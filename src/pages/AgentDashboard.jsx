@@ -7,6 +7,7 @@ import { readAllPayments } from '../services/PaymentService';
 import Card from '../components/Card';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
+import { useFetch } from '../hooks/useFetch';
 
 const styles = `
   .dashboard-container {
@@ -135,41 +136,37 @@ const styles = `
 `;
 
 const AgentDashboard = () => {
-  const [clients, setClients] = useState(0);
-  const [products, setProducts] = useState(0);
-  const [policies, setPolicies] = useState(0);
-  const [claims, setClaims] = useState(0);
-  const [totalPremium, setTotalPremium] = useState(0);
-
   const { userData } = useAuth();
 
   const fetchDashboardData = async () => {
-    try {
-      const [userRes, productRes, claimRes, policyRes, paymentRes] = await Promise.all([
-        readAllUsers(),
-        readAllProducts(),
-        readAllClaims(),
-        readAllPolicies(),
-        readAllPayments()
-      ]);
+    const [userRes, productRes, claimRes, policyRes, paymentRes] = await Promise.all([
+      readAllUsers(),
+      readAllProducts(),
+      readAllClaims(),
+      readAllPolicies(),
+      readAllPayments()
+    ]);
 
-      const paymentsSum = paymentRes?.data?.content
-        ? paymentRes.data.content.reduce((sum, payment) => sum + payment.amount, 0)
-        : 0;
+    const paymentsSum = paymentRes?.data?.content
+      ? paymentRes.data.content.reduce((sum, payment) => sum + payment.amount, 0)
+      : 0;
 
-      setClients(userRes?.data?.content?.length || 0);
-      setProducts(productRes?.data?.content?.length || 0);
-      setPolicies(policyRes?.data?.content?.length || 0);
-      setClaims(claimRes?.data?.content?.length || 0);
-      setTotalPremium(paymentsSum);
-    } catch (error) {
-      console.error("Failed to fetch agent dashboard data:", error);
-    }
+    return {
+      clients: userRes?.data?.content?.length || 0,
+      products: productRes?.data?.content?.length || 0,
+      policies: policyRes?.data?.content?.length || 0,
+      claims: claimRes?.data?.content?.length || 0,
+      totalPremium: paymentsSum
+    };
   };
 
+  const { data, loading, execute } = useFetch(fetchDashboardData);
+
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    execute();
+  }, [execute]);
+
+  const { clients = 0, products = 0, policies = 0, claims = 0, totalPremium = 0 } = data || {};
 
   return (
     <>

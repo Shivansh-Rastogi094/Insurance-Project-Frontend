@@ -7,6 +7,7 @@ import { readAllPayments } from '../services/PaymentService';
 import Card from '../components/Card';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
+import { useFetch } from '../hooks/useFetch';
 const styles = `
   .dashboard-container {
     font-family: var(--font-body);
@@ -217,48 +218,43 @@ const styles = `
   }
 `;
 const Dashboard = () => {
-  const [users, setUsers] = useState(0);
-  const [claims, setClaims] = useState(0);
-  const [products, setProducts] = useState(0);
-  const [policies, setPolicies] = useState(0);
-  const [payments, setPayments] = useState(0);
-  const [totalPayments, setTotalPayments] = useState(0);
-  const [totalClaims, setTotalClaims] = useState(0);
-
- const {userData} = useAuth();
+  const {userData} = useAuth();
 
   const fetchDashboardData = async () => {
-    try {
-      const [userRes, productRes, claimRes, policyRes, paymentRes] = await Promise.all([
-        readAllUsers(),
-        readAllProducts(),
-        readAllClaims(),
-        readAllPolicies(),
-        readAllPayments()
-      ]);
-      const payments = paymentRes?.data?.content
-        ? paymentRes.data.content.reduce((sum, payment) => sum + payment.amount, 0)
-        : 0;
+    const [userRes, productRes, claimRes, policyRes, paymentRes] = await Promise.all([
+      readAllUsers(),
+      readAllProducts(),
+      readAllClaims(),
+      readAllPolicies(),
+      readAllPayments()
+    ]);
+    
+    const payments = paymentRes?.data?.content
+      ? paymentRes.data.content.reduce((sum, payment) => sum + payment.amount, 0)
+      : 0;
 
-      const claims = claimRes?.data?.content
-        ? claimRes.data.content.reduce((sum, claim) => sum + claim.claimAmount, 0)
-        : 0;
-        
-      setTotalPayments(payments);
-      setTotalClaims(claims);
-      setUsers(userRes?.data?.content?.length || 0);
-      setProducts(productRes?.data?.content?.length || 0);
-      setClaims(claimRes?.data?.content?.length || 0);
-      setPolicies(policyRes?.data?.content?.length || 0);
-      setPayments(paymentRes?.data?.content?.length || 0);
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
-    }
+    const claims = claimRes?.data?.content
+      ? claimRes.data.content.reduce((sum, claim) => sum + claim.claimAmount, 0)
+      : 0;
+      
+    return {
+      totalPayments: payments,
+      totalClaims: claims,
+      users: userRes?.data?.content?.length || 0,
+      products: productRes?.data?.content?.length || 0,
+      claimsCount: claimRes?.data?.content?.length || 0,
+      policies: policyRes?.data?.content?.length || 0,
+      paymentsCount: paymentRes?.data?.content?.length || 0
+    };
   };
 
+  const { data, loading, execute } = useFetch(fetchDashboardData);
+
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    execute();
+  }, [execute]);
+
+  const { totalPayments = 0, totalClaims = 0, users = 0, products = 0, claimsCount = 0, policies = 0, paymentsCount = 0 } = data || {};
 
   return (
     <>
@@ -289,8 +285,8 @@ const Dashboard = () => {
             <Card title="Users" value={users} icon="👥" accent="accent-blue" sub="Registered accounts" />
             <Card title="Products" value={products} icon="📦" accent="accent-blue" sub="Active offerings" />
             <Card title="Policies" value={policies} icon="🗂️" accent="accent-blue" sub="Issued policies" />
-            <Card title="Claims" value={claims} icon="📄" accent="accent-amber" sub="Filed claims" />
-            <Card title="Payments" value={payments} icon="💵" accent="accent-blue" sub="Transactions logged" />
+            <Card title="Claims" value={claimsCount} icon="📄" accent="accent-amber" sub="Filed claims" />
+            <Card title="Payments" value={paymentsCount} icon="💵" accent="accent-blue" sub="Transactions logged" />
             <Card title="Total Claims Paid" value={totalClaims.toLocaleString('en-IN')} icon="💸" accent="accent-amber" prefix="₹" sub="Cumulative claim amount" />
             <Card title="Total Payments Received" value={totalPayments.toLocaleString('en-IN')} icon="✅" accent="accent-green" prefix="₹" sub="Cumulative premium collected" />
           </div>

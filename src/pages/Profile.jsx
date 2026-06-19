@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { getCustomerProfile, createCustomerProfile } from '../services/CustomerService';
+import { useFetch } from '../hooks/useFetch';
+import { useForm } from '../hooks/useForm';
+import Modal from '../components/Modal';
 
 const styles = `
   .page-container {
@@ -424,85 +427,37 @@ const styles = `
 
 const Profile = () => {
   const { userData } = useAuth();
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form State
-  const [formData, setFormData] = useState({
-    dateOfBirth: '',
-    address: '',
-    city: '',
-    state: '',
-    pinCode: '',
-    nomineeName: '',
-    nomineeRelation: ''
-  });
-
-  const [formErrors, setFormErrors] = useState({});
-
-  const loadProfile = async () => {
+  const fetchProfileData = async () => {
     try {
-      setLoading(true);
       const response = await getCustomerProfile();
-      if (response && response.data) {
-        setProfile(response.data);
-      } else {
-        setProfile(null);
-      }
+      return response?.data || null;
     } catch (err) {
       console.error("Failed to load customer profile:", err);
-      setProfile(null); // Treat errors (e.g. 404) as incomplete profile
-    } finally {
-      setLoading(false);
+      return null;
     }
   };
+
+  const { data: profile, loading, execute: loadProfile } = useFetch(fetchProfileData);
 
   useEffect(() => {
     loadProfile();
   }, []);
 
-  const openFormModal = () => {
-    if (profile) {
-      setFormData({
-        dateOfBirth: profile.dateOfBirth || '',
-        address: profile.address || '',
-        city: profile.city || '',
-        state: profile.state || '',
-        pinCode: profile.pinCode || '',
-        nomineeName: profile.nomineeName || '',
-        nomineeRelation: profile.nomineeRelation || ''
-      });
-    } else {
-      setFormData({
-        dateOfBirth: '',
-        address: '',
-        city: '',
-        state: '',
-        pinCode: '',
-        nomineeName: '',
-        nomineeRelation: ''
-      });
-    }
-    setFormErrors({});
-    setShowModal(true);
-  };
-
-  const validateForm = () => {
+  const validationFn = (values) => {
     const errors = {};
     const textRegex = /^[a-zA-Z\s.-]+$/;
 
-    // Check empty fields
-    Object.keys(formData).forEach(key => {
-      if (!formData[key] || formData[key].toString().trim() === '') {
+    Object.keys(values).forEach(key => {
+      if (!values[key] || values[key].toString().trim() === '') {
         errors[key] = "This field is required.";
       }
     });
 
-    // DOB check: Must be at least 18 years old
-    if (formData.dateOfBirth) {
-      const dob = new Date(formData.dateOfBirth);
+    if (values.dateOfBirth) {
+      const dob = new Date(values.dateOfBirth);
       const today = new Date();
       let age = today.getFullYear() - dob.getFullYear();
       const m = today.getMonth() - dob.getMonth();
@@ -516,30 +471,40 @@ const Profile = () => {
       }
     }
 
-    // Text fields only validation
-    if (formData.city && !textRegex.test(formData.city)) {
-      errors.city = "City can only contain alphabetic characters.";
-    }
+    if (values.city && !textRegex.test(values.city)) errors.city = "City can only contain alphabetic characters.";
+    if (values.state && !textRegex.test(values.state)) errors.state = "State can only contain alphabetic characters.";
+    if (values.nomineeName && !textRegex.test(values.nomineeName)) errors.nomineeName = "Nominee name can only contain alphabetic characters.";
+    if (values.nomineeRelation && !textRegex.test(values.nomineeRelation)) errors.nomineeRelation = "Nominee relation can only contain alphabetic characters.";
+    if (values.pinCode && !/^\d{6}$/.test(values.pinCode)) errors.pinCode = "Pin Code must be exactly 6 digits.";
 
-    if (formData.state && !textRegex.test(formData.state)) {
-      errors.state = "State can only contain alphabetic characters.";
-    }
+    return errors;
+  };
 
-    if (formData.nomineeName && !textRegex.test(formData.nomineeName)) {
-      errors.nomineeName = "Nominee name can only contain alphabetic characters.";
-    }
+  const { values: formData, errors: formErrors, handleChange, setValues: setFormData, resetForm, validateForm } = useForm({
+    dateOfBirth: '',
+    address: '',
+    city: '',
+    state: '',
+    pinCode: '',
+    nomineeName: '',
+    nomineeRelation: ''
+  }, validationFn);
 
-    if (formData.nomineeRelation && !textRegex.test(formData.nomineeRelation)) {
-      errors.nomineeRelation = "Nominee relation can only contain alphabetic characters.";
+  const openFormModal = () => {
+    if (profile) {
+      setFormData({
+        dateOfBirth: profile.dateOfBirth || '',
+        address: profile.address || '',
+        city: profile.city || '',
+        state: profile.state || '',
+        pinCode: profile.pinCode || '',
+        nomineeName: profile.nomineeName || '',
+        nomineeRelation: profile.nomineeRelation || ''
+      });
+    } else {
+      resetForm();
     }
-
-    // Pin Code: Must be exactly 6 digits
-    if (formData.pinCode && !/^\d{6}$/.test(formData.pinCode)) {
-      errors.pinCode = "Pin Code must be exactly 6 digits.";
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    setShowModal(true);
   };
 
   const handleSubmit = async (e) => {
@@ -702,120 +667,120 @@ const Profile = () => {
       </div>
 
       {/* Profile Form Modal */}
-      {showModal && (
-        <div className="modal-overlay" onClick={() => { if (!submitting) setShowModal(false); }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">{profile ? 'Update Profile Details' : 'Complete Profile Setup'}</h3>
-            <form onSubmit={handleSubmit} style={{ marginTop: '8px' }}>
-              
-              <div className="form-group">
-                <label className="form-label">Date of Birth</label>
-                <input 
-                  type="date"
-                  className="form-input"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                />
-                {formErrors.dateOfBirth && <div className="form-error">⚠️ {formErrors.dateOfBirth}</div>}
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Street Address</label>
-                <input 
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. 456 Maple Avenue"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                />
-                {formErrors.address && <div className="form-error">⚠️ {formErrors.address}</div>}
-              </div>
-
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">City</label>
-                  <input 
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. Scranton"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  />
-                  {formErrors.city && <div className="form-error">⚠️ {formErrors.city}</div>}
-                </div>
-
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">State</label>
-                  <input 
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. PA"
-                    value={formData.state}
-                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                  />
-                  {formErrors.state && <div className="form-error">⚠️ {formErrors.state}</div>}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Pin Code</label>
-                <input 
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. 185030"
-                  value={formData.pinCode}
-                  onChange={(e) => setFormData({ ...formData, pinCode: e.target.value })}
-                />
-                {formErrors.pinCode && <div className="form-error">⚠️ {formErrors.pinCode}</div>}
-              </div>
-
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Nominee Name</label>
-                  <input 
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. Carol Vance"
-                    value={formData.nomineeName}
-                    onChange={(e) => setFormData({ ...formData, nomineeName: e.target.value })}
-                  />
-                  {formErrors.nomineeName && <div className="form-error">⚠️ {formErrors.nomineeName}</div>}
-                </div>
-
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Nominee Relation</label>
-                  <input 
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. Spouse"
-                    value={formData.nomineeRelation}
-                    onChange={(e) => setFormData({ ...formData, nomineeRelation: e.target.value })}
-                  />
-                  {formErrors.nomineeRelation && <div className="form-error">⚠️ {formErrors.nomineeRelation}</div>}
-                </div>
-              </div>
-
-              <div className="modal-actions">
-                <button 
-                  type="button"
-                  className="btn-cancel" 
-                  onClick={() => setShowModal(false)}
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit"
-                  className="btn-confirm" 
-                  disabled={submitting}
-                >
-                  {submitting ? 'Saving...' : (profile ? 'Update Profile' : 'Save Profile')}
-                </button>
-              </div>
-            </form>
+      <Modal 
+        isOpen={showModal} 
+        onClose={() => { if (!submitting) setShowModal(false); }} 
+        title={profile ? 'Update Profile Details' : 'Complete Profile Setup'} 
+        maxWidth="520px"
+      >
+        <form onSubmit={handleSubmit} style={{ marginTop: '8px' }}>
+          
+          <div className="form-group">
+            <label className="form-label">Date of Birth</label>
+            <input 
+              type="date"
+              className="form-input"
+              value={formData.dateOfBirth}
+              onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+            />
+            {formErrors.dateOfBirth && <div className="form-error">⚠️ {formErrors.dateOfBirth}</div>}
           </div>
-        </div>
-      )}
+
+          <div className="form-group">
+            <label className="form-label">Street Address</label>
+            <input 
+              type="text"
+              className="form-input"
+              placeholder="e.g. 456 Maple Avenue"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            />
+            {formErrors.address && <div className="form-error">⚠️ {formErrors.address}</div>}
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label className="form-label">City</label>
+              <input 
+                type="text"
+                className="form-input"
+                placeholder="e.g. Scranton"
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              />
+              {formErrors.city && <div className="form-error">⚠️ {formErrors.city}</div>}
+            </div>
+
+            <div className="form-group" style={{ flex: 1 }}>
+              <label className="form-label">State</label>
+              <input 
+                type="text"
+                className="form-input"
+                placeholder="e.g. PA"
+                value={formData.state}
+                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+              />
+              {formErrors.state && <div className="form-error">⚠️ {formErrors.state}</div>}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Pin Code</label>
+            <input 
+              type="text"
+              className="form-input"
+              placeholder="e.g. 185030"
+              value={formData.pinCode}
+              onChange={(e) => setFormData({ ...formData, pinCode: e.target.value })}
+            />
+            {formErrors.pinCode && <div className="form-error">⚠️ {formErrors.pinCode}</div>}
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label className="form-label">Nominee Name</label>
+              <input 
+                type="text"
+                className="form-input"
+                placeholder="e.g. Carol Vance"
+                value={formData.nomineeName}
+                onChange={(e) => setFormData({ ...formData, nomineeName: e.target.value })}
+              />
+              {formErrors.nomineeName && <div className="form-error">⚠️ {formErrors.nomineeName}</div>}
+            </div>
+
+            <div className="form-group" style={{ flex: 1 }}>
+              <label className="form-label">Nominee Relation</label>
+              <input 
+                type="text"
+                className="form-input"
+                placeholder="e.g. Spouse"
+                value={formData.nomineeRelation}
+                onChange={(e) => setFormData({ ...formData, nomineeRelation: e.target.value })}
+              />
+              {formErrors.nomineeRelation && <div className="form-error">⚠️ {formErrors.nomineeRelation}</div>}
+            </div>
+          </div>
+
+          <div className="modal-actions">
+            <button 
+              type="button"
+              className="btn-cancel"
+              onClick={() => setShowModal(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              className="btn-confirm"
+              disabled={submitting}
+            >
+              {submitting ? 'Saving...' : 'Save Profile'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </>
   );
 };

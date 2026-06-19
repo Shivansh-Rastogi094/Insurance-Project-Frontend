@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { readAllCustomers } from '../services/CustomerService';
+import { useFetch } from '../hooks/useFetch';
 
 const styles = `
   .page-container {
@@ -285,34 +286,25 @@ const styles = `
 
 const Customers = () => {
   const { userData } = useAuth();
-  const [customers, setCustomers] = useState([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const fetchCustomers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await readAllCustomers();
-      if (response && response.data) {
-        setCustomers(response.data.content || []);
-        setTotalCount(response.data.totalElements !== undefined ? response.data.totalElements : (response.data.content?.length || 0));
-      } else {
-        setCustomers([]);
-        setTotalCount(0);
-      }
-    } catch (err) {
-      console.error("Failed to load customers list:", err);
-      setError("Failed to fetch customer directory. Please verify that the backend services are online.");
-    } finally {
-      setLoading(false);
+  const fetchCustomersData = async () => {
+    const response = await readAllCustomers();
+    if (response && response.data) {
+      return {
+        customersList: response.data.content || [],
+        total: response.data.totalElements !== undefined ? response.data.totalElements : (response.data.content?.length || 0)
+      };
     }
+    return { customersList: [], total: 0 };
   };
+
+  const { data, loading, error, execute: fetchCustomers } = useFetch(fetchCustomersData);
 
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  const customers = data?.customersList || [];
+  const totalCount = data?.total || 0;
 
   const initials = userData?.fullName
     ? userData.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)

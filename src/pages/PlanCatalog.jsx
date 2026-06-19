@@ -4,6 +4,9 @@ import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { readAllPlans, createPlan, updatePlan, deactivatePlan } from '../services/PlanService';
 import { purchasePolicy } from '../services/PolicyService';
+import { useFetch } from '../hooks/useFetch';
+import { useForm } from '../hooks/useForm';
+import Modal from '../components/Modal';
 
 const styles = `
   .page-container {
@@ -617,9 +620,12 @@ const PlanCatalog = () => {
   const navigate = useNavigate();
   const { userData } = useAuth();
 
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const fetchPlansList = async () => {
+    const res = await readAllPlans();
+    return res?.data?.content || [];
+  };
+
+  const { data: plans = [], loading, error, execute: loadPlans } = useFetch(fetchPlansList);
 
   // Purchase Modal State
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -664,27 +670,9 @@ const PlanCatalog = () => {
 
   const categoryMeta = getCategoryMeta();
 
-  const loadPlans = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await readAllPlans();
-      if (response && response.data && response.data.content) {
-        setPlans(response.data.content);
-      } else {
-        setPlans([]);
-      }
-    } catch (err) {
-      console.error("Error loading plans:", err);
-      setError("Failed to fetch plans catalog. Please ensure the backend is online.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     loadPlans();
-  }, [productId]);
+  }, [loadPlans, productId]);
 
   const isAdminOrAgent = userData?.role === 'ADMIN' || userData?.role === 'AGENT';
 
@@ -1012,10 +1000,7 @@ const PlanCatalog = () => {
       </div>
 
       {/* Confirmation Modal */}
-      {selectedPlan && (
-        <div className="modal-overlay" onClick={() => setSelectedPlan(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">🛡️ Confirm Policy Purchase</h3>
+      <Modal isOpen={!!selectedPlan} onClose={() => setSelectedPlan(null)} title="🛡️ Confirm Policy Purchase">
             <div className="modal-body">
               <p>You are initiating a request to buy the following insurance plan:</p>
               
@@ -1069,15 +1054,10 @@ const PlanCatalog = () => {
                 {purchasing ? 'Processing...' : 'Confirm Purchase'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Add Plan Modal */}
-      {showAddModal && (
-        <div className="modal-overlay" onClick={() => { setShowAddModal(false); setFormErrors({}); }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
-            <h3 className="modal-title">✨ Add New Plan</h3>
+      <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); setFormErrors({}); }} title="✨ Add New Plan" maxWidth="520px">
             <form onSubmit={handleAddPlanSubmit} style={{ marginTop: '16px' }}>
               <div className="form-group">
                 <label className="form-label">Plan Name</label>
@@ -1188,15 +1168,10 @@ const PlanCatalog = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Edit Plan Modal */}
-      {showEditModal && editingPlan && (
-        <div className="modal-overlay" onClick={() => { setShowEditModal(false); setFormErrors({}); }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
-            <h3 className="modal-title">✏️ Edit Plan</h3>
+      <Modal isOpen={showEditModal && !!editingPlan} onClose={() => { setShowEditModal(false); setFormErrors({}); }} title="✏️ Edit Plan" maxWidth="520px">
             <form onSubmit={handleEditPlanSubmit} style={{ marginTop: '16px' }}>
               <div className="form-group">
                 <label className="form-label">Plan Name</label>
@@ -1307,9 +1282,7 @@ const PlanCatalog = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
     </>
   );
 };
