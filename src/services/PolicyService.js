@@ -18,3 +18,13 @@ export const readMyPolicies = async () => {
         console.log(error);
     }
 };
+
+export const purchasePolicy = async (payload) => {
+    try {
+        const response = await api.post("policies/purchase", payload);
+        return response;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
-import { readAllProducts } from '../services/ProductService';
+import { readAllProducts, updateProduct, deactivateProduct } from '../services/ProductService';
 import { readAllPlans } from '../services/PlanService';
 
 const styles = `
@@ -285,6 +285,52 @@ const styles = `
     box-shadow: 0 6px 12px -2px rgba(37, 99, 168, 0.2);
   }
 
+  .action-sub-btn {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: 1.5px solid var(--primary-light);
+    color: var(--primary-light);
+    border-radius: var(--radius-button);
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .action-sub-btn:hover {
+    background: rgba(37, 99, 168, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .action-sub-btn-danger {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: 1.5px solid var(--danger);
+    color: var(--danger);
+    border-radius: var(--radius-button);
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .action-sub-btn-danger:hover {
+    background: rgba(220, 38, 38, 0.08);
+    transform: translateY(-1px);
+  }
+
   .empty-catalog-container {
     display: flex;
     flex-direction: column;
@@ -379,6 +425,125 @@ const styles = `
       margin: 0 20px 20px;
     }
   }
+
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal-content {
+    background: var(--card);
+    border-radius: var(--radius-card);
+    width: 100%;
+    max-width: 480px;
+    box-shadow: var(--shadow-premium);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 32px;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .form-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-input);
+    color: var(--text-primary);
+    background-color: var(--surface);
+    font-family: inherit;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    background-color: var(--card);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+
+  .btn-cancel {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-cancel:hover {
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+
+  .btn-confirm {
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-confirm:hover {
+    background: var(--primary-light);
+  }
 `;
 
 const ProductCatalog = () => {
@@ -390,6 +555,47 @@ const ProductCatalog = () => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Admin Product Actions state and handlers
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleUpdateProduct = async (e) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    try {
+      setSubmitting(true);
+      const payload = {
+        productName: editingProduct.productName,
+        productType: editingProduct.productType,
+        description: editingProduct.description,
+        active: editingProduct.active
+      };
+      await updateProduct(editingProduct.id, payload);
+      alert("Product updated successfully!");
+      setEditingProduct(null);
+      loadCatalogData();
+    } catch (err) {
+      console.error("Error updating product:", err);
+      alert("Failed to update product. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeactivateProduct = async (product) => {
+    if (!window.confirm(`Are you sure you want to deactivate ${product.productName}?`)) {
+      return;
+    }
+    try {
+      await deactivateProduct(product.id);
+      alert("Product deactivated successfully!");
+      loadCatalogData();
+    } catch (err) {
+      console.error("Error deactivating product:", err);
+      alert("Failed to deactivate product. Please try again.");
+    }
+  };
 
   const categoryTypeCode = type ? type.toUpperCase() : '';
 
@@ -444,10 +650,11 @@ const ProductCatalog = () => {
     loadCatalogData();
   }, [type]);
 
-  // Filter products matching this category and active status
-  const categoryProducts = products.filter(
-    (p) => p.productType === categoryTypeCode && p.active
-  );
+  // Filter products matching this category and active status (show inactive for Admin/Agent)
+  const categoryProducts = products.filter((p) => {
+    const isAdminOrAgent = userData?.role === 'ADMIN' || userData?.role === 'AGENT';
+    return p.productType === categoryTypeCode && (p.active || isAdminOrAgent);
+  });
 
   // Count active plans belonging to a product
   const getPlanCountForProduct = (productId, productName) => {
@@ -520,9 +727,15 @@ const ProductCatalog = () => {
                     <div>
                       <div className="card-header-row">
                         <div className="card-icon">{categoryMeta.icon}</div>
-                        <div className="status-dot-badge">
-                          <span className="status-pulse"></span>
-                          Active
+                        <div className="status-dot-badge" style={{
+                          color: product.active ? 'var(--success)' : 'var(--text-secondary)',
+                          background: product.active ? 'rgba(22, 163, 74, 0.08)' : 'rgba(100, 116, 139, 0.08)'
+                        }}>
+                          <span className="status-pulse" style={{
+                            background: product.active ? 'var(--success)' : 'var(--text-secondary)',
+                            animation: product.active ? 'pulse 1.8s infinite' : 'none'
+                          }}></span>
+                          {product.active ? 'Active' : 'Inactive'}
                         </div>
                       </div>
                       <div className="product-info-section">
@@ -534,12 +747,37 @@ const ProductCatalog = () => {
                       <div className="plans-badge" style={{ marginBottom: '20px' }}>
                         📋 {planCount} {planCount === 1 ? 'Plan' : 'Plans'} Available
                       </div>
-                      <button 
-                        className="explore-btn"
-                        onClick={() => alert(`Exploring plans for ${product.productName}...`)}
-                      >
-                        Explore Plans
-                      </button>
+                      {userData?.role === "ADMIN" ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <button 
+                            className="explore-btn"
+                            onClick={() => navigate(`/policy/${type}/${product.id}/plans`)}
+                          >
+                            Explore Plans
+                          </button>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button 
+                              className="action-sub-btn" 
+                              onClick={() => setEditingProduct(product)}
+                            >
+                              Update
+                            </button>
+                            <button 
+                              className="action-sub-btn-danger" 
+                              onClick={() => handleDeactivateProduct(product)}
+                            >
+                              Deactivate
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button 
+                          className="explore-btn"
+                          onClick={() => navigate(`/policy/${type}/${product.id}/plans`)}
+                        >
+                          Explore Plans
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -548,6 +786,81 @@ const ProductCatalog = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Product Modal */}
+      {editingProduct && (
+        <div className="modal-overlay" onClick={() => setEditingProduct(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">✏️ Update Product</h3>
+            <form onSubmit={handleUpdateProduct}>
+              <div className="form-group">
+                <label className="form-label">Product Name</label>
+                <input
+                  type="text"
+                  required
+                  className="form-input"
+                  value={editingProduct.productName}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, productName: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Product Type</label>
+                <select
+                  className="form-input"
+                  value={editingProduct.productType}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, productType: e.target.value })}
+                >
+                  <option value="LIFE">LIFE (Life Insurance)</option>
+                  <option value="HEALTH">HEALTH (Health Insurance)</option>
+                  <option value="MOTOR">MOTOR (Motor Insurance)</option>
+                  <option value="TRAVEL">TRAVEL (Travel Insurance)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <textarea
+                  className="form-input"
+                  style={{ height: '80px', resize: 'vertical' }}
+                  value={editingProduct.description}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  id="edit-active"
+                  checked={editingProduct.active}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, active: e.target.checked })}
+                />
+                <label htmlFor="edit-active" style={{ fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>
+                  Mark as Active
+                </label>
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={() => setEditingProduct(null)}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-confirm"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };

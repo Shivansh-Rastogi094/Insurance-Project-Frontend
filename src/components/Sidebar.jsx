@@ -159,22 +159,35 @@ const Sidebar = ({ title }) => {
     logout();
     navigate("/");
   };
-  const links =
-    userData?.role === "CUSTOMER"
-      ? [
-          { label: "Dashboard", path: "/userdashboard" },
-          { label: "Products & Plans", path: "/policy" },
-          { label: "Payments", path: "/payments" },
-          { label: "My Claims", path: "/claims" },
-          { label: "Profile", path: "/profile" }
-        ]
-      : [
-          { label: "Dashboard", path: "/admindashboard" },
-          { label: "Products & Plans", path: "/policy" },
-          { label: "Agents", path: "/admin/agents" },
-          { label: "Policies", path: "/admin/policies" },
-          { label: "Claims", path: "/admin/claims" }
-        ];
+  const getLinks = () => {
+    if (userData?.role === "CUSTOMER") {
+      return [
+        { label: "Dashboard", path: "/userdashboard" },
+        { label: "Products & Plans", path: "/policy" },
+        { label: "Payments", path: "/payments" },
+        { label: "My Claims", path: "/claims" },
+        { label: "Profile", path: "/profile" }
+      ];
+    } else if (userData?.role === "AGENT") {
+      return [
+        { label: "Dashboard", path: "/agentdashboard" },
+        { label: "Products & Plans", path: "/policy" },
+        { label: "Claims", path: "/admin/claims" },
+        { label: "Customers", path: "/customers" }
+      ];
+    } else {
+      return [
+        { label: "Dashboard", path: "/admindashboard" },
+        { label: "Products & Plans", path: "/policy" },
+        { label: "Agents", path: "/admin/agents" },
+        { label: "Policies", path: "/admin/policies" },
+        { label: "Claims", path: "/admin/claims" },
+        { label: "Customers", path: "/customers" }
+      ];
+    }
+  };
+
+  const links = getLinks();
 
   return (
     <>
@@ -184,7 +197,13 @@ const Sidebar = ({ title }) => {
           <div className="sidebar-brand-icon">🛡️</div>
           <div>
             <h2>{title}</h2>
-            <span>Admin Panel</span>
+            <span>
+              {userData?.role === 'AGENT'
+                ? 'Agent Panel'
+                : userData?.role === 'CUSTOMER'
+                ? 'Customer Portal'
+                : 'Admin Panel'}
+            </span>
           </div>
         </div>
 

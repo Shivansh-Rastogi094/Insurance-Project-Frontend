@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
-import { readAllProducts } from '../services/ProductService';
+import { readAllProducts, createProduct } from '../services/ProductService';
 
 const styles = `
   .page-container {
@@ -361,12 +361,165 @@ const styles = `
       margin: 8px 20px 20px;
     }
   }
+
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal-content {
+    background: var(--card);
+    border-radius: var(--radius-card);
+    width: 100%;
+    max-width: 480px;
+    box-shadow: var(--shadow-premium);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 32px;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .form-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-input);
+    color: var(--text-primary);
+    background-color: var(--surface);
+    font-family: inherit;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    background-color: var(--card);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+
+  .btn-cancel {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-cancel:hover {
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+
+  .btn-confirm {
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-confirm:hover {
+    background: var(--primary-light);
+  }
 `;
 
 const Policy = () => {
   const { userData } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  
+  // Add Product State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    productName: '',
+    productType: 'LIFE',
+    description: '',
+    active: true
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleCreateProduct = async (e) => {
+    e.preventDefault();
+    try {
+      setSubmitting(true);
+      await createProduct(newProduct);
+      alert("Product created successfully!");
+      setIsAddModalOpen(false);
+      // Reset form
+      setNewProduct({
+        productName: '',
+        productType: 'LIFE',
+        description: '',
+        active: true
+      });
+      // Refresh list
+      fetchProducts();
+    } catch (err) {
+      console.error("Error creating product:", err);
+      alert("Failed to create product. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -394,7 +547,8 @@ const Policy = () => {
 
   // Filter products by type (active only or all, depending on preference. Here we show active only if active field is true)
   const getFilteredProducts = (type) => {
-    return products.filter((p) => p.productType === type && p.active);
+    const isAdminOrAgent = userData?.role === 'ADMIN' || userData?.role === 'AGENT';
+    return products.filter((p) => p.productType === type && (p.active || isAdminOrAgent));
   };
 
   const productTypes = [
@@ -458,10 +612,7 @@ const Policy = () => {
             </div>
             {userData?.role === "ADMIN" && (
               <div className="header-actions">
-                <button className="btn-admin-secondary" onClick={() => alert("Add Policy Clicked (Admin feature details coming soon!)")}>
-                  + Add Policy
-                </button>
-                <button className="btn-admin" onClick={() => alert("Add Product Clicked (Admin feature details coming soon!)")}>
+                <button className="btn-admin" onClick={() => setIsAddModalOpen(true)}>
                   + Add Product
                 </button>
               </div>
@@ -525,6 +676,83 @@ const Policy = () => {
           )}
         </div>
       </div>
+
+      {/* Add Product Modal */}
+      {isAddModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">📦 Add New Product</h3>
+            <form onSubmit={handleCreateProduct}>
+              <div className="form-group">
+                <label className="form-label">Product Name</label>
+                <input
+                  type="text"
+                  required
+                  className="form-input"
+                  placeholder="e.g., Term Life Gold"
+                  value={newProduct.productName}
+                  onChange={(e) => setNewProduct({ ...newProduct, productName: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Product Type</label>
+                <select
+                  className="form-input"
+                  value={newProduct.productType}
+                  onChange={(e) => setNewProduct({ ...newProduct, productType: e.target.value })}
+                >
+                  <option value="LIFE">LIFE (Life Insurance)</option>
+                  <option value="HEALTH">HEALTH (Health Insurance)</option>
+                  <option value="MOTOR">MOTOR (Motor Insurance)</option>
+                  <option value="TRAVEL">TRAVEL (Travel Insurance)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <textarea
+                  className="form-input"
+                  style={{ height: '80px', resize: 'vertical' }}
+                  placeholder="Briefly describe the product..."
+                  value={newProduct.description}
+                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  id="active"
+                  checked={newProduct.active}
+                  onChange={(e) => setNewProduct({ ...newProduct, active: e.target.checked })}
+                />
+                <label htmlFor="active" style={{ fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>
+                  Mark as Active immediately
+                </label>
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={() => setIsAddModalOpen(false)}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-confirm"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Creating...' : 'Create Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };

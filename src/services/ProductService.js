@@ -1,18 +1,41 @@
 import api from "../api/api";
-export const token ="eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbkBpbnN1cmFuY2UuY29tIiwiaWF0IjoxNzgxNTk4NTMzLCJleHAiOjE3ODE2ODQ5MzN9.VfRV1ctkmIMIHyeuAb6cGgWrwTVbnOR0li3jI4GiFy06eUVq0F5Di7nFHEXdd3-q";
 
 export const readAllProducts=async()=>{
     try{
-        
-        const response = await api.get(`products`,{
-            headers: {
-                Authorization: `Bearer ${token}`,
-            }
-        })
-
+        const response = await api.get(`products`)
         return response
     }
     catch(err){
         console.log(err);
     }
 }
+
+export const createProduct = async (payload) => {
+    try {
+        const response = await api.post("products", payload);
+        return response;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};
+
+export const updateProduct = async (id, payload) => {
+    try {
+        const response = await api.put(`products/${id}`, payload);
+        return response;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};
+
+export const deactivateProduct = async (id) => {
+    try {
+        const response = await api.put(`products/${id}/deactivate`);
+        return response;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+};

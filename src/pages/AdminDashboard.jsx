@@ -236,23 +236,21 @@ const Dashboard = () => {
         readAllPolicies(),
         readAllPayments()
       ]);
-      const payments = paymentRes.data.content.reduce(
-              (sum, payment) => sum + payment.amount,
-              0
-              );
+      const payments = paymentRes?.data?.content
+        ? paymentRes.data.content.reduce((sum, payment) => sum + payment.amount, 0)
+        : 0;
 
-      const claims = claimRes.data.content.reduce(
-              (sum, claim) => sum + claim.claimAmount,
-              0
-              );
+      const claims = claimRes?.data?.content
+        ? claimRes.data.content.reduce((sum, claim) => sum + claim.claimAmount, 0)
+        : 0;
         
       setTotalPayments(payments);
       setTotalClaims(claims);
-      setUsers(userRes.data.content.length);
-      setProducts(productRes.data.content.length);
-      setClaims(claimRes.data.content.length);
-      setPolicies(policyRes.data.content.length);
-      setPayments(paymentRes.data.content.length);
+      setUsers(userRes?.data?.content?.length || 0);
+      setProducts(productRes?.data?.content?.length || 0);
+      setClaims(claimRes?.data?.content?.length || 0);
+      setPolicies(policyRes?.data?.content?.length || 0);
+      setPayments(paymentRes?.data?.content?.length || 0);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
     }
