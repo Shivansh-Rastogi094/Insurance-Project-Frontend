@@ -1,0 +1,220 @@
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+const styles = `
+  .sidebar {
+    font-family: var(--font-body);
+    width: 240px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: var(--sidebar-bg);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 0;
+    z-index: 1000;
+    color: var(--sidebar-text);
+  }
+
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 24px;
+  }
+
+  .sidebar-brand-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(15, 168, 158, 0.15);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-brand h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.2px;
+    line-height: 1.2;
+  }
+
+  .sidebar-brand span {
+    font-size: 11px;
+    color: var(--sidebar-text);
+    opacity: 0.7;
+    font-weight: 400;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .sidebar-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sidebar-text);
+    opacity: 0.5;
+    padding: 0 20px;
+    margin-bottom: 8px;
+  }
+
+  .sidebar ul {
+    list-style: none;
+    padding: 0 12px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sidebar ul li a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-radius: var(--radius-button);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .sidebar ul li a:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+  }
+
+  .sidebar ul li a.active-link {
+    background: rgba(15, 168, 158, 0.12);
+    color: var(--sidebar-active);
+    font-weight: 600;
+  }
+
+  .sidebar ul li a.active-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 25%;
+    bottom: 25%;
+    width: 3px;
+    background: var(--sidebar-active);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px 20px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .sidebar-footer p {
+    font-size: 11px;
+    color: var(--sidebar-text);
+    opacity: 0.5;
+    font-weight: 400;
+  }
+
+  .logout-btn {
+    width: 100%;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-button);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--sidebar-text);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    margin-bottom: 12px;
+  }
+
+  .logout-btn:hover {
+    background: rgba(220, 38, 38, 0.15);
+    color: #ef4444;
+  }
+`;
+
+const Sidebar = ({ title }) => {
+  const { userData, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+  const links =
+    userData?.role === "CUSTOMER"
+      ? [
+          { label: "Dashboard", path: "/userdashboard" },
+          { label: "Products & Plans", path: "/policy" },
+          { label: "Payments", path: "/payments" },
+          { label: "My Claims", path: "/claims" },
+          { label: "Profile", path: "/profile" }
+        ]
+      : [
+          { label: "Dashboard", path: "/admindashboard" },
+          { label: "Products & Plans", path: "/policy" },
+          { label: "Agents", path: "/admin/agents" },
+          { label: "Policies", path: "/admin/policies" },
+          { label: "Claims", path: "/admin/claims" }
+        ];
+
+  return (
+    <>
+      <style>{styles}</style>
+      <div className="sidebar">
+        <div className="sidebar-brand">
+          <div className="sidebar-brand-icon">🛡️</div>
+          <div>
+            <h2>{title}</h2>
+            <span>Admin Panel</span>
+          </div>
+        </div>
+
+        <p className="sidebar-section-label">Navigation</p>
+
+        <ul>
+          {links.map((link) => (
+            <li key={link.path}>
+              <NavLink
+                to={link.path}
+                className={({ isActive }) =>
+                  isActive ? "active-link" : ""
+                }
+              >
+                {link.icon && <span role="img" aria-hidden="true">{link.icon}</span>}
+                {link.label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+
+        <div className="sidebar-footer">
+            <button className="logout-btn" onClick={handleLogout}>
+              Logout
+            </button>
+          <p>Insurance Management System</p>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default Sidebar;

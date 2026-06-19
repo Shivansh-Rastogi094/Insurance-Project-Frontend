@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --primary: #1A3C5E;
+  --primary-light: #2563A8;
+  --accent: #0FA89E;
+  --warning: #F59E0B;
+  --danger: #DC2626;
+  --success: #16A34A;
+  --surface: #F8FAFC;
+  --card: #FFFFFF;
+  --border: #E2E8F0;
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --sidebar-bg: #0F2540;
+  --sidebar-text: #CBD5E1;
+  --sidebar-active: #0FA89E;
+  
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  --radius-card: 12px;
+  --radius-button: 8px;
+  --radius-badge: 999px;
+  --radius-input: 8px;
+  
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.07);
+  --shadow-premium: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 16px -6px rgba(15, 23, 42, 0.04);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--surface);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
