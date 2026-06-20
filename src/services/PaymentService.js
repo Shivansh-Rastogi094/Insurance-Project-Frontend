@@ -13,9 +13,19 @@ export const readAllPayments=async()=>{
 
 export const readMyPayements =async()=>{
     try {
-        const respone = await api.get(`payments/my`)
-        return (respone.data.content)
+        const response = await api.get(`payments/my`)
+        return (response.data.content)
     } catch (error) {
-        
+        console.error("Error in readMyPayements:", error);
     }
 }
+
+export const createPayment = async (payload) => {
+    try {
+        const response = await api.post("payments", payload);
+        return response;
+    } catch (error) {
+        console.error("Error in createPayment:", error);
+        throw error;
+    }
+};

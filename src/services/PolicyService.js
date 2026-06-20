@@ -5,7 +5,7 @@ export const readAllPolicies = async () => {
         const response = await api.get("policies");
         return response;
     } catch (err) {
-        console.log(err);
+        console.error(err);
     }
 };
 

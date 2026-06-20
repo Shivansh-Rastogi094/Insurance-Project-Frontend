@@ -164,7 +164,7 @@ const Sidebar = ({ title }) => {
       return [
         { label: "Dashboard", path: "/userdashboard" },
         { label: "Products & Plans", path: "/policy" },
-        { label: "Payments", path: "/payments" },
+        { label: "My Policies & Payments", path: "/payments" },
         { label: "My Claims", path: "/claims" },
         { label: "Profile", path: "/profile" }
       ];
@@ -172,7 +172,7 @@ const Sidebar = ({ title }) => {
       return [
         { label: "Dashboard", path: "/agentdashboard" },
         { label: "Products & Plans", path: "/policy" },
-        { label: "Claims", path: "/admin/claims" },
+        { label: "Claims", path: "/claims" },
         { label: "Customers", path: "/customers" }
       ];
     } else {
@@ -181,7 +181,7 @@ const Sidebar = ({ title }) => {
         { label: "Products & Plans", path: "/policy" },
         { label: "Agents", path: "/admin/agents" },
         { label: "Policies", path: "/admin/policies" },
-        { label: "Claims", path: "/admin/claims" },
+        { label: "Claims", path: "/claims" },
         { label: "Customers", path: "/customers" }
       ];
     }

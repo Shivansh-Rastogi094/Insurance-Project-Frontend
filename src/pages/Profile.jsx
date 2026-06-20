@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { getCustomerProfile, createCustomerProfile } from '../services/CustomerService';
@@ -430,7 +430,7 @@ const Profile = () => {
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchProfileData = async () => {
+  const fetchProfileData = useCallback(async () => {
     try {
       const response = await getCustomerProfile();
       return response?.data || null;
@@ -438,7 +438,7 @@ const Profile = () => {
       console.error("Failed to load customer profile:", err);
       return null;
     }
-  };
+  }, []);
 
   const { data: profile, loading, execute: loadProfile } = useFetch(fetchProfileData);
 

@@ -20,3 +20,33 @@ export const readMyClaims = async()=>{
         
     }
 }
+
+export const createClaim = async (payload) => {
+    try {
+        const response = await api.post(`claims`, payload);
+        return response;
+    } catch (err) {
+        console.error("Error creating claim:", err);
+        throw err;
+    }
+};
+
+export const agentReviewClaim = async (claimId, payload) => {
+    try {
+        const response = await api.put(`claims/${claimId}/review`, payload);
+        return response;
+    } catch (err) {
+        console.error("Error submitting agent review:", err);
+        throw err;
+    }
+};
+
+export const adminDecisionClaim = async (claimId, payload) => {
+    try {
+        const response = await api.put(`claims/${claimId}/decision`, payload);
+        return response;
+    } catch (err) {
+        console.error("Error submitting admin decision:", err);
+        throw err;
+    }
+};

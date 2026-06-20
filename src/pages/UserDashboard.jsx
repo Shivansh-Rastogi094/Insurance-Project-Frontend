@@ -498,7 +498,6 @@ const UserDashboard = () => {
   const myPolicies = async () => {
     try {
       const response = await readMyPolicies();    
-      console.log(response);
       setPolicy(response);
     } catch (e) {
       setPolicy([]);

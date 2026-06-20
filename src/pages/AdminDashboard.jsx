@@ -217,36 +217,36 @@ const styles = `
     }
   }
 `;
+const fetchDashboardData = async () => {
+  const [userRes, productRes, claimRes, policyRes, paymentRes] = await Promise.all([
+    readAllUsers(),
+    readAllProducts(),
+    readAllClaims(),
+    readAllPolicies(),
+    readAllPayments()
+  ]);
+  
+  const payments = paymentRes?.data?.content
+    ? paymentRes.data.content.reduce((sum, payment) => sum + payment.amount, 0)
+    : 0;
+
+  const claims = claimRes?.data?.content
+    ? claimRes.data.content.reduce((sum, claim) => sum + claim.claimAmount, 0)
+    : 0;
+    
+  return {
+    totalPayments: payments,
+    totalClaims: claims,
+    users: userRes?.data?.content?.length || 0,
+    products: productRes?.data?.content?.length || 0,
+    claimsCount: claimRes?.data?.content?.length || 0,
+    policies: policyRes?.data?.content?.length || 0,
+    paymentsCount: paymentRes?.data?.content?.length || 0
+  };
+};
+
 const Dashboard = () => {
   const {userData} = useAuth();
-
-  const fetchDashboardData = async () => {
-    const [userRes, productRes, claimRes, policyRes, paymentRes] = await Promise.all([
-      readAllUsers(),
-      readAllProducts(),
-      readAllClaims(),
-      readAllPolicies(),
-      readAllPayments()
-    ]);
-    
-    const payments = paymentRes?.data?.content
-      ? paymentRes.data.content.reduce((sum, payment) => sum + payment.amount, 0)
-      : 0;
-
-    const claims = claimRes?.data?.content
-      ? claimRes.data.content.reduce((sum, claim) => sum + claim.claimAmount, 0)
-      : 0;
-      
-    return {
-      totalPayments: payments,
-      totalClaims: claims,
-      users: userRes?.data?.content?.length || 0,
-      products: productRes?.data?.content?.length || 0,
-      claimsCount: claimRes?.data?.content?.length || 0,
-      policies: policyRes?.data?.content?.length || 0,
-      paymentsCount: paymentRes?.data?.content?.length || 0
-    };
-  };
 
   const { data, loading, execute } = useFetch(fetchDashboardData);
 

@@ -615,17 +615,17 @@ const styles = `
   }
 `;
 
+const fetchPlansList = async () => {
+  const res = await readAllPlans();
+  return res?.data?.content || [];
+};
+
 const PlanCatalog = () => {
   const { type, productId } = useParams();
   const navigate = useNavigate();
   const { userData } = useAuth();
 
-  const fetchPlansList = async () => {
-    const res = await readAllPlans();
-    return res?.data?.content || [];
-  };
-
-  const { data: plans = [], loading, error, execute: loadPlans } = useFetch(fetchPlansList);
+  const { data: plans , loading, error, execute: loadPlans } = useFetch(fetchPlansList);
 
   // Purchase Modal State
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -1000,61 +1000,63 @@ const PlanCatalog = () => {
       </div>
 
       {/* Confirmation Modal */}
-      <Modal isOpen={!!selectedPlan} onClose={() => setSelectedPlan(null)} title="🛡️ Confirm Policy Purchase">
-            <div className="modal-body">
-              <p>You are initiating a request to buy the following insurance plan:</p>
-              
-              <div className="modal-plan-summary">
-                <div style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-primary)', marginBottom: '8px' }}>
-                  {selectedPlan.planName}
+      {selectedPlan && (
+        <Modal isOpen={!!selectedPlan} onClose={() => setSelectedPlan(null)} title="🛡️ Confirm Policy Purchase">
+              <div className="modal-body">
+                <p>You are initiating a request to buy the following insurance plan:</p>
+                
+                <div className="modal-plan-summary">
+                  <div style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                    {selectedPlan.planName}
+                  </div>
+                  <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div><strong>Product Name:</strong> {selectedPlan.productName}</div>
+                    <div><strong>Sum Insured:</strong> ₹{selectedPlan.coverageAmount.toLocaleString('en-IN')}</div>
+                    <div><strong>Premium:</strong> ₹{selectedPlan.premiumAmount.toLocaleString('en-IN')} ({selectedPlan.premiumType})</div>
+                    <div><strong>Term:</strong> {selectedPlan.durationYears} Years</div>
+                  </div>
                 </div>
-                <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div><strong>Product Name:</strong> {selectedPlan.productName}</div>
-                  <div><strong>Sum Insured:</strong> ₹{selectedPlan.coverageAmount.toLocaleString('en-IN')}</div>
-                  <div><strong>Premium:</strong> ₹{selectedPlan.premiumAmount.toLocaleString('en-IN')} ({selectedPlan.premiumType})</div>
-                  <div><strong>Term:</strong> {selectedPlan.durationYears} Years</div>
+
+                <div className="form-group">
+                  <label className="form-label">Policy Start Date</label>
+                  <div style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    padding: '12px',
+                    borderRadius: 'var(--radius-input)',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: 'var(--text-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    📅 {new Date(purchaseDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    <span style={{ fontSize: '11px', fontWeight: '400', color: 'var(--text-secondary)', marginLeft: 'auto' }}>
+                      (Starts Immediately)
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Policy Start Date</label>
-                <div style={{
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  padding: '12px',
-                  borderRadius: 'var(--radius-input)',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: 'var(--text-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  📅 {new Date(purchaseDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  <span style={{ fontSize: '11px', fontWeight: '400', color: 'var(--text-secondary)', marginLeft: 'auto' }}>
-                    (Starts Immediately)
-                  </span>
-                </div>
+              <div className="modal-actions">
+                <button 
+                  className="btn-cancel" 
+                  onClick={() => setSelectedPlan(null)}
+                  disabled={purchasing}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="btn-confirm" 
+                  onClick={handleConfirmPurchase}
+                  disabled={purchasing}
+                >
+                  {purchasing ? 'Processing...' : 'Confirm Purchase'}
+                </button>
               </div>
-            </div>
-
-            <div className="modal-actions">
-              <button 
-                className="btn-cancel" 
-                onClick={() => setSelectedPlan(null)}
-                disabled={purchasing}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn-confirm" 
-                onClick={handleConfirmPurchase}
-                disabled={purchasing}
-              >
-                {purchasing ? 'Processing...' : 'Confirm Purchase'}
-              </button>
-            </div>
-      </Modal>
+        </Modal>
+      )}
 
       {/* Add Plan Modal */}
       <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); setFormErrors({}); }} title="✨ Add New Plan" maxWidth="520px">
@@ -1171,118 +1173,120 @@ const PlanCatalog = () => {
       </Modal>
 
       {/* Edit Plan Modal */}
-      <Modal isOpen={showEditModal && !!editingPlan} onClose={() => { setShowEditModal(false); setFormErrors({}); }} title="✏️ Edit Plan" maxWidth="520px">
-            <form onSubmit={handleEditPlanSubmit} style={{ marginTop: '16px' }}>
-              <div className="form-group">
-                <label className="form-label">Plan Name</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  value={editingPlan.planName}
-                  onChange={(e) => setEditingPlan({ ...editingPlan, planName: e.target.value })}
-                  placeholder="e.g. Gold Life Shield"
-                />
-                {formErrors.planName && <div className="form-error">⚠️ {formErrors.planName}</div>}
-              </div>
-
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Sum Insured Coverage (₹)</label>
+      {editingPlan && (
+        <Modal isOpen={showEditModal && !!editingPlan} onClose={() => { setShowEditModal(false); setFormErrors({}); }} title="✏️ Edit Plan" maxWidth="520px">
+              <form onSubmit={handleEditPlanSubmit} style={{ marginTop: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">Plan Name</label>
                   <input 
-                    type="number" 
-                    step="0.01"
+                    type="text" 
                     className="form-input" 
-                    value={editingPlan.coverageAmount}
-                    onChange={(e) => setEditingPlan({ ...editingPlan, coverageAmount: e.target.value })}
-                    placeholder="e.g. 5000000"
+                    value={editingPlan.planName}
+                    onChange={(e) => setEditingPlan({ ...editingPlan, planName: e.target.value })}
+                    placeholder="e.g. Gold Life Shield"
                   />
-                  {formErrors.coverageAmount && <div className="form-error">⚠️ {formErrors.coverageAmount}</div>}
+                  {formErrors.planName && <div className="form-error">⚠️ {formErrors.planName}</div>}
                 </div>
 
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Premium Installment (₹)</label>
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    className="form-input" 
-                    value={editingPlan.premiumAmount}
-                    onChange={(e) => setEditingPlan({ ...editingPlan, premiumAmount: e.target.value })}
-                    placeholder="e.g. 12000"
-                  />
-                  {formErrors.premiumAmount && <div className="form-error">⚠️ {formErrors.premiumAmount}</div>}
-                </div>
-              </div>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <label className="form-label">Sum Insured Coverage (₹)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      className="form-input" 
+                      value={editingPlan.coverageAmount}
+                      onChange={(e) => setEditingPlan({ ...editingPlan, coverageAmount: e.target.value })}
+                      placeholder="e.g. 5000000"
+                    />
+                    {formErrors.coverageAmount && <div className="form-error">⚠️ {formErrors.coverageAmount}</div>}
+                  </div>
 
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Billing Frequency</label>
-                  <select 
-                    className="form-input"
-                    value={editingPlan.premiumType}
-                    onChange={(e) => setEditingPlan({ ...editingPlan, premiumType: e.target.value })}
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <label className="form-label">Premium Installment (₹)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      className="form-input" 
+                      value={editingPlan.premiumAmount}
+                      onChange={(e) => setEditingPlan({ ...editingPlan, premiumAmount: e.target.value })}
+                      placeholder="e.g. 12000"
+                    />
+                    {formErrors.premiumAmount && <div className="form-error">⚠️ {formErrors.premiumAmount}</div>}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <label className="form-label">Billing Frequency</label>
+                    <select 
+                      className="form-input"
+                      value={editingPlan.premiumType}
+                      onChange={(e) => setEditingPlan({ ...editingPlan, premiumType: e.target.value })}
+                    >
+                      <option value="ANNUAL">ANNUAL</option>
+                      <option value="ONE_TIME">ONE_TIME</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <label className="form-label">Coverage Term (Years)</label>
+                    <input 
+                      type="number" 
+                      className="form-input" 
+                      value={editingPlan.duration}
+                      onChange={(e) => setEditingPlan({ ...editingPlan, duration: e.target.value })}
+                      placeholder="e.g. 20"
+                    />
+                    {formErrors.duration && <div className="form-error">⚠️ {formErrors.duration}</div>}
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Terms & Conditions</label>
+                  <textarea 
+                    className="form-input" 
+                    value={editingPlan.termsAndConditions}
+                    onChange={(e) => setEditingPlan({ ...editingPlan, termsAndConditions: e.target.value })}
+                    placeholder="Enter terms and conditions..."
+                    rows="3"
+                    style={{ resize: 'vertical', fontFamily: 'inherit' }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px', marginTop: '16px' }}>
+                  <input 
+                    type="checkbox" 
+                    id="edit-active-plan"
+                    checked={editingPlan.active}
+                    onChange={(e) => setEditingPlan({ ...editingPlan, active: e.target.checked })}
+                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                  />
+                  <label htmlFor="edit-active-plan" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>
+                    Mark as Active
+                  </label>
+                </div>
+
+                <div className="modal-actions" style={{ marginTop: '24px' }}>
+                  <button 
+                    type="button"
+                    className="btn-cancel" 
+                    onClick={() => { setShowEditModal(false); setFormErrors({}); }}
+                    disabled={purchasing}
                   >
-                    <option value="ANNUAL">ANNUAL</option>
-                    <option value="ONE_TIME">ONE_TIME</option>
-                  </select>
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    className="btn-confirm" 
+                    disabled={purchasing}
+                  >
+                    {purchasing ? 'Saving...' : 'Save Changes'}
+                  </button>
                 </div>
-
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Coverage Term (Years)</label>
-                  <input 
-                    type="number" 
-                    className="form-input" 
-                    value={editingPlan.duration}
-                    onChange={(e) => setEditingPlan({ ...editingPlan, duration: e.target.value })}
-                    placeholder="e.g. 20"
-                  />
-                  {formErrors.duration && <div className="form-error">⚠️ {formErrors.duration}</div>}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Terms & Conditions</label>
-                <textarea 
-                  className="form-input" 
-                  value={editingPlan.termsAndConditions}
-                  onChange={(e) => setEditingPlan({ ...editingPlan, termsAndConditions: e.target.value })}
-                  placeholder="Enter terms and conditions..."
-                  rows="3"
-                  style={{ resize: 'vertical', fontFamily: 'inherit' }}
-                />
-              </div>
-
-              <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px', marginTop: '16px' }}>
-                <input 
-                  type="checkbox" 
-                  id="edit-active-plan"
-                  checked={editingPlan.active}
-                  onChange={(e) => setEditingPlan({ ...editingPlan, active: e.target.checked })}
-                  style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                />
-                <label htmlFor="edit-active-plan" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>
-                  Mark as Active
-                </label>
-              </div>
-
-              <div className="modal-actions" style={{ marginTop: '24px' }}>
-                <button 
-                  type="button"
-                  className="btn-cancel" 
-                  onClick={() => { setShowEditModal(false); setFormErrors({}); }}
-                  disabled={purchasing}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit"
-                  className="btn-confirm" 
-                  disabled={purchasing}
-                >
-                  {purchasing ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-      </Modal>
+              </form>
+        </Modal>
+      )}
     </>
   );
 };
