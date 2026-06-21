@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { readMyPolicies } from '../services/PolicyService';
@@ -582,6 +583,7 @@ const styles = `
 
 const Payments = () => {
   const { userData } = useAuth();
+  const navigate = useNavigate();
 
   // Load My Policies and Transaction History via useFetch
   const { data: policiesList = [], loading: policiesLoading, execute: loadPolicies } = useFetch(readMyPolicies);
@@ -668,11 +670,20 @@ const Payments = () => {
             </div>
           </div>
 
-          <div className="header">
+          <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
             <div className="header-text">
               <h2>Billing & Payments</h2>
               <p>Manage your policies, settle premium installments, and track recent transactions</p>
             </div>
+            {userData?.role === 'CUSTOMER' && (
+              <button 
+                className="btn-pay" 
+                style={{ background: 'var(--primary)', color: '#ffffff', boxShadow: 'none' }}
+                onClick={() => navigate("/policy")}
+              >
+                + Buy New Policy
+              </button>
+            )}
           </div>
 
           <div className="divider" />

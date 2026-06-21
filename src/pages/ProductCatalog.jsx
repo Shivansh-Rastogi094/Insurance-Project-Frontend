@@ -775,7 +775,7 @@ const ProductCatalog = () => {
                           className="explore-btn"
                           onClick={() => navigate(`/policy/${type}/${product.id}/plans`)}
                         >
-                          Explore Plans
+                          {userData?.role === 'CUSTOMER' ? 'View Plans & Buy' : 'Explore Plans'}
                         </button>
                       )}
                     </div>

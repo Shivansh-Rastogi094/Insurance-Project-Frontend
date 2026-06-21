@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { readAllPlans, createPlan, updatePlan, deactivatePlan } from '../services/PlanService';
 import { purchasePolicy } from '../services/PolicyService';
+import { getCustomerProfile } from '../services/CustomerService';
 import { useFetch } from '../hooks/useFetch';
 import { useForm } from '../hooks/useForm';
 import Modal from '../components/Modal';
@@ -631,6 +632,8 @@ const PlanCatalog = () => {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().substring(0, 10));
   const [purchasing, setPurchasing] = useState(false);
+  const [customerProfile, setCustomerProfile] = useState(null);
+  const [checkingProfile, setCheckingProfile] = useState(false);
 
   // Add Plan Modal State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -673,6 +676,33 @@ const PlanCatalog = () => {
   useEffect(() => {
     loadPlans();
   }, [loadPlans, productId]);
+
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (userData?.role === 'CUSTOMER') {
+        try {
+          setCheckingProfile(true);
+          const res = await getCustomerProfile();
+          setCustomerProfile(res?.data || null);
+        } catch (err) {
+          console.error("Error fetching customer profile:", err);
+          setCustomerProfile(null);
+        } finally {
+          setCheckingProfile(false);
+        }
+      }
+    };
+    checkProfile();
+  }, [userData]);
+
+  const handleBuyPlanClick = (plan) => {
+    if (userData?.role === 'CUSTOMER' && !customerProfile) {
+      alert("⚠️ You must complete your customer profile before purchasing a policy. Redirecting to your profile page...");
+      navigate('/profile');
+      return;
+    }
+    setSelectedPlan(plan);
+  };
 
   const isAdminOrAgent = userData?.role === 'ADMIN' || userData?.role === 'AGENT';
 
@@ -968,9 +998,10 @@ const PlanCatalog = () => {
                     <div style={{ marginTop: '24px' }}>
                       <button 
                         className="buy-btn"
-                        onClick={() => setSelectedPlan(plan)}
+                        onClick={() => handleBuyPlanClick(plan)}
+                        disabled={checkingProfile}
                       >
-                        Buy Plan
+                        {checkingProfile ? 'Checking Profile...' : 'Buy Plan'}
                       </button>
                     </div>
                   )}
@@ -1019,23 +1050,13 @@ const PlanCatalog = () => {
 
                 <div className="form-group">
                   <label className="form-label">Policy Start Date</label>
-                  <div style={{
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    padding: '12px',
-                    borderRadius: 'var(--radius-input)',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: 'var(--text-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    📅 {new Date(purchaseDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    <span style={{ fontSize: '11px', fontWeight: '400', color: 'var(--text-secondary)', marginLeft: 'auto' }}>
-                      (Starts Immediately)
-                    </span>
-                  </div>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={purchaseDate}
+                    onChange={(e) => setPurchaseDate(e.target.value)}
+                    required
+                  />
                 </div>
               </div>
 
