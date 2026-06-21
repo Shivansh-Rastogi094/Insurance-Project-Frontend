@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react'
 import './App.css'
 import AdminDashboard   from './pages/AdminDashboard'
 import AgentDashboard   from './pages/AgentDashboard'
@@ -11,8 +12,11 @@ import Profile          from './pages/Profile'
 import ProductCatalog   from './pages/ProductCatalog'
 import PlanCatalog      from './pages/PlanCatalog'
 import Customers        from './pages/Customers'
+import Users            from './pages/Users'
+import Policies         from './pages/Policies'
 import Register         from './pages/Register'
 import VerifyOtp        from './pages/VerifyOtp'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
 // Landing sub-pages
 import Home        from './pages/landing/Home'
@@ -23,6 +27,15 @@ import Features    from './pages/landing/Features'
 import ClaimsInfo  from './pages/landing/ClaimsInfo'
 
 function App() {
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+  }, []);
+
   return (
     <>
       <Routes>
@@ -40,19 +53,70 @@ function App() {
         <Route path="/verify-otp"  element={<VerifyOtp />} />
 
         {/* ── App (protected) ── */}
-        <Route path="/admindashboard"                element={<AdminDashboard />} />
-        <Route path="/userdashboard"                 element={<UserDashboard />} />
-        <Route path="/agentdashboard"                element={<AgentDashboard />} />
-        <Route path="/policy"                        element={<Policy />} />
-        <Route path="/policy/:type"                  element={<ProductCatalog />} />
-        <Route path="/policy/:type/:productId/plans" element={<PlanCatalog />} />
-        <Route path="/claims"                        element={<Claims />} />
-        <Route path="/payments"                      element={<Payments />} />
-        <Route path="/profile"                       element={<Profile />} />
-        <Route path="/customers"                     element={<Customers />} />
+        <Route path="/admindashboard" element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/userdashboard" element={
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+            <UserDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/agentdashboard" element={
+          <ProtectedRoute allowedRoles={['AGENT']}>
+            <AgentDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/policy" element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'CUSTOMER']}>
+            <Policy />
+          </ProtectedRoute>
+        } />
+        <Route path="/policy/:type" element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'CUSTOMER']}>
+            <ProductCatalog />
+          </ProtectedRoute>
+        } />
+        <Route path="/policy/:type/:productId/plans" element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'CUSTOMER']}>
+            <PlanCatalog />
+          </ProtectedRoute>
+        } />
+        <Route path="/claims" element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'CUSTOMER']}>
+            <Claims />
+          </ProtectedRoute>
+        } />
+        <Route path="/payments" element={
+          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+            <Payments />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'CUSTOMER']}>
+            <Profile />
+          </ProtectedRoute>
+        } />
+        <Route path="/customers" element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT']}>
+            <Customers />
+          </ProtectedRoute>
+        } />
+        <Route path="/users" element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <Users />
+          </ProtectedRoute>
+        } />
+        <Route path="/policies" element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT']}>
+            <Policies />
+          </ProtectedRoute>
+        } />
       </Routes>
     </>
   )
 }
 
 export default App
+

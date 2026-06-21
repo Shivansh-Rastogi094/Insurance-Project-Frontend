@@ -44,3 +44,15 @@ export const ResendOtpService = async (email) => {
         throw error;
     }
 };
+
+// POST /api/auth/verify-mobile-otp
+export const VerifyMobileOtpService = async (payload) => {
+    // payload: { email, otp }
+    try {
+        const response = await api.post(`auth/verify-mobile-otp`, payload);
+        return response;
+    } catch (error) {
+        console.error("Error in VerifyMobileOtpService:", error);
+        throw error;
+    }
+};

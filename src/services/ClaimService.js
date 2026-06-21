@@ -72,3 +72,14 @@ export const adminDecisionClaim = async (claimId, payload) => {
         throw err;
     }
 };
+
+// GET /api/claim-history/:claimId
+export const readClaimHistory = async (claimId) => {
+    try {
+        const response = await api.get(`claim-history/${claimId}`);
+        return response;
+    } catch (err) {
+        console.error("Error fetching claim history:", err);
+        throw err;
+    }
+};

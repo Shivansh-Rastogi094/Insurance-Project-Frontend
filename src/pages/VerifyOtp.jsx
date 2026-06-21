@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { VerifyOtpService, ResendOtpService } from "../services/AuthService";
+import { VerifyOtpService, ResendOtpService, VerifyMobileOtpService } from "../services/AuthService";
 import "../styles/VerifyOtp.css";
 
 const RESEND_COOLDOWN = 60; // seconds
@@ -13,6 +13,7 @@ const VerifyOtp = () => {
   const emailFromState = location.state?.email || "";
 
   const [email, setEmail] = useState(emailFromState);
+  const [step, setStep] = useState(1); // 1 = Email OTP, 2 = Mobile OTP
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [otpError, setOtpError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -47,7 +48,7 @@ const VerifyOtp = () => {
   // Auto-focus first box on mount
   useEffect(() => {
     inputRefs.current[0]?.focus();
-  }, []);
+  }, [step]);
 
   const handleOtpChange = (index, value) => {
     if (!/^\d?$/.test(value)) return; // only single digit
@@ -103,13 +104,23 @@ const VerifyOtp = () => {
     setApiError("");
     setSuccessMsg("");
     try {
-      await VerifyOtpService({ email, otp: otp.join("") });
-      setSuccessMsg("✅ OTP verified successfully! Redirecting to login...");
-      setTimeout(() => navigate("/login"), 2000);
+      if (step === 1) {
+        await VerifyOtpService({ email, otp: otp.join("") });
+        setSuccessMsg("📧 Email OTP verified successfully! Now please verify your mobile OTP...");
+        setTimeout(() => {
+          setStep(2);
+          setOtp(["", "", "", "", "", ""]);
+          setSuccessMsg("");
+        }, 1500);
+      } else {
+        await VerifyMobileOtpService({ email, otp: otp.join("") });
+        setSuccessMsg("📱 Mobile OTP verified successfully! Account is now activated. Redirecting to login...");
+        setTimeout(() => navigate("/login"), 2000);
+      }
     } catch (error) {
       const msg =
         error?.response?.data?.message ||
-        "Invalid or expired OTP. Please try again.";
+        `Invalid or expired ${step === 1 ? 'Email' : 'Mobile'} OTP. Please try again.`;
       setApiError(msg);
     } finally {
       setLoading(false);
@@ -127,7 +138,7 @@ const VerifyOtp = () => {
     setSuccessMsg("");
     try {
       await ResendOtpService(email);
-      setSuccessMsg("📧 OTP resent to your email. Please check your inbox.");
+      setSuccessMsg("📧 OTP resent. Please check your email inbox / phone messages.");
       setCooldown(RESEND_COOLDOWN);
       // Clear OTP boxes
       setOtp(["", "", "", "", "", ""]);
@@ -150,15 +161,23 @@ const VerifyOtp = () => {
 
         {/* Header */}
         <div className="otp-header">
-          <div className="otp-icon">📧</div>
-          <h2>Verify Your Email</h2>
+          <div className="otp-icon">{step === 1 ? "📧" : "📱"}</div>
+          <h2>{step === 1 ? "Verify Your Email" : "Verify Your Mobile Number"}</h2>
           <p>
-            We sent a 6-digit OTP to{" "}
-            {emailFromState
-              ? <><strong>{emailFromState}</strong>.</>
-              : "your registered email."
-            }
-            {" "}Enter it below to activate your account.
+            {step === 1 ? (
+              <>
+                We sent a 6-digit OTP to{" "}
+                {emailFromState
+                  ? <strong>{emailFromState}</strong>
+                  : "your registered email."
+                }
+                {" "}Enter it below to proceed.
+              </>
+            ) : (
+              <>
+                We sent a 6-digit OTP to your registered phone number. Enter it below to activate your account.
+              </>
+            )}
           </p>
         </div>
 
@@ -178,13 +197,14 @@ const VerifyOtp = () => {
               placeholder="your@email.com"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setEmailError(""); setApiError(""); }}
+              disabled={loading || step === 2}
             />
             {emailError && <span className="otp-error-text">{emailError}</span>}
           </div>
 
           {/* OTP 6-box input */}
           <div>
-            <span className="otp-boxes-label">One-Time Password (OTP)</span>
+            <span className="otp-boxes-label">{step === 1 ? "Email One-Time Password (OTP)" : "Mobile One-Time Password (OTP)"}</span>
             <div className="otp-boxes" onPaste={handleOtpPaste}>
               {otp.map((digit, i) => (
                 <input
@@ -198,6 +218,7 @@ const VerifyOtp = () => {
                   onChange={(e) => handleOtpChange(i, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(i, e)}
                   className={`otp-box${digit ? " box-filled" : ""}${otpError ? " box-error" : ""}`}
+                  disabled={loading}
                 />
               ))}
             </div>
@@ -209,31 +230,37 @@ const VerifyOtp = () => {
             type="submit"
             className="verify-btn"
             disabled={loading || otpStr.length < 6}
+            style={{
+              background: step === 2 ? "linear-gradient(135deg, var(--accent), #0d968d)" : "linear-gradient(135deg, var(--primary-light), var(--primary))"
+            }}
           >
-            {loading
-              ? <><div className="otp-spinner" /> Verifying...</>
-              : "✔ Verify OTP"
-            }
+            {loading ? (
+              <><div className="otp-spinner" /> Verifying...</>
+            ) : (
+              `✔ Verify ${step === 1 ? 'Email' : 'Mobile'} OTP`
+            )}
           </button>
         </form>
 
         {/* Resend OTP */}
-        <div className="resend-row">
-          Didn't receive the OTP?{" "}
-          {cooldown > 0 ? (
-            <span>
-              Resend in <span className="resend-countdown">{cooldown}s</span>
-            </span>
-          ) : (
-            <button
-              className="resend-btn"
-              onClick={handleResend}
-              disabled={resending || cooldown > 0}
-            >
-              {resending ? "Sending..." : "Resend OTP"}
-            </button>
-          )}
-        </div>
+        {step === 1 && (
+          <div className="resend-row">
+            Didn't receive the OTP?{" "}
+            {cooldown > 0 ? (
+              <span>
+                Resend in <span className="resend-countdown">{cooldown}s</span>
+              </span>
+            ) : (
+              <button
+                className="resend-btn"
+                onClick={handleResend}
+                disabled={resending || cooldown > 0}
+              >
+                {resending ? "Sending..." : "Resend OTP"}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Back to login */}
         <div className="otp-footer">

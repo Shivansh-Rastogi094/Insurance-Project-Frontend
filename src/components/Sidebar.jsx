@@ -172,6 +172,7 @@ const Sidebar = ({ title }) => {
       return [
         { label: "Dashboard", path: "/agentdashboard" },
         { label: "Products & Plans", path: "/policy" },
+        { label: "Policies", path: "/policies" },
         { label: "Claims", path: "/claims" },
         { label: "Customers", path: "/customers" }
       ];
@@ -179,8 +180,8 @@ const Sidebar = ({ title }) => {
       return [
         { label: "Dashboard", path: "/admindashboard" },
         { label: "Products & Plans", path: "/policy" },
-        { label: "Agents", path: "/admin/agents" },
-        { label: "Policies", path: "/admin/policies" },
+        { label: "Users", path: "/users" },
+        { label: "Policies", path: "/policies" },
         { label: "Claims", path: "/claims" },
         { label: "Customers", path: "/customers" }
       ];

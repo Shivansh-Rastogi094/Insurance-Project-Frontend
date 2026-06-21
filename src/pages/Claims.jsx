@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useFetch } from '../hooks/useFetch';
-import { readAllClaims, readMyClaims, createClaim, agentReviewClaim, adminDecisionClaim } from '../services/ClaimService';
+import { readAllClaims, readMyClaims, createClaim, agentReviewClaim, adminDecisionClaim, readClaimHistory } from '../services/ClaimService';
 import { readMyPolicies } from '../services/PolicyService';
 import Modal from '../components/Modal';
 
@@ -643,8 +643,25 @@ const Claims = () => {
   const [reviewErrors, setReviewErrors] = useState({});
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
-  const handleGetHistory = (claimNumber) => {
-    alert(`Retrieving detailed audit history for claim: ${claimNumber} (Feature coming soon)`);
+  // Claim History states
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [selectedHistoryClaim, setSelectedHistoryClaim] = useState(null);
+  const [claimHistoryList, setClaimHistoryList] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const handleGetHistory = async (claim) => {
+    setSelectedHistoryClaim(claim);
+    setShowHistoryModal(true);
+    setLoadingHistory(true);
+    setClaimHistoryList([]);
+    try {
+      const response = await readClaimHistory(claim.id);
+      setClaimHistoryList(response?.data || response || []);
+    } catch (err) {
+      console.error("Failed to load claim history:", err);
+    } finally {
+      setLoadingHistory(false);
+    }
   };
 
   const handleReviewClaim = (claim) => {
@@ -805,11 +822,11 @@ const Claims = () => {
                             <td>
                               {claim.documents && claim.documents.length > 0 ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                  {claim.documents.map((doc) => {
+                                  {claim.documents.map((doc, docIdx) => {
                                     const isUrl = doc.documentReference && (doc.documentReference.startsWith('http://') || doc.documentReference.startsWith('https://'));
                                     return (
                                       <button
-                                        key={doc.id}
+                                        key={doc.id || docIdx}
                                         className="action-btn"
                                         style={{ 
                                           fontSize: '11px', 
@@ -843,7 +860,7 @@ const Claims = () => {
                               {isCustomer ? (
                                 <button
                                   className="action-btn"
-                                  onClick={() => handleGetHistory(claimNum)}
+                                  onClick={() => handleGetHistory(claim)}
                                 >
                                   Claim History
                                 </button>
@@ -1158,6 +1175,142 @@ const Claims = () => {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Claim Audit History Modal */}
+      {showHistoryModal && selectedHistoryClaim && (
+        <Modal
+          isOpen={showHistoryModal}
+          onClose={() => { if (!loadingHistory) setShowHistoryModal(false); }}
+          title="📋 Claim Status Audit History"
+          maxWidth="600px"
+        >
+          <div className="modal-summary" style={{ background: 'var(--surface)', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Claim Reference:</span>
+              <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedHistoryClaim.claimNumber || `CLM-${selectedHistoryClaim.id}`}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Incident Reason:</span>
+              <strong>{selectedHistoryClaim.claimReason || 'N/A'}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Requested Amount:</span>
+              <strong style={{ color: 'var(--primary-light)', fontFamily: 'var(--font-mono)' }}>
+                ₹{selectedHistoryClaim.claimAmount?.toLocaleString('en-IN') || 0}
+              </strong>
+            </div>
+          </div>
+
+          {loadingHistory ? (
+            <div className="loading-container" style={{ minHeight: '150px' }}>
+              <div className="spinner"></div>
+              <p>Fetching history entries...</p>
+            </div>
+          ) : claimHistoryList.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)', fontSize: '13.5px', fontStyle: 'italic' }}>
+              No status audit transitions logged for this claim.
+            </div>
+          ) : (
+            <div className="history-timeline" style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '400px', overflowY: 'auto', paddingRight: '8px' }}>
+              {claimHistoryList.map((item, idx) => {
+                const formattedDate = item.updatedDate 
+                  ? new Date(item.updatedDate).toLocaleString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })
+                  : 'Date unknown';
+                
+                return (
+                  <div key={item.id || idx} style={{ 
+                    display: 'flex', 
+                    gap: '16px', 
+                    position: 'relative',
+                    paddingBottom: idx === claimHistoryList.length - 1 ? '0' : '20px',
+                  }}>
+                    {/* Connector line */}
+                    {idx !== claimHistoryList.length - 1 && (
+                      <div style={{
+                        position: 'absolute',
+                        left: '19px',
+                        top: '38px',
+                        bottom: 0,
+                        width: '2px',
+                        background: 'var(--border)'
+                      }}></div>
+                    )}
+
+                    {/* Indicator Circle */}
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: 'var(--surface)',
+                      border: '2px solid var(--primary-light)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '18px',
+                      zIndex: 2,
+                      flexShrink: 0
+                    }}>
+                      {item.newStatus === 'APPROVED' ? '✅' : item.newStatus === 'REJECTED' ? '❌' : '⏳'}
+                    </div>
+
+                    {/* Content details card */}
+                    <div style={{
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      flex: 1
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                        <div>
+                          <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', marginRight: '6px' }}>Status:</span>
+                          {item.previousStatus && (
+                            <span className={`status-badge ${item.previousStatus.toLowerCase()}`} style={{ marginRight: '6px', fontSize: '10px', padding: '2px 6px' }}>
+                              {item.previousStatus}
+                            </span>
+                          )}
+                          {item.previousStatus && <span style={{ marginRight: '6px', color: 'var(--text-secondary)' }}>➔</span>}
+                          <span className={`status-badge ${item.newStatus.toLowerCase()}`} style={{ fontSize: '10px', padding: '2px 6px' }}>
+                            {item.newStatus}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                          {formattedDate}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '8px', fontStyle: 'italic' }}>
+                        " {item.remarks || 'No remarks'} "
+                      </div>
+
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        Updated by: <strong style={{ color: 'var(--text-primary)' }}>{item.updatedBy}</strong>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="modal-actions" style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+            <button
+              type="button"
+              className="btn-cancel"
+              onClick={() => setShowHistoryModal(false)}
+              disabled={loadingHistory}
+            >
+              Close
+            </button>
+          </div>
         </Modal>
       )}
     </>

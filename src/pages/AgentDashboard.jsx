@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { readAllUsers } from '../services/UserService';
+import { readAllCustomers } from '../services/CustomerService';
 import { readAllProducts } from '../services/ProductService';
 import { readAllClaims } from '../services/ClaimService';
 import { readAllPolicies } from '../services/PolicyService';
@@ -136,12 +136,12 @@ const styles = `
 `;
 
 const fetchDashboardData = async () => {
-  const [userRes, productRes, claimRes, policyRes, paymentRes] = await Promise.all([
-    readAllUsers(),
-    readAllProducts(),
-    readAllClaims(),
-    readAllPolicies(),
-    readAllPayments()
+  const [customerRes, productRes, claimRes, policyRes, paymentRes] = await Promise.all([
+    readAllCustomers().catch(err => { console.warn("readAllCustomers failed:", err); return { data: { content: [] } }; }),
+    readAllProducts().catch(err => { console.warn("readAllProducts failed:", err); return { data: { content: [] } }; }),
+    readAllClaims().catch(err => { console.warn("readAllClaims failed:", err); return { data: { content: [] } }; }),
+    readAllPolicies().catch(err => { console.warn("readAllPolicies failed:", err); return { data: { content: [] } }; }),
+    readAllPayments().catch(err => { console.warn("readAllPayments failed:", err); return { data: { content: [] } }; })
   ]);
 
   const paymentsSum = paymentRes?.data?.content
@@ -149,7 +149,7 @@ const fetchDashboardData = async () => {
     : 0;
 
   return {
-    clients: userRes?.data?.content?.length || 0,
+    clients: customerRes?.data?.content?.length || 0,
     products: productRes?.data?.content?.length || 0,
     policies: policyRes?.data?.content?.length || 0,
     claims: claimRes?.data?.content?.length || 0,
