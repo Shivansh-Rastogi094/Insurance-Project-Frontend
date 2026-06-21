@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
+/* ── Light Mode (default) ── */
 :root {
   --primary: #1A3C5E;
   --primary-light: #2563A8;
@@ -15,18 +16,44 @@
   --sidebar-bg: #0F2540;
   --sidebar-text: #CBD5E1;
   --sidebar-active: #0FA89E;
-  
+
   --font-display: 'Inter', sans-serif;
   --font-body: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  
+
   --radius-card: 12px;
   --radius-button: 8px;
   --radius-badge: 999px;
   --radius-input: 8px;
-  
+
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.07);
   --shadow-premium: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 16px -6px rgba(15, 23, 42, 0.04);
+  --nav-bg: rgba(255, 255, 255, 0.92);
+  --nav-border: rgba(226, 232, 240, 0.8);
+  --hero-bg: linear-gradient(135deg, #0F2540 0%, #1A3C5E 50%, #0FA89E22 100%);
+  --section-alt: #F1F5F9;
+}
+
+/* ── Dark Mode ── */
+[data-theme="dark"] {
+  --primary: #3B82F6;
+  --primary-light: #60A5FA;
+  --accent: #14B8A6;
+  --warning: #FBBF24;
+  --danger: #F87171;
+  --success: #34D399;
+  --surface: #0F172A;
+  --card: #1E293B;
+  --border: #334155;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --sidebar-bg: #0B1120;
+  --sidebar-text: #CBD5E1;
+  --sidebar-active: #14B8A6;
+  --nav-bg: rgba(15, 23, 42, 0.95);
+  --nav-border: rgba(51, 65, 85, 0.8);
+  --hero-bg: linear-gradient(135deg, #020617 0%, #0F172A 50%, #14B8A610 100%);
+  --section-alt: #1E293B;
 }
 
 * {
@@ -41,4 +68,5 @@ body {
   color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }

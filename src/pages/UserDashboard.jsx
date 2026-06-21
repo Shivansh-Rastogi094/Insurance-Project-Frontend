@@ -567,7 +567,7 @@ const UserDashboard = () => {
               <h2>Good Morning, {userData?.fullName} 👋</h2>
               <p>Welcome back to your dashboard. Here is your policy health-check.</p>
             </div>
-            <button className="btn-primary" onClick={()=>{navigate("/policy")}}>Explore Policies</button>
+            <button className="btn-primary" onClick={()=>{navigate("/policy")}}>+ Buy Policy</button>
           </div>
 
           <div className="divider" />
@@ -586,7 +586,7 @@ const UserDashboard = () => {
             <div className="dashboard-section">
               <div className="section-header">
                 <span className="section-title">My Policies (Quick View)</span>
-                <button className="text-btn">View All</button>
+                <button className="text-btn" onClick={() => navigate("/payments")}>View All</button>
               </div>
               <div className="compact-policy-list">
                 {policy.slice(0, 3).map((p, index) => {
@@ -613,7 +613,7 @@ const UserDashboard = () => {
             <div className="dashboard-section">
               <div className="section-header">
                 <span className="section-title">Recent Claims</span>
-                <button className="text-btn">View All</button>
+                <button className="text-btn" onClick={() => navigate("/claims")}>View All</button>
               </div>
               <div className="claims-list">
                 {claims.slice(0, 2).map((c, index) => {

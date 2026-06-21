@@ -242,6 +242,7 @@ const styles = `
     padding: 12px 14px;
     background: var(--surface);
     transition: all 0.2s ease;
+    cursor: pointer;
   }
 
   .product-item:hover {
@@ -655,7 +656,11 @@ const Policy = () => {
                         </div>
                       ) : (
                         displayedProducts.map((prod) => (
-                          <div className="product-item" key={prod.id}>
+                          <div 
+                            className="product-item" 
+                            key={prod.id}
+                            onClick={() => navigate(`/policy/${category.typeCode.toLowerCase()}/${prod.id}/plans`)}
+                          >
                             <h4 className="product-item-name">{prod.productName}</h4>
                             <p className="product-item-desc">{prod.description}</p>
                           </div>
@@ -667,7 +672,7 @@ const Policy = () => {
                       className="view-more-btn"
                       onClick={() => navigate(`/policy/${category.typeCode.toLowerCase()}`)}
                     >
-                      View More
+                      {userData?.role === 'CUSTOMER' ? 'Explore & Buy Plans' : 'View More'}
                     </button>
                   </div>
                 );

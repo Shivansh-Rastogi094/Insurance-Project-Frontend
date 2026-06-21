@@ -1,0 +1,90 @@
+/* ── HERO ── */
+.home-hero {
+  min-height: calc(100vh - 64px);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--hero-bg);
+  padding: 60px 24px; text-align: center; position: relative; overflow: hidden;
+}
+.home-blob {
+  position: absolute; border-radius: 50%; filter: blur(80px);
+  opacity: 0.18; pointer-events: none;
+}
+.hblob1 { width: 500px; height: 500px; background: #0FA89E; top: -100px; left: -100px; }
+.hblob2 { width: 400px; height: 400px; background: #2563A8; bottom: -80px; right: -80px; }
+.home-content { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; }
+
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 16px; border-radius: 999px;
+  border: 1px solid rgba(15,168,158,0.4); background: rgba(15,168,158,0.08);
+  font-size: 12px; font-weight: 600; color: #0FA89E; margin-bottom: 24px;
+}
+.hero-title {
+  font-size: clamp(36px, 6vw, 72px); font-weight: 800;
+  letter-spacing: -1.5px; color: #fff; line-height: 1.05; margin-bottom: 20px;
+}
+.hero-title .grad {
+  background: linear-gradient(90deg, #0FA89E, #60A5FA);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hero-sub {
+  font-size: 17px; color: rgba(255,255,255,0.72);
+  max-width: 580px; margin: 0 auto 36px; line-height: 1.7;
+}
+.hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+.btn-hprimary {
+  padding: 14px 32px; border-radius: var(--radius-button);
+  font-size: 15px; font-weight: 700; font-family: inherit;
+  background: linear-gradient(135deg, #0FA89E, #2563A8); color: #fff; border: none;
+  cursor: pointer; box-shadow: 0 8px 24px rgba(15,168,158,0.35); transition: all 0.25s ease;
+}
+.btn-hprimary:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(15,168,158,0.45); }
+
+.btn-hghost {
+  padding: 14px 32px; border-radius: var(--radius-button);
+  font-size: 15px; font-weight: 700; font-family: inherit;
+  background: rgba(255,255,255,0.08); color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.25); cursor: pointer;
+  backdrop-filter: blur(8px); transition: all 0.25s ease;
+}
+.btn-hghost:hover { background: rgba(255,255,255,0.14); transform: translateY(-2px); }
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px;
+  margin-top: 56px; flex-wrap: wrap;
+}
+.hstat { text-align: center; }
+.hstat-val { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+.hstat-lbl { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 3px; font-weight: 500; }
+
+/* ── TRUST STRIP ── */
+.trust-strip {
+  background: var(--card); border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border); padding: 28px 24px;
+}
+.trust-inner {
+  max-width: 900px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  gap: 40px; flex-wrap: wrap;
+}
+.trust-item { display: flex; align-items: center; gap: 10px; }
+.trust-icon { font-size: 24px; }
+.trust-text { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+
+/* ── QUICK NAV CARDS ── */
+.quick-section { padding: 72px 24px; background: var(--section-alt); }
+.quick-inner { max-width: 1100px; margin: 0 auto; }
+.quick-header { text-align: center; margin-bottom: 44px; }
+.quick-header h2 { font-size: 32px; font-weight: 800; color: var(--text-primary); margin-bottom: 10px; }
+.quick-header p { font-size: 15px; color: var(--text-secondary); }
+.quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+.quick-card {
+  background: var(--card); border-radius: 16px; padding: 28px 20px;
+  border: 1px solid var(--border); text-align: center; cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.quick-card:hover { transform: translateY(-6px); box-shadow: 0 16px 36px rgba(0,0,0,0.1); border-color: var(--accent); }
+.quick-card-icon { font-size: 36px; margin-bottom: 12px; display: block; }
+.quick-card-label { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+.quick-card-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
