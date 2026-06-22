@@ -552,8 +552,6 @@ const Claims = () => {
 
     const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
     const ext = file.name.substring(file.name.lastIndexOf('.') + 1).toUpperCase();
-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const mockRef = `https://res.cloudinary.com/ddm3sgigj/image/upload/v1781674834/claims/mock/${cleanFileName}`;
 
     setClaimDocuments(
       claimDocuments.map((doc, i) =>
@@ -561,7 +559,8 @@ const Claims = () => {
           ? {
               documentName: nameWithoutExt,
               documentType: ext === 'JPG' ? 'JPEG' : ext,
-              documentReference: mockRef
+              documentReference: file.name, // Display the actual selected filename
+              fileObject: file // Store the actual File object
             }
           : doc
       )
@@ -597,7 +596,9 @@ const Claims = () => {
 
     claimDocuments.forEach((doc, idx) => {
       if (!doc.documentName.trim()) errors[`docName_${idx}`] = "Document name is required.";
-      if (!doc.documentReference.trim()) errors[`docRef_${idx}`] = "Document link/reference is required.";
+      if (!doc.fileObject && !doc.documentReference.trim()) {
+        errors[`docRef_${idx}`] = "Please select a file or enter a document reference.";
+      }
     });
 
     if (Object.keys(errors).length > 0) {
@@ -609,7 +610,10 @@ const Claims = () => {
 
     try {
       setSubmitting(true);
-      const payload = {
+      
+      const formData = new FormData();
+      
+      const claimData = {
         policyId: parseInt(claimForm.policyId),
         claimAmount: parseFloat(claimForm.claimAmount),
         claimReason: claimForm.claimReason.trim(),
@@ -617,11 +621,20 @@ const Claims = () => {
         documents: claimDocuments.map(d => ({
           documentName: d.documentName.trim(),
           documentType: d.documentType,
-          documentReference: d.documentReference.trim()
+          documentReference: d.documentReference ? d.documentReference.trim() : ''
         }))
       };
+      
+      formData.append("claim", JSON.stringify(claimData));
+      
+      // Append all selected file objects
+      claimDocuments.forEach(doc => {
+        if (doc.fileObject) {
+          formData.append("files", doc.fileObject);
+        }
+      });
 
-      await createClaim(payload);
+      await createClaim(formData);
       alert("Claim filed successfully!");
       setShowFileModal(false);
       loadClaims();
