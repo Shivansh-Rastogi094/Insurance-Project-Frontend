@@ -299,6 +299,8 @@ const styles = `
     border-radius: var(--radius-card);
     width: 100%;
     max-width: 550px;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: var(--shadow-premium);
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 32px;
@@ -448,6 +450,47 @@ const styles = `
     display: block;
   }
 
+  .pagination-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.01);
+    border-top: 1px solid var(--border);
+  }
+
+  .pagination-info {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+  }
+
+  .pagination-controls {
+    display: flex;
+    gap: 8px;
+  }
+
+  .page-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .page-btn:hover:not(:disabled) {
+    border-color: var(--primary-light);
+    color: var(--primary-light);
+  }
+
+  .page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
   @media (max-width: 968px) {
     .main-content {
       margin-left: 0;
@@ -465,27 +508,32 @@ const styles = `
 const Claims = () => {
   const { userData } = useAuth();
   const isCustomer = userData?.role === 'CUSTOMER';
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 10;
 
   // Load claims data using useFetch hook
-  const fetchClaimsData = useCallback(async () => {
+  const fetchClaimsData = useCallback(async (page = 0) => {
     if (isCustomer) {
       const response = await readMyClaims();
       return response || [];
     } else {
-      const response = await readAllClaims();
-      // Unpack paginated content if available, otherwise check direct data
-      return response?.data?.content || response?.data || response || [];
+      const response = await readAllClaims(page, pageSize);
+      return response?.data || response || {};
     }
   }, [isCustomer]);
 
-  const { data = [], loading, execute: loadClaims } = useFetch(fetchClaimsData);
+  const { data = isCustomer ? [] : {}, loading, execute: loadClaims } = useFetch(fetchClaimsData);
 
   useEffect(() => {
-    loadClaims();
-  }, [loadClaims]);
+    loadClaims(currentPage);
+  }, [currentPage, loadClaims]);
 
-  // Safely extract claims array
-  const claimsList = Array.isArray(data) ? data : (data?.content || []);
+  // Safely extract claims array and pagination info
+  const claimsList = isCustomer
+    ? (Array.isArray(data) ? data : [])
+    : (data?.content || []);
+  const totalPages = isCustomer ? 1 : (data?.totalPages || 1);
+  const totalElements = isCustomer ? claimsList.length : (data?.totalElements || 0);
 
   const initials = userData?.fullName
     ? userData.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
@@ -637,7 +685,7 @@ const Claims = () => {
       await createClaim(formData);
       alert("Claim filed successfully!");
       setShowFileModal(false);
-      loadClaims();
+      loadClaims(currentPage);
     } catch (err) {
       console.error("Failed to file claim:", err);
       alert("Filing claim failed. Please check your inputs or backend logs.");
@@ -722,7 +770,7 @@ const Claims = () => {
       }
 
       setShowReviewModal(false);
-      loadClaims();
+      loadClaims(currentPage);
     } catch (err) {
       console.error("Error submitting review:", err);
       alert("Failed to submit claim review/decision. Please check inputs or logs.");
@@ -892,6 +940,31 @@ const Claims = () => {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Pagination footer */}
+                {!isCustomer && totalPages > 1 && (
+                  <div className="pagination-footer">
+                    <div className="pagination-info">
+                      Showing Page <strong>{currentPage + 1}</strong> of <strong>{totalPages}</strong> (<strong>{totalElements}</strong> total claims)
+                    </div>
+                    <div className="pagination-controls">
+                      <button
+                        className="page-btn"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
+                        disabled={currentPage === 0 || loading}
+                      >
+                        Previous
+                      </button>
+                      <button
+                        className="page-btn"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
+                        disabled={currentPage === totalPages - 1 || loading}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

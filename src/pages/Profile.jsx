@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
-import { getCustomerProfile, createCustomerProfile } from '../services/CustomerService';
+import { getCustomerProfile, createCustomerProfile, updateCustomerProfile } from '../services/CustomerService';
 import { useFetch } from '../hooks/useFetch';
 import { useForm } from '../hooks/useForm';
 import Modal from '../components/Modal';
@@ -512,9 +512,46 @@ const Profile = () => {
     if (!validateForm()) return;
 
     if (profile) {
-      // Mock Update Action (per instructions, do NOT make update api call)
-      alert("Update API integration is coming soon! Profile changes have been saved mock-only.");
-      setShowModal(false);
+      // Real Update Action
+      try {
+        setSubmitting(true);
+        const payload = {
+          dateOfBirth: formData.dateOfBirth,
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          pinCode: formData.pinCode.toString().trim(),
+          nomineeName: formData.nomineeName.trim(),
+          nomineeRelation: formData.nomineeRelation.trim()
+        };
+        let updateId = profile.id;
+        const token = localStorage.getItem("token");
+        if (token) {
+          try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            const decoded = JSON.parse(jsonPayload);
+            if (decoded.userId) {
+              updateId = decoded.userId;
+            }
+
+          } catch (e) {
+            console.error("Error decoding token for userId:", e);
+          }
+        }
+        await updateCustomerProfile(updateId, payload);
+        alert("Profile updated successfully!");
+        setShowModal(false);
+        loadProfile();
+      } catch (err) {
+        console.error("Error updating profile:", err);
+        alert("Failed to update profile. Please check the backend console logs.");
+      } finally {
+        setSubmitting(false);
+      }
     } else {
       // Real Creation Action
       try {
@@ -582,7 +619,7 @@ const Profile = () => {
                 <div className="large-avatar">{initials}</div>
                 <div className="profile-name">{userData?.fullName || "Valued Customer"}</div>
                 <div className="profile-email">{userData?.email || "customer@insurespace.com"}</div>
-                
+
                 <div className={`status-badge ${profile ? 'complete' : 'incomplete'}`}>
                   <span style={{
                     width: '6px',
@@ -639,7 +676,7 @@ const Profile = () => {
                     <div className="detail-item">
                       <span className="detail-label">Date of Birth</span>
                       <span className={`detail-value ${!profile?.dateOfBirth ? 'empty' : ''}`}>
-                        {profile?.dateOfBirth 
+                        {profile?.dateOfBirth
                           ? new Date(profile.dateOfBirth).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
                           : 'Not Provided'}
                       </span>
@@ -667,17 +704,17 @@ const Profile = () => {
       </div>
 
       {/* Profile Form Modal */}
-      <Modal 
-        isOpen={showModal} 
-        onClose={() => { if (!submitting) setShowModal(false); }} 
-        title={profile ? 'Update Profile Details' : 'Complete Profile Setup'} 
+      <Modal
+        isOpen={showModal}
+        onClose={() => { if (!submitting) setShowModal(false); }}
+        title={profile ? 'Update Profile Details' : 'Complete Profile Setup'}
         maxWidth="520px"
       >
         <form onSubmit={handleSubmit} style={{ marginTop: '8px' }}>
-          
+
           <div className="form-group">
             <label className="form-label">Date of Birth</label>
-            <input 
+            <input
               type="date"
               className="form-input"
               value={formData.dateOfBirth}
@@ -688,7 +725,7 @@ const Profile = () => {
 
           <div className="form-group">
             <label className="form-label">Street Address</label>
-            <input 
+            <input
               type="text"
               className="form-input"
               placeholder="e.g. 456 Maple Avenue"
@@ -701,7 +738,7 @@ const Profile = () => {
           <div style={{ display: 'flex', gap: '16px' }}>
             <div className="form-group" style={{ flex: 1 }}>
               <label className="form-label">City</label>
-              <input 
+              <input
                 type="text"
                 className="form-input"
                 placeholder="e.g. Scranton"
@@ -713,7 +750,7 @@ const Profile = () => {
 
             <div className="form-group" style={{ flex: 1 }}>
               <label className="form-label">State</label>
-              <input 
+              <input
                 type="text"
                 className="form-input"
                 placeholder="e.g. PA"
@@ -726,7 +763,7 @@ const Profile = () => {
 
           <div className="form-group">
             <label className="form-label">Pin Code</label>
-            <input 
+            <input
               type="text"
               className="form-input"
               placeholder="e.g. 185030"
@@ -739,7 +776,7 @@ const Profile = () => {
           <div style={{ display: 'flex', gap: '16px' }}>
             <div className="form-group" style={{ flex: 1 }}>
               <label className="form-label">Nominee Name</label>
-              <input 
+              <input
                 type="text"
                 className="form-input"
                 placeholder="e.g. Carol Vance"
@@ -751,7 +788,7 @@ const Profile = () => {
 
             <div className="form-group" style={{ flex: 1 }}>
               <label className="form-label">Nominee Relation</label>
-              <input 
+              <input
                 type="text"
                 className="form-input"
                 placeholder="e.g. Spouse"
@@ -763,7 +800,7 @@ const Profile = () => {
           </div>
 
           <div className="modal-actions">
-            <button 
+            <button
               type="button"
               className="btn-cancel"
               onClick={() => setShowModal(false)}
@@ -771,7 +808,7 @@ const Profile = () => {
             >
               Cancel
             </button>
-            <button 
+            <button
               type="submit"
               className="btn-confirm"
               disabled={submitting}
