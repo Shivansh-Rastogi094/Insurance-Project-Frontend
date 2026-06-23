@@ -354,7 +354,7 @@ const Customers = () => {
                   <span className="card-icon">👥</span>
                 </div>
                 <div className="card-value">{totalCount}</div>
-                <div className="card-sub">Registered insurance accounts</div>
+                <div className="card-sub">Registered Customers with Complete profile</div>
               </div>
 
               {customers.length === 0 ? (

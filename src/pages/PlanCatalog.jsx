@@ -862,7 +862,8 @@ const PlanCatalog = () => {
   const handleDeactivatePlan = async (id) => {
     if (window.confirm("Are you sure you want to deactivate this plan? This action cannot be undone.")) {
       try {
-        setLoading(true);
+        console.log("Deactivating plan with ID:", id);
+        // setLoading(true);
         await deactivatePlan(id);
         alert("Plan deactivated successfully!");
         loadPlans();
@@ -870,7 +871,7 @@ const PlanCatalog = () => {
         console.error("Error deactivating plan:", err);
         alert("Failed to deactivate plan. Please check the backend console.");
       } finally {
-        setLoading(false);
+        // setLoading(false);
       }
     }
   };
