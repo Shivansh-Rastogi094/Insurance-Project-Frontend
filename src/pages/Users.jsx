@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useFetch } from '../hooks/useFetch';
-import { readAllUsers, activateUser, deactivateUser } from '../services/UserService';
+import { readAllUsers, activateUser, deactivateUser, createAgentAccount } from '../services/UserService';
 import Modal from '../components/Modal';
 
 const styles = `
@@ -396,7 +396,65 @@ const styles = `
     }
   }
 
-     .modal-overlay {
+  .btn-primary {
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 4px 6px -1px rgba(26, 60, 94, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-primary:hover {
+    background: var(--primary-light);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .form-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-input);
+    color: var(--text-primary);
+    background-color: var(--surface);
+    font-family: inherit;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    background-color: var(--card);
+  }
+
+  /* Modal Styles */
+  .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -415,7 +473,7 @@ const styles = `
     background: var(--card);
     border-radius: var(--radius-card);
     width: 100%;
-    max-width: 500px;
+    max-width: 480px;
     box-shadow: var(--shadow-premium);
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 32px;
@@ -436,14 +494,55 @@ const styles = `
     font-size: 18px;
     font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .modal-body {
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: var(--text-secondary);
   }
 
   .modal-actions {
     display: flex;
     gap: 12px;
     justify-content: flex-end;
-    margin-top: 24px;
+  }
+
+  .btn-cancel {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-cancel:hover {
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+
+  .btn-confirm {
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-confirm:hover {
+    background: var(--primary-light);
   }
 `;
 
@@ -457,6 +556,47 @@ const Users = () => {
   const [targetUser, setTargetUser] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [modalSubmitting, setModalSubmitting] = useState(false);
+
+  // Add Agent Modal state
+  const [showAddAgentModal, setShowAddAgentModal] = useState(false);
+  const [agentData, setAgentData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    phoneNumber: '',
+    role: 'AGENT'
+  });
+  const [agentSubmitting, setAgentSubmitting] = useState(false);
+
+  const handleAddAgentSubmit = async (e) => {
+    e.preventDefault();
+    if (!agentData.fullName.trim() || !agentData.email.trim() || !agentData.password.trim() || !agentData.phoneNumber.trim()) {
+      alert("All fields are required.");
+      return;
+    }
+
+    try {
+      setAgentSubmitting(true);
+      await createAgentAccount(agentData);
+      alert("Agent account created successfully!");
+      setShowAddAgentModal(false);
+      // Reset form
+      setAgentData({
+        fullName: '',
+        email: '',
+        password: '',
+        phoneNumber: '',
+        role: 'AGENT'
+      });
+      // Refresh list
+      loadUsers(currentPage);
+    } catch (err) {
+      console.error("Failed to create agent:", err);
+      alert(`Failed to create agent: ${err?.response?.data?.message || err.message}`);
+    } finally {
+      setAgentSubmitting(false);
+    }
+  };
 
   const fetchUsersData = useCallback(async (page = 0) => {
     const response = await readAllUsers(page, pageSize);
@@ -538,6 +678,11 @@ const Users = () => {
               <h2>Users Directory</h2>
               <p>Manage system credentials, user activation status, and administrative role rights</p>
             </div>
+            {userData?.role === 'ADMIN' && (
+              <button className="btn-primary" onClick={() => setShowAddAgentModal(true)}>
+                + Add Agent
+              </button>
+            )}
           </div>
 
           <div className="divider" />
@@ -736,6 +881,140 @@ const Users = () => {
                 }}
               >
                 {modalSubmitting ? 'Processing...' : targetUser.active ? 'Deactivate Account' : 'Activate Account'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+      {/* Add Agent Modal */}
+      {showAddAgentModal && (
+        <Modal
+          isOpen={showAddAgentModal}
+          onClose={() => { if (!agentSubmitting) setShowAddAgentModal(false); }}
+          title="✨ Add New Agent"
+          maxWidth="480px"
+        >
+          <form onSubmit={handleAddAgentSubmit} style={{ marginTop: '16px' }}>
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Full Name</label>
+              <input
+                type="text"
+                required
+                className="form-input"
+                placeholder="e.g. alex"
+                value={agentData.fullName}
+                onChange={(e) => setAgentData({ ...agentData, fullName: e.target.value })}
+                disabled={agentSubmitting}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  background: 'var(--surface)',
+                  color: 'var(--text-primary)'
+                }}
+              />
+            </div>
+
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Email Address</label>
+              <input
+                type="email"
+                required
+                className="form-input"
+                placeholder="e.g. alexKh@gmail.com"
+                value={agentData.email}
+                onChange={(e) => setAgentData({ ...agentData, email: e.target.value })}
+                disabled={agentSubmitting}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  background: 'var(--surface)',
+                  color: 'var(--text-primary)'
+                }}
+              />
+            </div>
+
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Password</label>
+              <input
+                type="password"
+                required
+                className="form-input"
+                placeholder="e.g. Alex123"
+                value={agentData.password}
+                onChange={(e) => setAgentData({ ...agentData, password: e.target.value })}
+                disabled={agentSubmitting}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  background: 'var(--surface)',
+                  color: 'var(--text-primary)'
+                }}
+              />
+            </div>
+
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Phone Number</label>
+              <input
+                type="text"
+                required
+                className="form-input"
+                placeholder="e.g. 9876543211"
+                value={agentData.phoneNumber}
+                onChange={(e) => setAgentData({ ...agentData, phoneNumber: e.target.value })}
+                disabled={agentSubmitting}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  background: 'var(--surface)',
+                  color: 'var(--text-primary)'
+                }}
+              />
+            </div>
+
+            <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <button
+                type="button"
+                className="btn-cancel"
+                onClick={() => setShowAddAgentModal(false)}
+                disabled={agentSubmitting}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border)',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-confirm"
+                disabled={agentSubmitting}
+                style={{
+                  background: 'var(--primary)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  opacity: agentSubmitting ? 0.6 : 1
+                }}
+              >
+                {agentSubmitting ? 'Creating...' : 'Create Agent'}
               </button>
             </div>
           </form>
