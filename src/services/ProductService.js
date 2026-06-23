@@ -1,7 +1,7 @@
 import api from "../api/api";
 
 // GET /api/products?page=0&size=10
-export const readAllProducts = async (page = 0, size = 10) => {
+export const readAllProducts = async (page = 0, size = 1000) => {
     try {
         const response = await api.get(`products`, { params: { page, size } });
         return response;
