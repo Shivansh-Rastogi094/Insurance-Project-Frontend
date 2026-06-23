@@ -114,8 +114,13 @@ const Login = () => {
           </form>
 
           <div className="login-footer">
-            Don't have an account?{" "}
-            <a onClick={() => navigate("/register")}>Register here</a>
+            <p style={{ margin: 0 }}>
+              Don't have an account?{" "}
+              <a onClick={() => navigate("/register")}>Register here</a>
+            </p>
+            <p style={{ marginTop: "12px", marginBlockEnd: 0 }}>
+              <a onClick={() => navigate("/")}>← Back to Landing Page</a>
+            </p>
           </div>
       </div>
     </div>

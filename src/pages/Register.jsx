@@ -158,8 +158,13 @@ const Register = () => {
         </form>
 
         <div className="register-footer">
-          Already have an account?{" "}
-          <a onClick={() => navigate("/login")}>Sign in here</a>
+          <p style={{ margin: 0 }}>
+            Already have an account?{" "}
+            <a onClick={() => navigate("/login")}>Sign in here</a>
+          </p>
+          <p style={{ marginTop: "12px", marginBlockEnd: 0 }}>
+            <a onClick={() => navigate("/")}>← Back to Landing Page</a>
+          </p>
         </div>
       </div>
     </div>
