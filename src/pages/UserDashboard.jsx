@@ -571,24 +571,6 @@ const UserDashboard = () => {
           </div>
 
           <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
-          <div className="divider" />
 
           <p className="section-label">Account Summary</p>
 
