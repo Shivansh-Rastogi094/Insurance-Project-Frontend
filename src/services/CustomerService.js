@@ -1,3 +1,8 @@
+/**
+ * Topic: Service Layer APIs
+ * Module: Customer Profile Management (CustomerService)
+ * Description: Client-side axios interface handles operations for reading, creating, and updating user profiles, nominee details, and administrative search.
+ */
 import api from "../api/api";
 
 // GET /api/customers/profile  (logged-in customer)

@@ -1,4 +1,9 @@
-    import { useState, useCallback } from 'react';
+/**
+ * Topic: Custom React Hooks
+ * Module: Data Fetching Handler (useFetch)
+ * Description: Generic custom hook to handle async API requests, manages state for loading, error logging, and fetched data.
+ */
+import { useState, useCallback } from 'react';
 
     export const useFetch = (apiFunc) => {
         const [data, setData] = useState([]);

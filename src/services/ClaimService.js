@@ -1,3 +1,8 @@
+/**
+ * Topic: Service Layer APIs
+ * Module: Claims Management Service (ClaimService)
+ * Description: Client-side axios interface handles operations for reading, creating, and updating insurance claims for customers, agents, and administrators.
+ */
 import api from "../api/api";
 
 // GET /api/claims?page=0&size=10  [admin/agent]

@@ -1,3 +1,8 @@
+/**
+ * Topic: Custom React Hooks
+ * Module: Form State Management & Validation Handler (useForm)
+ * Description: Generic custom hook to capture input form values, handle errors, reset forms, and execute client-side validation rules.
+ */
 import { useState } from 'react';
 
 export const useForm = (initialValues, validate) => {

@@ -474,7 +474,10 @@ const Profile = () => {
     if (values.city && !textRegex.test(values.city)) errors.city = "City can only contain alphabetic characters.";
     if (values.state && !textRegex.test(values.state)) errors.state = "State can only contain alphabetic characters.";
     if (values.nomineeName && !textRegex.test(values.nomineeName)) errors.nomineeName = "Nominee name can only contain alphabetic characters.";
-    if (values.nomineeRelation && !textRegex.test(values.nomineeRelation)) errors.nomineeRelation = "Nominee relation can only contain alphabetic characters.";
+    const allowedRelations = ["Spouse", "Parent", "Sibling", "Child", "Friend", "Relative", "Other"];
+    if (values.nomineeRelation && !allowedRelations.includes(values.nomineeRelation)) {
+      errors.nomineeRelation = "Please select a valid nominee relation.";
+    }
     if (values.pinCode && !/^\d{6}$/.test(values.pinCode)) errors.pinCode = "Pin Code must be exactly 6 digits.";
 
     return errors;
@@ -788,13 +791,20 @@ const Profile = () => {
 
             <div className="form-group" style={{ flex: 1 }}>
               <label className="form-label">Nominee Relation</label>
-              <input
-                type="text"
+              <select
                 className="form-input"
-                placeholder="e.g. Spouse"
                 value={formData.nomineeRelation}
                 onChange={(e) => setFormData({ ...formData, nomineeRelation: e.target.value })}
-              />
+              >
+                <option value="">-- Select Relation --</option>
+                <option value="Spouse">Spouse</option>
+                <option value="Parent">Parent</option>
+                <option value="Sibling">Sibling</option>
+                <option value="Child">Child</option>
+                <option value="Friend">Friend</option>
+                <option value="Relative">Relative</option>
+                <option value="Other">Other</option>
+              </select>
               {formErrors.nomineeRelation && <div className="form-error">⚠️ {formErrors.nomineeRelation}</div>}
             </div>
           </div>

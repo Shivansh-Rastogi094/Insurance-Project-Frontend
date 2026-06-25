@@ -544,6 +544,69 @@ const styles = `
   .btn-confirm:hover {
     background: var(--primary-light);
   }
+
+  .filter-bar {
+    display: flex;
+    gap: 16px;
+    padding: 0 40px 24px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .filter-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+
+  .filter-select {
+    padding: 10px 16px;
+    font-size: 13.5px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    background-color: var(--card);
+    font-family: inherit;
+    min-width: 180px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .filter-select:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 2px rgba(37, 99, 168, 0.1);
+  }
+
+  .btn-reset {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-reset:hover {
+    background: var(--surface);
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+  }
 `;
 
 const Users = () => {
@@ -556,6 +619,10 @@ const Users = () => {
   const [targetUser, setTargetUser] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [modalSubmitting, setModalSubmitting] = useState(false);
+
+  // Filters state
+  const [roleFilter, setRoleFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   // Add Agent Modal state
   const [showAddAgentModal, setShowAddAgentModal] = useState(false);
@@ -612,6 +679,14 @@ const Users = () => {
   const usersList = data?.content || [];
   const totalPages = data?.totalPages || 1;
   const totalElements = data?.totalElements || 0;
+
+  const filteredUsers = usersList.filter(user => {
+    const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
+    const matchesStatus = statusFilter === 'ALL' ||
+      (statusFilter === 'ACTIVE' && user.active) ||
+      (statusFilter === 'DEACTIVATED' && !user.active);
+    return matchesRole && matchesStatus;
+  });
   
   // Calculate active and total count from fetched page (or display metrics)
   const activeCount = usersList.filter(u => u.active).length;
@@ -709,6 +784,48 @@ const Users = () => {
             </div>
           </div>
 
+          {/* Filters section */}
+          {!loading && !error && usersList.length > 0 && (
+            <div className="filter-bar">
+              <div className="filter-group">
+                <label className="filter-label">Filter by Role</label>
+                <select 
+                  className="filter-select" 
+                  value={roleFilter} 
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                >
+                  <option value="ALL">All Roles</option>
+                  <option value="CUSTOMER">Customer</option>
+                  <option value="AGENT">Agent</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+              <div className="filter-group">
+                <label className="filter-label">Filter by Login Status</label>
+                <select 
+                  className="filter-select" 
+                  value={statusFilter} 
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="ALL">All Statuses</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="DEACTIVATED">Deactivated</option>
+                </select>
+              </div>
+              {(roleFilter !== 'ALL' || statusFilter !== 'ALL') && (
+                <button 
+                  className="btn-reset" 
+                  onClick={() => {
+                    setRoleFilter('ALL');
+                    setStatusFilter('ALL');
+                  }}
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          )}
+
           {loading ? (
             <div className="loading-container">
               <div className="spinner"></div>
@@ -740,7 +857,14 @@ const Users = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {usersList.map((user) => {
+                    {filteredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '32px' }}>
+                          🔍 No users found matching the selected filters.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredUsers.map((user) => {
                       const isSelf = user.email === userData?.email;
                       const roleClass = (user.role || 'CUSTOMER').toLowerCase();
                       
@@ -774,7 +898,7 @@ const Users = () => {
                           </td>
                         </tr>
                       );
-                    })}
+                    }))}
                   </tbody>
                 </table>
               </div>
