@@ -6,6 +6,7 @@ import { readMyPolicies } from '../services/PolicyService';
 import { readMyPayements, createPayment } from '../services/PaymentService';
 import { useFetch } from '../hooks/useFetch';
 import Modal from '../components/Modal';
+import DownloadButton from '../components/DownloadButton';
 
 const styles = `
   .page-container {
@@ -611,6 +612,8 @@ const Payments = () => {
     ? userData.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
     : "U";
 
+
+
   // Trigger modal and generate transaction reference
   const handleOpenPayModal = (policy) => {
     const randomHex = Math.floor(10000000 + Math.random() * 90000000).toString(16).toUpperCase();
@@ -739,16 +742,33 @@ const Payments = () => {
                           </div>
                         </div>
 
-                        {!isActive && (
-                          <div className="card-action">
+                        <div className="card-action" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', width: '100%', marginTop: '8px' }}>
+                          <DownloadButton
+                            type="policy"
+                            data={policy}
+                            extraData={{ customerName: userData?.fullName }}
+                            label="📥 Download Schedule"
+                            title="Download Policy PDF Schedule"
+                            className="btn-pay"
+                            style={{
+                              background: 'transparent',
+                              border: '1.5px solid var(--primary-light)',
+                              color: 'var(--primary-light)',
+                              boxShadow: 'none',
+                              padding: '6px 12px',
+                              fontSize: '12px'
+                            }}
+                          />
+                          {!isActive && (
                             <button 
                               className="btn-pay"
                               onClick={() => handleOpenPayModal(policy)}
+                              style={{ padding: '6px 12px', fontSize: '12px' }}
                             >
                               Pay ₹{policy.premiumAmount.toLocaleString('en-IN')}
                             </button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -796,13 +816,32 @@ const Payments = () => {
                             <span className="txn-mode-badge">{txn.paymentMode}</span>
                           </span>
                         </div>
-                        <div className="txn-right">
-                          <span className="txn-amount">
-                            ₹{txn.amount.toLocaleString('en-IN')}
-                          </span>
-                          <span className="txn-status">
-                            🛡️ Success
-                          </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div className="txn-right">
+                            <span className="txn-amount">
+                              ₹{txn.amount.toLocaleString('en-IN')}
+                            </span>
+                            <span className="txn-status">
+                              🛡️ Success
+                            </span>
+                          </div>
+                          <DownloadButton
+                            type="payment"
+                            data={txn}
+                            extraData={{ formattedDate, formattedTime }}
+                            label="📥"
+                            title="Download PDF Receipt"
+                            className="action-btn"
+                            style={{
+                              background: 'rgba(37, 99, 168, 0.05)',
+                              border: '1px solid rgba(37, 99, 168, 0.1)',
+                              color: 'var(--primary-light)',
+                              padding: '8px 10px',
+                              borderRadius: '6px',
+                              fontSize: '14px',
+                              marginLeft: '8px'
+                            }}
+                          />
                         </div>
                       </div>
                     );

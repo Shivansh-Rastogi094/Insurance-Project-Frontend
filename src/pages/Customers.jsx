@@ -3,6 +3,9 @@ import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { readAllCustomers } from '../services/CustomerService';
 import { useFetch } from '../hooks/useFetch';
+import Modal from '../components/Modal';
+import DownloadButton from '../components/DownloadButton';
+import { generateCustomerListPDF } from '../utils/pdfGenerator';
 
 const styles = `
   .page-container {
@@ -282,6 +285,153 @@ const styles = `
       margin: 0 20px 20px;
     }
   }
+
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal-content {
+    background: var(--card);
+    border-radius: var(--radius-card);
+    width: 100%;
+    max-width: 500px;
+    box-shadow: var(--shadow-premium);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 32px;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+
+  .btn-cancel {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-cancel:hover {
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+
+  .btn-confirm {
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-confirm:hover {
+    background: var(--primary-light);
+  }
+
+  .btn-confirm:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .form-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-input);
+    color: var(--text-primary);
+    background-color: var(--surface);
+    font-family: inherit;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    background-color: var(--card);
+  }
+
+  .customers-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .action-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .action-btn:hover {
+    border-color: var(--primary-light);
+    color: var(--primary-light);
+    background: rgba(37, 99, 168, 0.02);
+  }
 `;
 
 const Customers = () => {
@@ -299,12 +449,50 @@ const Customers = () => {
 
   const { data, loading, error, execute: fetchCustomers } = useFetch(fetchCustomersData);
 
+  // Export Modal State
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportRange, setExportRange] = useState('PAGE'); // 'PAGE', 'FULL', 'CUSTOM'
+  const [customExportLimit, setCustomExportLimit] = useState('50');
+  const [exporting, setExporting] = useState(false);
+
   useEffect(() => {
     fetchCustomers();
   }, []);
 
   const customers = data?.customersList || [];
   const totalCount = data?.total || 0;
+
+  const handleExportSubmit = async (e) => {
+    e.preventDefault();
+    setExporting(true);
+    try {
+      let customersToExport = [];
+      if (exportRange === 'PAGE') {
+        customersToExport = customers;
+      } else {
+        const limit = exportRange === 'FULL' ? totalCount : parseInt(customExportLimit);
+        if (!limit || limit <= 0) {
+          alert("Please enter a valid count.");
+          setExporting(false);
+          return;
+        }
+        const res = await readAllCustomers(0, limit);
+        customersToExport = res?.data?.content || [];
+      }
+
+      if (customersToExport.length === 0) {
+        alert("No customers found inside chosen range.");
+      } else {
+        generateCustomerListPDF(customersToExport);
+      }
+      setShowExportModal(false);
+    } catch (err) {
+      console.error("Export list failed:", err);
+      alert("Failed to export list. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const initials = userData?.fullName
     ? userData.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
@@ -327,11 +515,36 @@ const Customers = () => {
             </div>
           </div>
 
-          <div className="header">
+          <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="header-text">
               <h2>Customers Directory</h2>
               <p>View and manage client contact details, address, and nominee records</p>
             </div>
+            <button
+              onClick={() => {
+                setExportRange('PAGE');
+                setCustomExportLimit('50');
+                setShowExportModal(true);
+              }}
+              title="Export Customers Report Options"
+              className="page-btn"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'var(--primary)',
+                color: '#ffffff',
+                border: 'none',
+                padding: '10px 18px',
+                fontSize: '13px',
+                fontWeight: '600',
+                borderRadius: 'var(--radius-button)',
+                cursor: 'pointer',
+                fontFamily: 'inherit'
+              }}
+            >
+              📊 Export List
+            </button>
           </div>
 
           <div className="divider" />
@@ -363,46 +576,172 @@ const Customers = () => {
                 </div>
               ) : (
                 <div className="table-container">
-                  <table className="customers-table">
-                    <thead>
-                      <tr>
-                        <th>Full Name</th>
-                        <th>Email Address</th>
-                        <th>Phone Number</th>
-                        <th>Date of Birth</th>
-                        <th>Location</th>
-                        <th>Nominee</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {customers.map((c) => (
-                        <tr key={c.id || c.email}>
-                          <td style={{ fontWeight: '600' }}>{c.fullName || 'N/A'}</td>
-                          <td>{c.email || 'N/A'}</td>
-                          <td style={{ fontFamily: 'var(--font-mono)' }}>{c.phoneNumber || 'N/A'}</td>
-                          <td>
-                            {c.dateOfBirth 
-                              ? new Date(c.dateOfBirth).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                              : 'N/A'}
-                          </td>
-                          <td>
-                            {c.city && c.state ? `${c.city}, ${c.state}` : c.city || c.state || 'N/A'}
-                          </td>
-                          <td>
-                            {c.nomineeName 
-                              ? `${c.nomineeName} (${c.nomineeRelation || 'Nominee'})` 
-                              : 'N/A'}
-                          </td>
+                  <div className="customers-table-wrapper">
+                    <table className="customers-table">
+                      <thead>
+                        <tr>
+                          <th>Full Name</th>
+                          <th>Email Address</th>
+                          <th>Phone Number</th>
+                          <th>Date of Birth</th>
+                          <th>Location</th>
+                          <th>Nominee</th>
+                          <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {customers.map((c) => (
+                          <tr key={c.id || c.email}>
+                            <td style={{ fontWeight: '600' }}>{c.fullName || 'N/A'}</td>
+                            <td>{c.email || 'N/A'}</td>
+                            <td style={{ fontFamily: 'var(--font-mono)' }}>{c.phoneNumber || 'N/A'}</td>
+                            <td>
+                              {c.dateOfBirth 
+                                ? new Date(c.dateOfBirth).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                                : 'N/A'}
+                            </td>
+                            <td>
+                              {c.city && c.state ? `${c.city}, ${c.state}` : c.city || c.state || 'N/A'}
+                            </td>
+                            <td>
+                              {c.nomineeName 
+                                ? `${c.nomineeName} (${c.nomineeRelation || 'Nominee'})` 
+                                : 'N/A'}
+                            </td>
+                            <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                              <DownloadButton
+                                type="customer"
+                                data={c}
+                                label="📥"
+                                title="Download Customer PDF Profile"
+                                className="action-btn"
+                                style={{
+                                  padding: '6px 10px',
+                                  fontSize: '12px',
+                                  borderColor: 'var(--border)'
+                                }}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </>
           )}
         </div>
       </div>
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <Modal
+          isOpen={showExportModal}
+          onClose={() => { if (!exporting) setShowExportModal(false); }}
+          title="📊 Export Customers Directory PDF"
+          maxWidth="460px"
+        >
+          <form onSubmit={handleExportSubmit} style={{ marginTop: '12px' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.4' }}>
+              Select your export range preference. The report will extract registered customers directly from the database:
+            </p>
+
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Export Option</label>
+              
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="exportRange"
+                  checked={exportRange === 'PAGE'}
+                  onChange={() => setExportRange('PAGE')}
+                  disabled={exporting}
+                />
+                Current Page ({customers.length} customers)
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="exportRange"
+                  checked={exportRange === 'FULL'}
+                  onChange={() => setExportRange('FULL')}
+                  disabled={exporting}
+                />
+                Full List ({totalCount} total customers)
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="exportRange"
+                  checked={exportRange === 'CUSTOM'}
+                  onChange={() => setExportRange('CUSTOM')}
+                  disabled={exporting}
+                />
+                Custom Quantity Limit
+              </label>
+            </div>
+
+            {exportRange === 'CUSTOM' && (
+              <div className="form-group" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label className="form-label">Quantity to Extract</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  min="1"
+                  max={totalCount}
+                  value={customExportLimit}
+                  onChange={(e) => setCustomExportLimit(parseInt(e.target.value) || '')}
+                  disabled={exporting}
+                  placeholder="e.g. 50"
+                  required
+                />
+              </div>
+            )}
+
+            <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <button
+                type="button"
+                className="btn-cancel"
+                onClick={() => setShowExportModal(false)}
+                disabled={exporting}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border)',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-confirm"
+                disabled={exporting}
+                style={{
+                  background: 'var(--primary)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  opacity: exporting ? 0.6 : 1
+                }}
+              >
+                {exporting ? 'Generating...' : 'Export PDF'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </>
   );
 };

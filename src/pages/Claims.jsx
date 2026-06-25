@@ -5,6 +5,7 @@ import { useFetch } from '../hooks/useFetch';
 import { readAllClaims, readMyClaims, createClaim, agentReviewClaim, adminDecisionClaim, readClaimHistory } from '../services/ClaimService';
 import { readMyPolicies } from '../services/PolicyService';
 import Modal from '../components/Modal';
+import DownloadButton from '../components/DownloadButton';
 
 const styles = `
   .page-container {
@@ -710,6 +711,8 @@ const Claims = () => {
   const [claimHistoryList, setClaimHistoryList] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+
+
   const handleGetHistory = async (claim) => {
     setSelectedHistoryClaim(claim);
     setShowHistoryModal(true);
@@ -918,21 +921,38 @@ const Claims = () => {
                               )}
                             </td>
                             <td style={{ textAlign: 'right' }}>
-                              {isCustomer ? (
-                                <button
+                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                {isCustomer ? (
+                                  <button
+                                    className="action-btn"
+                                    onClick={() => handleGetHistory(claim)}
+                                  >
+                                    Claim History
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="action-btn accent"
+                                    onClick={() => handleReviewClaim(claim)}
+                                  >
+                                    Review Claim
+                                  </button>
+                                )}
+                                <DownloadButton
+                                  type="claim"
+                                  data={claim}
+                                  extraData={{ claimNum }}
+                                  label="📥"
+                                  title="Download PDF Claim Slip"
                                   className="action-btn"
-                                  onClick={() => handleGetHistory(claim)}
-                                >
-                                  Claim History
-                                </button>
-                              ) : (
-                                <button
-                                  className="action-btn accent"
-                                  onClick={() => handleReviewClaim(claim)}
-                                >
-                                  Review Claim
-                                </button>
-                              )}
+                                  style={{
+                                    padding: '6px 10px',
+                                    fontSize: '14px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                />
+                              </div>
                             </td>
                           </tr>
                         );

@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useFetch } from '../hooks/useFetch';
 import { readAllUsers, activateUser, deactivateUser, createAgentAccount } from '../services/UserService';
 import Modal from '../components/Modal';
+import DownloadButton from '../components/DownloadButton';
+import { generateUserListPDF } from '../utils/pdfGenerator';
 
 const styles = `
   .page-container {
@@ -620,6 +622,12 @@ const Users = () => {
   const [remarks, setRemarks] = useState('');
   const [modalSubmitting, setModalSubmitting] = useState(false);
 
+  // Export Modal state
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportRange, setExportRange] = useState('PAGE'); // 'PAGE', 'FULL', 'CUSTOM'
+  const [customExportLimit, setCustomExportLimit] = useState('50');
+  const [exporting, setExporting] = useState(false);
+
   // Filters state
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -731,6 +739,47 @@ const Users = () => {
     }
   };
 
+  const handleExportSubmit = async (e) => {
+    e.preventDefault();
+    setExporting(true);
+    try {
+      let usersToExport = [];
+      if (exportRange === 'PAGE') {
+        usersToExport = filteredUsers;
+      } else {
+        const limit = exportRange === 'FULL' ? totalElements : parseInt(customExportLimit);
+        if (!limit || limit <= 0) {
+          alert("Please enter a valid count.");
+          setExporting(false);
+          return;
+        }
+        const res = await readAllUsers(0, limit);
+        const list = res?.data?.content || res?.content || [];
+        
+        // Apply filters to the fetched list
+        usersToExport = list.filter(user => {
+          const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
+          const matchesStatus = statusFilter === 'ALL' ||
+            (statusFilter === 'ACTIVE' && user.active) ||
+            (statusFilter === 'DEACTIVATED' && !user.active);
+          return matchesRole && matchesStatus;
+        });
+      }
+
+      if (usersToExport.length === 0) {
+        alert("No users found matching current filters inside chosen range.");
+      } else {
+        generateUserListPDF(usersToExport, { role: roleFilter, status: statusFilter });
+      }
+      setShowExportModal(false);
+    } catch (err) {
+      console.error("Export list failed:", err);
+      alert("Failed to export list. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <>
       <style>{styles}</style>
@@ -753,11 +802,27 @@ const Users = () => {
               <h2>Users Directory</h2>
               <p>Manage system credentials, user activation status, and administrative role rights</p>
             </div>
-            {userData?.role === 'ADMIN' && (
-              <button className="btn-primary" onClick={() => setShowAddAgentModal(true)}>
-                + Add Agent
-              </button>
-            )}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              {filteredUsers.length > 0 && (
+                <button
+                  className="btn-primary"
+                  style={{ background: "var(--accent)", border: "none" }}
+                  onClick={() => {
+                    setExportRange('PAGE');
+                    setCustomExportLimit('50');
+                    setShowExportModal(true);
+                  }}
+                  title="Export Users Report Options"
+                >
+                  📊 Export List
+                </button>
+              )}
+              {userData?.role === 'ADMIN' && (
+                <button className="btn-primary" onClick={() => setShowAddAgentModal(true)}>
+                  + Add Agent
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="divider" />
@@ -885,7 +950,21 @@ const Users = () => {
                               {user.active ? 'Active' : 'Deactivated'}
                             </span>
                           </td>
-                          <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                          <td style={{ textAlign: 'right', paddingRight: '24px', display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                            <DownloadButton
+                              type="user"
+                              data={user}
+                              label="📥 PDF"
+                              title="Download Profile Receipt PDF"
+                              className="action-btn"
+                              style={{
+                                background: "rgba(37, 99, 168, 0.05)",
+                                border: "1px solid rgba(37, 99, 168, 0.1)",
+                                color: "var(--primary-light)",
+                                padding: "6px 10px",
+                                fontSize: "12px"
+                              }}
+                            />
                             <button
                               className={`action-btn ${user.active ? 'deactivate' : 'activate'}`}
                               onClick={() => handleActionClick(user)}
@@ -1139,6 +1218,127 @@ const Users = () => {
                 }}
               >
                 {agentSubmitting ? 'Creating...' : 'Create Agent'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <Modal
+          isOpen={showExportModal}
+          onClose={() => { if (!exporting) setShowExportModal(false); }}
+          title="📊 Export Users Directory PDF"
+          maxWidth="460px"
+        >
+          <form onSubmit={handleExportSubmit} style={{ marginTop: '12px' }}>
+            <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '16px' }}>
+              Select your export range preference. The report will respect your current filters: 
+              <strong style={{ color: 'var(--text-primary)' }}> Role: {roleFilter}</strong> and 
+              <strong style={{ color: 'var(--text-primary)' }}> Status: {statusFilter}</strong>.
+            </div>
+
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Export Option</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="exportRange"
+                    value="PAGE"
+                    checked={exportRange === 'PAGE'}
+                    onChange={() => setExportRange('PAGE')}
+                    disabled={exporting}
+                  />
+                  Current Page List (max {pageSize} users)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="exportRange"
+                    value="FULL"
+                    checked={exportRange === 'FULL'}
+                    onChange={() => setExportRange('FULL')}
+                    disabled={exporting}
+                  />
+                  Full System Directory ({totalElements} users)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="exportRange"
+                    value="CUSTOM"
+                    checked={exportRange === 'CUSTOM'}
+                    onChange={() => setExportRange('CUSTOM')}
+                    disabled={exporting}
+                  />
+                  Custom Quantity
+                </label>
+              </div>
+            </div>
+
+            {exportRange === 'CUSTOM' && (
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+                <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Quantity to Extract</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10000"
+                  required
+                  className="form-input"
+                  value={customExportLimit}
+                  onChange={(e) => setCustomExportLimit(parseInt(e.target.value) || '')}
+                  disabled={exporting}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid var(--border)',
+                    borderRadius: '6px',
+                    background: 'var(--surface)',
+                    color: 'var(--text-primary)'
+                  }}
+                  placeholder="e.g. 50"
+                />
+              </div>
+            )}
+
+            <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <button
+                type="button"
+                className="btn-cancel"
+                onClick={() => setShowExportModal(false)}
+                disabled={exporting}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border)',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-confirm"
+                disabled={exporting}
+                style={{
+                  background: 'var(--primary)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  opacity: exporting ? 0.6 : 1
+                }}
+              >
+                {exporting ? 'Exporting...' : 'Generate PDF'}
               </button>
             </div>
           </form>

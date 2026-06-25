@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useFetch } from '../hooks/useFetch';
 import { readAllPolicies, cancelPolicy } from '../services/PolicyService';
 import Modal from '../components/Modal';
+import DownloadButton from '../components/DownloadButton';
+import { generatePolicyListPDF } from '../utils/pdfGenerator';
 
 const styles = `
   .page-container {
@@ -434,6 +436,12 @@ const Policies = () => {
   const [targetPolicy, setTargetPolicy] = useState(null);
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
+  // Export Modal State
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportRange, setExportRange] = useState('PAGE'); // 'PAGE', 'FULL', 'CUSTOM'
+  const [customExportLimit, setCustomExportLimit] = useState('50');
+  const [exporting, setExporting] = useState(false);
+
   const fetchPoliciesData = useCallback(async (page = 0) => {
     const response = await readAllPolicies(page, pageSize);
     return response?.data || response || {};
@@ -475,6 +483,38 @@ const Policies = () => {
     }
   };
 
+  const handleExportSubmit = async (e) => {
+    e.preventDefault();
+    setExporting(true);
+    try {
+      let policiesToExport = [];
+      if (exportRange === 'PAGE') {
+        policiesToExport = policiesList;
+      } else {
+        const limit = exportRange === 'FULL' ? totalElements : parseInt(customExportLimit);
+        if (!limit || limit <= 0) {
+          alert("Please enter a valid count.");
+          setExporting(false);
+          return;
+        }
+        const res = await readAllPolicies(0, limit);
+        policiesToExport = res?.data?.content || res?.content || [];
+      }
+
+      if (policiesToExport.length === 0) {
+        alert("No policies found inside chosen range.");
+      } else {
+        generatePolicyListPDF(policiesToExport);
+      }
+      setShowExportModal(false);
+    } catch (err) {
+      console.error("Export list failed:", err);
+      alert("Failed to export list. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <>
       <style>{styles}</style>
@@ -492,11 +532,30 @@ const Policies = () => {
             </div>
           </div>
 
-          <div className="header">
+          <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="header-text">
               <h2>Policies Directory</h2>
               <p>Monitor customer policy registrations, coverage parameters, and issue cancellations</p>
             </div>
+            <button
+              onClick={() => {
+                setExportRange('PAGE');
+                setCustomExportLimit('50');
+                setShowExportModal(true);
+              }}
+              title="Export Policies Report Options"
+              className="page-btn"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'var(--primary)',
+                color: '#ffffff',
+                border: 'none'
+              }}
+            >
+              📊 Export List
+            </button>
           </div>
 
           <div className="divider" />
@@ -584,17 +643,32 @@ const Policies = () => {
                             </span>
                           </td>
                           <td style={{ textAlign: 'right', paddingRight: '24px' }}>
-                            <button
-                              className="action-btn cancel-policy"
-                              onClick={() => handleCancelClick(policy)}
-                              disabled={policy.policyStatus === 'CANCELLED'}
-                              style={{
-                                opacity: policy.policyStatus === 'CANCELLED' ? 0.5 : 1,
-                                cursor: policy.policyStatus === 'CANCELLED' ? 'not-allowed' : 'pointer'
-                              }}
-                            >
-                              {policy.policyStatus === 'CANCELLED' ? 'Cancelled' : 'Cancel Policy'}
-                            </button>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                              <DownloadButton
+                                type="policy"
+                                data={policy}
+                                extraData={{ customerName: policy.customerName || policy.customer?.fullName }}
+                                label="📥"
+                                title="Download Policy PDF"
+                                className="action-btn"
+                                style={{
+                                  padding: '6px 10px',
+                                  fontSize: '12px',
+                                  borderColor: 'var(--border)'
+                                }}
+                              />
+                              <button
+                                className="action-btn cancel-policy"
+                                onClick={() => handleCancelClick(policy)}
+                                disabled={policy.policyStatus === 'CANCELLED'}
+                                style={{
+                                  opacity: policy.policyStatus === 'CANCELLED' ? 0.5 : 1,
+                                  cursor: policy.policyStatus === 'CANCELLED' ? 'not-allowed' : 'pointer'
+                                }}
+                              >
+                                {policy.policyStatus === 'CANCELLED' ? 'Cancelled' : 'Cancel Policy'}
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -686,6 +760,114 @@ const Policies = () => {
               {cancelSubmitting ? 'Cancelling...' : 'Yes, Cancel Policy'}
             </button>
           </div>
+        </Modal>
+      )}
+      {/* Export Modal */}
+      {showExportModal && (
+        <Modal
+          isOpen={showExportModal}
+          onClose={() => { if (!exporting) setShowExportModal(false); }}
+          title="📊 Export Policies Directory PDF"
+          maxWidth="460px"
+        >
+          <form onSubmit={handleExportSubmit} style={{ marginTop: '12px' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.4' }}>
+              Select your export range preference. The report will extract registered policies directly from the database:
+            </p>
+
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Export Option</label>
+              
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="exportRange"
+                  checked={exportRange === 'PAGE'}
+                  onChange={() => setExportRange('PAGE')}
+                  disabled={exporting}
+                />
+                Current Page ({policiesList.length} policies)
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="exportRange"
+                  checked={exportRange === 'FULL'}
+                  onChange={() => setExportRange('FULL')}
+                  disabled={exporting}
+                />
+                Full List ({totalElements} total policies)
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="exportRange"
+                  checked={exportRange === 'CUSTOM'}
+                  onChange={() => setExportRange('CUSTOM')}
+                  disabled={exporting}
+                />
+                Custom Quantity Limit
+              </label>
+            </div>
+
+            {exportRange === 'CUSTOM' && (
+              <div className="form-group" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label className="form-label">Quantity to Extract</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  min="1"
+                  max={totalElements}
+                  value={customExportLimit}
+                  onChange={(e) => setCustomExportLimit(parseInt(e.target.value) || '')}
+                  disabled={exporting}
+                  placeholder="e.g. 50"
+                  required
+                />
+              </div>
+            )}
+
+            <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <button
+                type="button"
+                className="btn-cancel"
+                onClick={() => setShowExportModal(false)}
+                disabled={exporting}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border)',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-confirm"
+                disabled={exporting}
+                style={{
+                  background: 'var(--primary)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  opacity: exporting ? 0.6 : 1
+                }}
+              >
+                {exporting ? 'Generating...' : 'Export PDF'}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
     </>

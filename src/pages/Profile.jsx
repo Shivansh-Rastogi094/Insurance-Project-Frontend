@@ -5,6 +5,7 @@ import { getCustomerProfile, createCustomerProfile, updateCustomerProfile } from
 import { useFetch } from '../hooks/useFetch';
 import { useForm } from '../hooks/useForm';
 import Modal from '../components/Modal';
+import DownloadButton from '../components/DownloadButton';
 
 const styles = `
   .page-container {
@@ -637,6 +638,32 @@ const Profile = () => {
                 <button className="cta-btn" onClick={openFormModal}>
                   {profile ? 'Update Your Profile' : 'Complete Your Profile'}
                 </button>
+                {profile && (
+                  <DownloadButton
+                    type="customer"
+                    data={{
+                      id: profile.id,
+                      fullName: userData?.fullName,
+                      email: userData?.email,
+                      phoneNumber: userData?.phoneNumber || profile.phoneNumber || "N/A",
+                      dateOfBirth: profile.dateOfBirth,
+                      city: profile.city,
+                      state: profile.state,
+                      nomineeName: profile.nomineeName,
+                      nomineeRelation: profile.nomineeRelation
+                    }}
+                    label="📥 Download Profile PDF"
+                    title="Download Profile Details PDF"
+                    className="cta-btn"
+                    style={{
+                      marginTop: '12px',
+                      background: 'transparent',
+                      border: '1.5px solid var(--primary-light)',
+                      color: 'var(--primary-light)',
+                      boxShadow: 'none'
+                    }}
+                  />
+                )}
               </div>
 
               <div className="profile-details-card">
