@@ -404,6 +404,7 @@ export const generatePolicyPDF = (policy, customerName) => {
     ["Insurance Product Type", policy.productType || "N/A"],
     ["Insurance Plan Name", policy.planName || "N/A"],
     ["Sum Insured (Coverage Limit)", `INR ${(policy.coverageAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`],
+    ["Available Coverage Balance", `INR ${(policy.remainingCoverage !== undefined && policy.remainingCoverage !== null ? policy.remainingCoverage : policy.coverageAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`],
     ["Premium Installment", `INR ${(policy.premiumAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })} / ${policy.premiumType || 'TERM'}`],
     ["Commencement Date", policy.startDate ? new Date(policy.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'],
     ["Policy Status", status]
@@ -545,13 +546,14 @@ export const generatePolicyListPDF = (policies) => {
   doc.setTextColor(100, 116, 139);
   doc.text(`Total Records Extracted: ${policies.length}`, 15, 58);
 
-  const tableHeaders = [["Policy No.", "Plan Name", "Policyholder", "Product Type", "Coverage", "Premium", "Start Date", "Status"]];
+  const tableHeaders = [["Policy No.", "Plan Name", "Policyholder", "Product Type", "Max Cover", "Available Cover", "Premium", "Start Date", "Status"]];
   const tableData = policies.map(p => [
     p.policyNumber || "N/A",
     p.planName || "Insurance Plan",
     p.customerName || p.customer?.fullName || "N/A",
     p.productType || "N/A",
     `INR ${(p.coverageAmount || 0).toLocaleString("en-IN")}`,
+    `INR ${(p.remainingCoverage !== undefined && p.remainingCoverage !== null ? p.remainingCoverage : p.coverageAmount || 0).toLocaleString("en-IN")}`,
     `INR ${(p.premiumAmount || 0).toLocaleString("en-IN")}`,
     p.startDate ? new Date(p.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A',
     p.policyStatus || "PENDING"
@@ -573,12 +575,12 @@ export const generatePolicyListPDF = (policies) => {
       cellPadding: 3
     },
     columnStyles: {
-      0: { fontStyle: "bold", cellWidth: 28 },
+      0: { fontStyle: "bold", cellWidth: 26 },
       1: { fontStyle: "bold" },
-      7: { fontStyle: "bold" }
+      8: { fontStyle: "bold" }
     },
     didDrawCell: (data) => {
-      if (data.column.index === 7 && data.cell.section === "body") {
+      if (data.column.index === 8 && data.cell.section === "body") {
         const text = data.cell.text[0];
         const isActive = text === "ACTIVE";
         doc.setFillColor(data.row.index % 2 === 0 ? 255 : 245, 245, 245);
