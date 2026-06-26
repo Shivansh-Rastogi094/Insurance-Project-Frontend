@@ -16,6 +16,8 @@ import Users            from './pages/Users'
 import Policies         from './pages/Policies'
 import Register         from './pages/Register'
 import VerifyOtp        from './pages/VerifyOtp'
+import ForgotPassword   from './pages/ForgotPassword'
+import ResetPassword    from './pages/ResetPassword'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 // Landing sub-pages
@@ -51,6 +53,8 @@ function App() {
         <Route path="/login"       element={<Login />} />
         <Route path="/register"    element={<Register />} />
         <Route path="/verify-otp"  element={<VerifyOtp />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password"  element={<ResetPassword />} />
 
         {/* ── App (protected) ── */}
         <Route path="/admindashboard" element={

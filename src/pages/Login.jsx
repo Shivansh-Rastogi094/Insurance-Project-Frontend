@@ -110,6 +110,15 @@ const Login = () => {
               {errors.password && <p className="error-text">{errors.password}</p>}
             </div>
 
+            <div style={{ textAlign: "right", marginTop: "-8px", marginBottom: "16px" }}>
+              <a 
+                onClick={() => navigate("/forgot-password")} 
+                style={{ fontSize: "12.5px", color: "var(--primary-light)", cursor: "pointer", fontWeight: "500" }}
+              >
+                Forgot password?
+              </a>
+            </div>
+
             <button type="submit" className="login-btn">Login</button>
           </form>
 
