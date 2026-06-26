@@ -157,6 +157,13 @@ const Sidebar = ({ title }) => {
 
   const [theme, setTheme] = useState(document.documentElement.getAttribute("data-theme") || "light");
 
+  const defaultTitle = userData?.role === "ADMIN"
+    ? "Admin Panel"
+    : userData?.role === "AGENT"
+    ? "Agent Workspace"
+    : "Customer Portal";
+  const displayTitle = title || defaultTitle;
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "light";
     document.documentElement.setAttribute("data-theme", savedTheme);
@@ -212,7 +219,7 @@ const Sidebar = ({ title }) => {
         <div className="sidebar-brand">
           <div className="sidebar-brand-icon">🛡️</div>
           <div>
-            <h2>{title}</h2>
+            <h2>{displayTitle}</h2>
             <span>
               {userData?.role === 'AGENT'
                 ? 'Agent Panel'
@@ -242,11 +249,9 @@ const Sidebar = ({ title }) => {
         </ul>
 
         <div className="sidebar-footer">
-          {userData?.role === 'ADMIN' && (
-            <button className="theme-btn" onClick={toggleTheme}>
-              {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
-            </button>
-          )}
+          <button className="theme-btn" onClick={toggleTheme}>
+            {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+          </button>
           <button className="logout-btn" onClick={handleLogout}>
             Logout
           </button>

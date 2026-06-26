@@ -31,48 +31,87 @@
 }
 
 .card {
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 1.75rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-height: 140px;
 }
 
 .card:hover {
+  box-shadow: var(--shadow-premium);
   transform: translateY(-4px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  border-color: rgba(37, 99, 168, 0.2);
 }
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+.card.accent-blue::before { background: var(--primary-light); }
+.card.accent-green::before { background: var(--success); }
+.card.accent-amber::before { background: var(--warning); }
+.card.accent-danger::before { background: var(--danger); }
 
 .card-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
 .card-header h4 {
-  color: #64748b;
-  font-size: 0.875rem;
+  font-size: 12px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-weight: 600;
-  margin: 0;
+  color: var(--text-secondary);
 }
 
-.card-icon {
-  font-size: 1.5rem;
-  background-color: #f1f5f9;
-  padding: 0.5rem;
+.card-icon-wrap {
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: transform 0.2s ease;
 }
+
+.card:hover .card-icon-wrap {
+  transform: scale(1.1);
+}
+
+.card.accent-blue .card-icon-wrap { background: rgba(37, 99, 168, 0.1); color: var(--primary-light); }
+.card.accent-green .card-icon-wrap { background: rgba(22, 163, 74, 0.1); color: var(--success); }
+.card.accent-amber .card-icon-wrap { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+.card.accent-danger .card-icon-wrap { background: rgba(220, 38, 38, 0.1); color: var(--danger); }
 
 .card-value {
-  color: #0f172a;
-  font-size: 2.5rem;
+  font-size: 26px;
   font-weight: 700;
-  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  letter-spacing: -0.5px;
+  margin-top: auto;
+}
+
+.card-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 6px;
 }

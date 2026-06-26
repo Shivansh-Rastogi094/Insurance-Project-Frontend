@@ -591,7 +591,7 @@ const Policy = () => {
     <>
       <style>{styles}</style>
       <div className="page-container">
-        <Sidebar title="Policyholder Portal" />
+        <Sidebar />
 
         <div className="main-content">
           <div className="topbar">

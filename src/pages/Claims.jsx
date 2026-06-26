@@ -661,9 +661,9 @@ const Claims = () => {
   }, [currentPage, loadClaims]);
 
   // Safely extract claims array and pagination info
-  const claimsList = isCustomer
+  const claimsList = [...(isCustomer
     ? (Array.isArray(data) ? data : [])
-    : (data?.content || []);
+    : (data?.content || []))].sort((a, b) => (b.id || 0) - (a.id || 0));
   const totalPages = isCustomer ? 1 : (data?.totalPages || 1);
   const totalElements = isCustomer ? claimsList.length : (data?.totalElements || 0);
 
@@ -794,8 +794,14 @@ const Claims = () => {
       errors.claimAmount = "Please enter a valid positive claim amount.";
     } else {
       const selectedPolObj = activePolicies.find(p => p.id.toString() === claimForm.policyId.toString());
-      if (selectedPolObj && amt > selectedPolObj.coverageAmount) {
-        errors.claimAmount = `Claim amount cannot exceed policy coverage limit of ₹${selectedPolObj.coverageAmount.toLocaleString('en-IN')}`;
+      if (selectedPolObj) {
+        const availableCoverage = selectedPolObj.remainingCoverage !== undefined && selectedPolObj.remainingCoverage !== null 
+          ? selectedPolObj.remainingCoverage 
+          : selectedPolObj.coverageAmount;
+          
+        if (amt > availableCoverage) {
+          errors.claimAmount = `Claim amount cannot exceed available remaining coverage of ₹${availableCoverage.toLocaleString('en-IN')}`;
+        }
       }
     }
 
@@ -1129,6 +1135,7 @@ const Claims = () => {
                             const claimAmount = claim.claimAmount || 0;
                             const agentRemarks = claim.agentRemarks === "null" || !claim.agentRemarks ? "Pending" : claim.agentRemarks;
                             const adminRemarks = claim.adminRemarks === "null" || !claim.adminRemarks ? "Pending" : claim.adminRemarks;
+                            const isAdminDecided = adminRemarks !== "Pending";
 
                             return (
                               <tr key={claim.id || idx}>
@@ -1191,34 +1198,31 @@ const Claims = () => {
                                 </td>
                                 <td style={{ textAlign: 'right' }}>
                                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                    {isCustomer ? (
-                                      <button
-                                        className="action-btn"
-                                        onClick={() => handleGetHistory(claim)}
-                                      >
-                                        Claim History
-                                      </button>
-                                    ) : (
+                                    <button
+                                      className="action-btn"
+                                      onClick={() => handleGetHistory(claim)}
+                                    >
+                                      Claim History
+                                    </button>
+                                    {!isCustomer && (
                                       userData?.role === 'ADMIN' && status === 'submitted' ? (
-                                        <span style={{ 
-                                          fontSize: '11px', 
-                                          fontWeight: '600', 
-                                          color: 'var(--text-secondary)', 
-                                          background: 'var(--surface)', 
-                                          padding: '4px 10px', 
-                                          borderRadius: '12px', 
-                                          border: '1px solid var(--border)',
-                                          textTransform: 'uppercase',
-                                          letterSpacing: '0.05em'
-                                        }}>
+                                        <button 
+                                          className="action-btn" 
+                                          disabled 
+                                          style={{ cursor: 'not-allowed', opacity: 0.7 }}
+                                          title="Waiting for Agent recommendation"
+                                        >
                                           ⏳ Agent Review Pending
-                                        </span>
+                                        </button>
                                       ) : (
                                         <button
-                                          className="action-btn accent"
+                                          className={`action-btn ${isAdminDecided ? '' : 'accent'}`}
                                           onClick={() => handleReviewClaim(claim)}
+                                          disabled={isAdminDecided}
+                                          style={isAdminDecided ? { cursor: 'not-allowed', opacity: 0.6 } : {}}
+                                          title={isAdminDecided ? "Admin decision has already been finalized" : ""}
                                         >
-                                          {userData?.role === 'AGENT' ? 'Review Claim' : 'Take Decision'}
+                                          {isAdminDecided ? 'Decision Finalized' : (userData?.role === 'AGENT' ? 'Review Claim' : 'Take Decision')}
                                         </button>
                                       )
                                     )}
@@ -1297,11 +1301,14 @@ const Claims = () => {
                 disabled={submitting}
               >
                 <option value="">-- Select Active Policy --</option>
-                {activePolicies.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.planName} ({p.policyNumber}) - Max Cover: ₹{p.coverageAmount.toLocaleString('en-IN')}
-                  </option>
-                ))}
+                {activePolicies.map(p => {
+                  const availableCoverage = p.remainingCoverage !== undefined && p.remainingCoverage !== null ? p.remainingCoverage : p.coverageAmount;
+                  return (
+                    <option key={p.id} value={p.id}>
+                      {p.planName} ({p.policyNumber}) - Max: ₹{p.coverageAmount.toLocaleString('en-IN')} | Avail: ₹{availableCoverage.toLocaleString('en-IN')}
+                    </option>
+                  );
+                })}
               </select>
               {formErrors.policyId && <div className="form-error">⚠️ {formErrors.policyId}</div>}
             </div>

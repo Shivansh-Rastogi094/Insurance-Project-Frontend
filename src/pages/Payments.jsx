@@ -594,8 +594,11 @@ const Payments = () => {
   const sortedPoliciesList = [...policiesList].sort((a, b) => {
     const aActive = a.policyStatus === 'ACTIVE' ? 1 : 0;
     const bActive = b.policyStatus === 'ACTIVE' ? 1 : 0;
-    return aActive - bActive;
+    if (aActive !== bActive) return aActive - bActive;
+    return (b.id || 0) - (a.id || 0);
   });
+
+  const sortedTransactionsList = [...transactionsList].sort((a, b) => (b.id || 0) - (a.id || 0));
 
   // States
   const [selectedPolicy, setSelectedPolicy] = useState(null);
@@ -658,7 +661,7 @@ const Payments = () => {
     <>
       <style>{styles}</style>
       <div className="page-container">
-        <Sidebar title="Policyholder Portal" />
+        <Sidebar />
 
         <div className="main-content">
           <div className="topbar">
@@ -740,6 +743,12 @@ const Payments = () => {
                               ₹{policy.coverageAmount.toLocaleString('en-IN')}
                             </span>
                           </div>
+                          <div className="detail-field">
+                            <span className="field-label">Available Balance</span>
+                            <span className="field-val mono" style={{ color: 'var(--primary)' }}>
+                              ₹{(policy.remainingCoverage !== undefined && policy.remainingCoverage !== null ? policy.remainingCoverage : policy.coverageAmount).toLocaleString('en-IN')}
+                            </span>
+                          </div>
                         </div>
 
                         <div className="card-action" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', width: '100%', marginTop: '8px' }}>
@@ -790,7 +799,7 @@ const Payments = () => {
                 </div>
               ) : (
                 <div className="txn-list">
-                  {transactionsList.map((txn) => {
+                  {sortedTransactionsList.map((txn) => {
                     const dateObj = new Date(txn.paymentDate);
                     const formattedDate = dateObj.toLocaleDateString('en-IN', {
                       day: 'numeric',

@@ -590,7 +590,7 @@ const Profile = () => {
     <>
       <style>{styles}</style>
       <div className="page-container">
-        <Sidebar title="Customer Portal" />
+        <Sidebar />
 
         <div className="main-content">
           <div className="topbar">

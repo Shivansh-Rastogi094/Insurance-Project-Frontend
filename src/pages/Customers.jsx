@@ -177,6 +177,10 @@ const styles = `
     box-shadow: var(--shadow-card);
   }
 
+  .filter-bar {
+    margin: 0 40px 24px;
+  }
+
   .customers-table {
     width: 100%;
     border-collapse: collapse;

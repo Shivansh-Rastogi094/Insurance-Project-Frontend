@@ -186,6 +186,10 @@ const styles = `
     box-shadow: var(--shadow-card);
   }
 
+  .filter-bar {
+    margin: 0 40px 24px;
+  }
+
   .policies-table-wrapper {
     width: 100%;
     overflow-x: auto;
@@ -739,7 +743,8 @@ const Policies = () => {
                           <th>Plan Name</th>
                           <th>Policyholder</th>
                           <th>Product Type</th>
-                          <th>Coverage Limit</th>
+                          <th>Max Cover</th>
+                          <th>Available Cover</th>
                           <th>Premium</th>
                           <th>Start Date</th>
                           <th>Status</th>
@@ -752,6 +757,7 @@ const Policies = () => {
                           const planName = policy.planName || 'Insurance Plan';
                           const productType = policy.productType || 'N/A';
                           const coverage = policy.coverageAmount || 0;
+                          const availCoverage = policy.remainingCoverage !== undefined && policy.remainingCoverage !== null ? policy.remainingCoverage : coverage;
                           const premium = policy.premiumAmount || 0;
                           const freq = policy.premiumType ? `/${policy.premiumType.toLowerCase()}` : '';
                           const startDate = policy.startDate
@@ -766,6 +772,7 @@ const Policies = () => {
                               <td>{policyholder}</td>
                               <td>{productType}</td>
                               <td className="amount-val">₹{coverage.toLocaleString('en-IN')}</td>
+                              <td className="amount-val" style={{ color: 'var(--primary)' }}>₹{availCoverage.toLocaleString('en-IN')}</td>
                               <td className="amount-val">₹{premium.toLocaleString('en-IN')}{freq}</td>
                               <td>{startDate}</td>
                               <td>

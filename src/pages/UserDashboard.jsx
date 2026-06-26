@@ -126,49 +126,7 @@ const styles = `
     padding: 0 40px 32px;
   }
 
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    padding: 24px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: var(--shadow-card);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-height: 140px;
-  }
-
-  .card:hover {
-    box-shadow: var(--shadow-premium);
-    transform: translateY(-4px);
-    border-color: rgba(37, 99, 168, 0.2);
-  }
-
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    border-radius: var(--radius-card) var(--radius-card) 0 0;
-  }
-
-  .card.accent-blue::before { background: var(--primary-light); }
-  .card.accent-green::before { background: var(--success); }
-  .card.accent-amber::before { background: var(--warning); }
-  .card.accent-danger::before { background: var(--danger); }
-
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-    .agent-remarks,
+  .agent-remarks,
 .admin-remarks {
   max-width: 220px;
   text-align: right;
@@ -189,45 +147,6 @@ const styles = `
     background: rgba(22, 163, 74, 0.08);
     color: var(--success);
     border: 1px solid rgba(22, 163, 74, 0.15);
-  }
-
-  .card-header h4 {
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-  }
-
-  .card-icon-wrap {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    transition: transform 0.2s ease;
-  }
-
-  .card.accent-blue .card-icon-wrap { background: rgba(37, 99, 168, 0.1); color: var(--primary-light); }
-  .card.accent-green .card-icon-wrap { background: rgba(22, 163, 74, 0.1); color: var(--success); }
-  .card.accent-amber .card-icon-wrap { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
-  .card.accent-danger .card-icon-wrap { background: rgba(220, 38, 38, 0.1); color: var(--danger); }
-
-  .card-value {
-    font-size: 26px;
-    font-weight: 700;
-    color: var(--text-primary);
-    font-family: var(--font-mono);
-    letter-spacing: -0.5px;
-    margin-top: auto;
-  }
-
-  .card-sub {
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: 6px;
   }
 
   /* Two column grid */
@@ -541,7 +460,9 @@ const UserDashboard = () => {
   );
 
   const totalClaimAvailableVal = policy.reduce(
-    (sum, p) => p.policyStatus === "ACTIVE" ? sum + p.coverageAmount : sum,
+    (sum, p) => p.policyStatus === "ACTIVE" 
+      ? sum + (p.remainingCoverage !== undefined && p.remainingCoverage !== null ? p.remainingCoverage : p.coverageAmount) 
+      : sum,
     0
   );
 
