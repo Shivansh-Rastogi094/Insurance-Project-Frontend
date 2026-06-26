@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 .env
+curl_output.txt
+node_output.txt

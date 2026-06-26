@@ -1,0 +1,20 @@
+[33m2e42894[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: pull: Fast-forward
+[33m58e7300[m HEAD@{1}: rebase (abort): returning to refs/heads/main
+[33m58e7300[m HEAD@{2}: rebase (abort): returning to refs/heads/main
+[33m8370233[m HEAD@{3}: commit: add forot password module
+[33m6215ff0[m HEAD@{4}: commit: add pdf genration on module
+[33m885455a[m HEAD@{5}: commit: add fliter functionality
+[33m5debee8[m HEAD@{6}: commit: add landing page in login or register
+[33m36a5c22[m HEAD@{7}: pull: Fast-forward
+[33mad49005[m HEAD@{8}: commit: update in customer module
+[33m68b5f57[m HEAD@{9}: commit (merge): merge resolved
+[33m58e7300[m HEAD@{10}: checkout: moving from 4bf07687ef3a354a03d3014c7d45b86720268aca to main
+[33m4bf0768[m HEAD@{11}: commit: add agent and user thing
+[33m184690d[m HEAD@{12}: pull origin main --rebase (start): checkout 184690d24051bb6147feb108dab918675e306694
+[33m58e7300[m HEAD@{13}: commit: add agent
+[33m7e91818[m HEAD@{14}: pull: Fast-forward
+[33m3e29c25[m HEAD@{15}: checkout: moving from landingpage-registration-module to main
+[33m6ced87f[m[33m ([m[1;31morigin/landingpage-registration-module[m[33m, [m[1;32mlandingpage-registration-module[m[33m)[m HEAD@{16}: commit: Added landing page and registration module
+[33m3e29c25[m HEAD@{17}: checkout: moving from main to landingpage-registration-module
+[33m3e29c25[m HEAD@{18}: pull: Fast-forward
+[33mf1acaf3[m HEAD@{19}: clone: from https://github.com/Shivansh-Rastogi094/Insurance-Project-Frontend.git
