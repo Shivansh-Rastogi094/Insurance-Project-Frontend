@@ -548,11 +548,16 @@ const styles = `
   }
 
   .filter-bar {
-    display: flex;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 20px 24px;
+    margin: 0 40px 24px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
     gap: 16px;
-    padding: 0 40px 24px;
-    align-items: flex-end;
-    flex-wrap: wrap;
+    align-items: end;
+    box-shadow: var(--shadow-card);
   }
 
   .filter-group {
@@ -563,51 +568,17 @@ const styles = `
 
   .filter-label {
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-secondary);
   }
 
-  .filter-select {
-    padding: 10px 16px;
-    font-size: 13.5px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text-primary);
-    background-color: var(--card);
-    font-family: inherit;
-    min-width: 180px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .filter-select:focus {
-    outline: none;
-    border-color: var(--primary-light);
-    box-shadow: 0 0 0 2px rgba(37, 99, 168, 0.1);
-  }
-
-  .btn-reset {
-    background: transparent;
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
-    padding: 10px 18px;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .btn-reset:hover {
-    background: var(--surface);
-    color: var(--text-primary);
-    border-color: var(--text-secondary);
+  @media (max-width: 768px) {
+    .filter-bar {
+      grid-template-columns: 1fr;
+      margin: 0 20px 24px;
+    }
   }
 `;
 
@@ -629,8 +600,15 @@ const Users = () => {
   const [exporting, setExporting] = useState(false);
 
   // Filters state
+  const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setRoleFilter('ALL');
+    setStatusFilter('ALL');
+  };
 
   // Add Agent Modal state
   const [showAddAgentModal, setShowAddAgentModal] = useState(false);
@@ -689,11 +667,18 @@ const Users = () => {
   const totalElements = data?.totalElements || 0;
 
   const filteredUsers = usersList.filter(user => {
+    const matchesSearch = !searchQuery || 
+      user.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (user.phoneNumber && user.phoneNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      user.role?.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
     const matchesStatus = statusFilter === 'ALL' ||
       (statusFilter === 'ACTIVE' && user.active) ||
       (statusFilter === 'DEACTIVATED' && !user.active);
-    return matchesRole && matchesStatus;
+
+    return matchesSearch && matchesRole && matchesStatus;
   });
   
   // Calculate active and total count from fetched page (or display metrics)
@@ -758,18 +743,25 @@ const Users = () => {
         
         // Apply filters to the fetched list
         usersToExport = list.filter(user => {
+          const matchesSearch = !searchQuery || 
+            user.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (user.phoneNumber && user.phoneNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            user.role?.toLowerCase().includes(searchQuery.toLowerCase());
+
           const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
           const matchesStatus = statusFilter === 'ALL' ||
             (statusFilter === 'ACTIVE' && user.active) ||
             (statusFilter === 'DEACTIVATED' && !user.active);
-          return matchesRole && matchesStatus;
+
+          return matchesSearch && matchesRole && matchesStatus;
         });
       }
 
       if (usersToExport.length === 0) {
         alert("No users found matching current filters inside chosen range.");
       } else {
-        generateUserListPDF(usersToExport, { role: roleFilter, status: statusFilter });
+        generateUserListPDF(usersToExport, { role: roleFilter, status: statusFilter, search: searchQuery });
       }
       setShowExportModal(false);
     } catch (err) {
@@ -853,9 +845,19 @@ const Users = () => {
           {!loading && !error && usersList.length > 0 && (
             <div className="filter-bar">
               <div className="filter-group">
+                <label className="filter-label">Search</label>
+                <input
+                  type="text"
+                  className="filter-input"
+                  placeholder="Search Name, Email, Phone..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="filter-group">
                 <label className="filter-label">Filter by Role</label>
                 <select 
-                  className="filter-select" 
+                  className="filter-input" 
                   value={roleFilter} 
                   onChange={(e) => setRoleFilter(e.target.value)}
                 >
@@ -868,7 +870,7 @@ const Users = () => {
               <div className="filter-group">
                 <label className="filter-label">Filter by Login Status</label>
                 <select 
-                  className="filter-select" 
+                  className="filter-input" 
                   value={statusFilter} 
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
@@ -877,15 +879,13 @@ const Users = () => {
                   <option value="DEACTIVATED">Deactivated</option>
                 </select>
               </div>
-              {(roleFilter !== 'ALL' || statusFilter !== 'ALL') && (
+              {(searchQuery || roleFilter !== 'ALL' || statusFilter !== 'ALL') && (
                 <button 
-                  className="btn-reset" 
-                  onClick={() => {
-                    setRoleFilter('ALL');
-                    setStatusFilter('ALL');
-                  }}
+                  className="clear-filter-btn" 
+                  onClick={handleClearFilters}
+                  title="Clear All Filters"
                 >
-                  Clear Filters
+                  Clear
                 </button>
               )}
             </div>
@@ -908,105 +908,121 @@ const Users = () => {
               <p>📋 No registered user accounts found.</p>
             </div>
           ) : (
-            <div className="table-container">
-              <div className="users-table-wrapper">
-                <table className="users-table">
-                  <thead>
-                    <tr>
-                      <th>Full Name</th>
-                      <th>Email Address</th>
-                      <th>Phone Number</th>
-                      <th>System Role</th>
-                      <th>Login Status</th>
-                      <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '32px' }}>
-                          🔍 No users found matching the selected filters.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredUsers.map((user) => {
-                      const isSelf = user.email === userData?.email;
-                      const roleClass = (user.role || 'CUSTOMER').toLowerCase();
-                      
-                      return (
-                        <tr key={user.id}>
-                          <td style={{ fontWeight: '600' }}>
-                            {user.fullName} {isSelf && <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>(You)</span>}
-                          </td>
-                          <td>{user.email}</td>
-                          <td style={{ fontFamily: 'var(--font-mono)' }}>{user.phoneNumber || 'N/A'}</td>
-                          <td>
-                            <span className={`user-badge ${roleClass}`}>
-                              {user.role}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`status-dot ${user.active ? 'active' : 'inactive'}`}>
-                              {user.active ? 'Active' : 'Deactivated'}
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'right', paddingRight: '24px', display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                            <DownloadButton
-                              type="user"
-                              data={user}
-                              label="📥 PDF"
-                              title="Download Profile Receipt PDF"
-                              className="action-btn"
-                              style={{
-                                background: "rgba(37, 99, 168, 0.05)",
-                                border: "1px solid rgba(37, 99, 168, 0.1)",
-                                color: "var(--primary-light)",
-                                padding: "6px 10px",
-                                fontSize: "12px"
-                              }}
-                            />
-                            <button
-                              className={`action-btn ${user.active ? 'deactivate' : 'activate'}`}
-                              onClick={() => handleActionClick(user)}
-                              disabled={isSelf}
-                              title={isSelf ? "You cannot deactivate or activate your own admin account" : ""}
-                              style={{ opacity: isSelf ? 0.4 : 1, cursor: isSelf ? 'not-allowed' : 'pointer' }}
-                            >
-                              {user.active ? 'Deactivate' : 'Activate'}
-                            </button>
-                          </td>
+            <>
+              {filteredUsers.length === 0 ? (
+                <div className="empty-state" style={{ 
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: 'var(--text-secondary)',
+                  fontSize: '13.5px',
+                  fontStyle: 'italic',
+                  border: '1px dashed var(--border)',
+                  borderRadius: '8px',
+                  background: 'var(--card)',
+                  margin: '0 40px 40px'
+                }}>
+                  <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🔍</span>
+                  <h3>No Matching Users</h3>
+                  <p style={{ marginTop: '4px' }}>No user accounts match your filter criteria. Try adjusting your search query or role/status filters.</p>
+                  <button className="btn-primary" style={{ marginTop: '12px', background: 'var(--primary)' }} onClick={handleClearFilters}>
+                    Reset Filters
+                  </button>
+                </div>
+              ) : (
+                <div className="table-container">
+                  <div className="users-table-wrapper">
+                    <table className="users-table">
+                      <thead>
+                        <tr>
+                          <th>Full Name</th>
+                          <th>Email Address</th>
+                          <th>Phone Number</th>
+                          <th>System Role</th>
+                          <th>Login Status</th>
+                          <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
                         </tr>
-                      );
-                    }))}
-                  </tbody>
-                </table>
-              </div>
+                      </thead>
+                      <tbody>
+                        {filteredUsers.map((user) => {
+                          const isSelf = user.email === userData?.email;
+                          const roleClass = (user.role || 'CUSTOMER').toLowerCase();
+                          
+                          return (
+                            <tr key={user.id}>
+                              <td style={{ fontWeight: '600' }}>
+                                {user.fullName} {isSelf && <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>(You)</span>}
+                              </td>
+                              <td>{user.email}</td>
+                              <td style={{ fontFamily: 'var(--font-mono)' }}>{user.phoneNumber || 'N/A'}</td>
+                              <td>
+                                <span className={`user-badge ${roleClass}`}>
+                                  {user.role}
+                                </span>
+                              </td>
+                              <td>
+                                <span className={`status-dot ${user.active ? 'active' : 'inactive'}`}>
+                                  {user.active ? 'Active' : 'Deactivated'}
+                                </span>
+                              </td>
+                              <td style={{ textAlign: 'right', paddingRight: '24px', display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                <DownloadButton
+                                  type="user"
+                                  data={user}
+                                  label="📥 PDF"
+                                  title="Download Profile Receipt PDF"
+                                  className="action-btn"
+                                  style={{
+                                    background: "rgba(37, 99, 168, 0.05)",
+                                    border: "1px solid rgba(37, 99, 168, 0.1)",
+                                    color: "var(--primary-light)",
+                                    padding: "6px 10px",
+                                    fontSize: "12px"
+                                  }}
+                                />
+                                <button
+                                  className={`action-btn ${user.active ? 'deactivate' : 'activate'}`}
+                                  onClick={() => handleActionClick(user)}
+                                  disabled={isSelf}
+                                  title={isSelf ? "You cannot deactivate or activate your own admin account" : ""}
+                                  style={{ opacity: isSelf ? 0.4 : 1, cursor: isSelf ? 'not-allowed' : 'pointer' }}
+                                >
+                                  {user.active ? 'Deactivate' : 'Activate'}
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
 
-              {/* Pagination footer */}
-              {totalPages > 1 && (
-                <div className="pagination-footer">
-                  <div className="pagination-info">
-                    Showing Page <strong>{currentPage + 1}</strong> of <strong>{totalPages}</strong> (<strong>{totalElements}</strong> total users)
-                  </div>
-                  <div className="pagination-controls">
-                    <button
-                      className="page-btn"
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
-                      disabled={currentPage === 0 || loading}
-                    >
-                      ⬅️ Previous
-                    </button>
-                    <button
-                      className="page-btn"
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
-                      disabled={currentPage === totalPages - 1 || loading}
-                    >
-                      Next ➡️
-                    </button>
-                  </div>
+                  {/* Pagination footer */}
+                  {totalPages > 1 && (
+                    <div className="pagination-footer">
+                      <div className="pagination-info">
+                        Showing Page <strong>{currentPage + 1}</strong> of <strong>{totalPages}</strong> (<strong>{totalElements}</strong> total users)
+                      </div>
+                      <div className="pagination-controls">
+                        <button
+                          className="page-btn"
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
+                          disabled={currentPage === 0 || loading}
+                        >
+                          ⬅️ Previous
+                        </button>
+                        <button
+                          className="page-btn"
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
+                          disabled={currentPage === totalPages - 1 || loading}
+                        >
+                          Next ➡️
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 const styles = `
@@ -155,6 +155,21 @@ const Sidebar = ({ title }) => {
   const { userData, logout } = useAuth();
   const navigate = useNavigate();
 
+  const [theme, setTheme] = useState(document.documentElement.getAttribute("data-theme") || "light");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    setTheme(savedTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    document.documentElement.setAttribute("data-theme", nextTheme);
+    localStorage.setItem("theme", nextTheme);
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -227,9 +242,14 @@ const Sidebar = ({ title }) => {
         </ul>
 
         <div className="sidebar-footer">
-            <button className="logout-btn" onClick={handleLogout}>
-              Logout
+          {userData?.role === 'ADMIN' && (
+            <button className="theme-btn" onClick={toggleTheme}>
+              {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
             </button>
+          )}
+          <button className="logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
           <p>Insurance Management System</p>
         </div>
       </div>

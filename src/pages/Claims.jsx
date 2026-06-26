@@ -6,6 +6,7 @@ import { readAllClaims, readMyClaims, createClaim, agentReviewClaim, adminDecisi
 import { readMyPolicies } from '../services/PolicyService';
 import Modal from '../components/Modal';
 import DownloadButton from '../components/DownloadButton';
+import { generateClaimListPDF } from '../utils/pdfGenerator';
 
 const styles = `
   .page-container {
@@ -504,6 +505,81 @@ const styles = `
       margin: 8px 20px 24px;
     }
   }
+
+  /* Claims Filter Bar Styles */
+  .filter-bar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 16px;
+    align-items: end;
+    box-shadow: var(--shadow-card);
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .filter-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+
+  .filter-input {
+    padding: 10px 12px;
+    font-size: 13.5px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-input);
+    color: var(--text-primary);
+    background-color: var(--surface);
+    font-family: inherit;
+    width: 100%;
+    height: 40px;
+    transition: all 0.2s ease;
+  }
+
+  .filter-input:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    background-color: var(--card);
+  }
+
+  .clear-filter-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .clear-filter-btn:hover {
+    background: var(--surface);
+    color: var(--text-primary);
+    border-color: var(--primary-light);
+  }
+
+  @media (max-width: 768px) {
+    .filter-bar {
+      grid-template-columns: 1fr;
+    }
+  }
 `;
 
 const Claims = () => {
@@ -511,6 +587,61 @@ const Claims = () => {
   const isCustomer = userData?.role === 'CUSTOMER';
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
+
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('');
+    setMinAmount('');
+    setMaxAmount('');
+  };
+
+  // Export Modal States
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportRange, setExportRange] = useState('PAGE');
+  const [customExportLimit, setCustomExportLimit] = useState('50');
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportSubmit = async (e) => {
+    e.preventDefault();
+    setExporting(true);
+    try {
+      let claimsToExport = [];
+      if (isCustomer) {
+        claimsToExport = filteredClaims;
+      } else {
+        if (exportRange === 'PAGE') {
+          claimsToExport = filteredClaims;
+        } else {
+          const limit = exportRange === 'FULL' ? totalElements : parseInt(customExportLimit);
+          if (!limit || limit <= 0) {
+            alert("Please enter a valid count.");
+            setExporting(false);
+            return;
+          }
+          const res = await readAllClaims(0, limit);
+          claimsToExport = res?.data?.content || res?.content || [];
+        }
+      }
+
+      if (claimsToExport.length === 0) {
+        alert("No claims found inside chosen range.");
+      } else {
+        generateClaimListPDF(claimsToExport);
+      }
+      setShowExportModal(false);
+    } catch (err) {
+      console.error("Export list failed:", err);
+      alert("Failed to export claims list. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Load claims data using useFetch hook
   const fetchClaimsData = useCallback(async (page = 0) => {
@@ -535,6 +666,42 @@ const Claims = () => {
     : (data?.content || []);
   const totalPages = isCustomer ? 1 : (data?.totalPages || 1);
   const totalElements = isCustomer ? claimsList.length : (data?.totalElements || 0);
+
+  // Compute filtered claims
+  const filteredClaims = claimsList.filter(claim => {
+    if (statusFilter && (claim.claimStatus || '').toUpperCase() !== statusFilter.toUpperCase()) {
+      return false;
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const claimNum = (claim.claimNumber || `CLM-${claim.id}`).toLowerCase();
+      const policyNum = (claim.policyNumber || '').toLowerCase();
+      const customerName = (claim.customerName || '').toLowerCase();
+      const claimReason = (claim.claimReason || '').toLowerCase();
+
+      if (
+        !claimNum.includes(q) &&
+        !policyNum.includes(q) &&
+        !customerName.includes(q) &&
+        !claimReason.includes(q)
+      ) {
+        return false;
+      }
+    }
+    if (minAmount) {
+      const min = parseFloat(minAmount);
+      if (!isNaN(min) && (claim.claimAmount || 0) < min) {
+        return false;
+      }
+    }
+    if (maxAmount) {
+      const max = parseFloat(maxAmount);
+      if (!isNaN(max) && (claim.claimAmount || 0) > max) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   const initials = userData?.fullName
     ? userData.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
@@ -799,7 +966,7 @@ const Claims = () => {
             </div>
           </div>
 
-          <div className="header">
+          <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div className="header-text">
               <h2>{isCustomer ? "My Claims" : "Claims Management"}</h2>
               <p>
@@ -808,11 +975,38 @@ const Claims = () => {
                   : "Review, audit, and process customer submitted claims database"}
               </p>
             </div>
-            {isCustomer && (
-              <button className="file-claim-btn" onClick={handleFileClaim}>
-                + File New Claim
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <button
+                onClick={() => {
+                  setExportRange('PAGE');
+                  setCustomExportLimit('50');
+                  setShowExportModal(true);
+                }}
+                title="Export Claims Report Options"
+                className="page-btn"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'var(--primary)',
+                  color: '#ffffff',
+                  border: 'none',
+                  height: '40px',
+                  padding: '10px 18px',
+                  fontSize: '13.5px',
+                  fontWeight: '600',
+                  borderRadius: 'var(--radius-button)',
+                  cursor: 'pointer'
+                }}
+              >
+                📊 Export List
               </button>
-            )}
+              {isCustomer && (
+                <button className="file-claim-btn" onClick={handleFileClaim} style={{ height: '40px' }}>
+                  + File New Claim
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="divider" />
@@ -834,132 +1028,223 @@ const Claims = () => {
                 </p>
               </div>
             ) : (
-              <div className="table-card">
-                <div className="claims-table-wrapper">
-                  <table className="claims-table">
-                    <thead>
-                      <tr>
-                        <th>Claim ID</th>
-                        <th>Policy ID</th>
-                        <th>Incident Date</th>
-                        <th>Claim Reason</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th>Remarks</th>
-                        <th>Documents</th>
-                        <th style={{ textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {claimsList.map((claim, idx) => {
-                        const claimNum = claim.claimNumber || `CLM-${claim.id || idx}`;
-                        const status = (claim.claimStatus || 'SUBMITTED').toLowerCase();
-                        const assocPolicy = claim.policyNumber || 'N/A';
-                        const incidentDate = claim.incidentDate || 'N/A';
-                        const claimReason = claim.claimReason || 'No reason provided';
-                        const claimAmount = claim.claimAmount || 0;
-                        const agentRemarks = claim.agentRemarks === "null" || !claim.agentRemarks ? "Pending" : claim.agentRemarks;
-                        const adminRemarks = claim.adminRemarks === "null" || !claim.adminRemarks ? "Pending" : claim.adminRemarks;
+              <>
+                {/* Filter Bar */}
+                <div className="filter-bar">
+                  <div className="filter-group">
+                    <label className="filter-label">Search</label>
+                    <input
+                      type="text"
+                      className="filter-input"
+                      placeholder="Search Claim No, Policy, Reason..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
 
-                        return (
-                          <tr key={claim.id || idx}>
-                            <td className="claim-number-cell">{claimNum}</td>
-                            <td className="policy-number-cell">{assocPolicy}</td>
-                            <td>{incidentDate}</td>
-                            <td>{claimReason}</td>
-                            <td className="amount-cell">₹{claimAmount.toLocaleString('en-IN')}</td>
-                            <td>
-                              <span className={`status-badge ${status}`}>
-                                {status}
-                              </span>
-                            </td>
-                            <td>
-                              <div className="remarks-block">
-                                <span className="remark-item">
-                                  <strong>Agent:</strong> {agentRemarks}
-                                </span>
-                                <span className="remark-item">
-                                  <strong>Admin:</strong> {adminRemarks}
-                                </span>
-                              </div>
-                            </td>
-                            <td>
-                              {claim.documents && claim.documents.length > 0 ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                  {claim.documents.map((doc, docIdx) => {
-                                    const isUrl = doc.documentReference && (doc.documentReference.startsWith('http://') || doc.documentReference.startsWith('https://'));
-                                    return (
-                                      <button
-                                        key={doc.id || docIdx}
-                                        className="action-btn"
-                                        style={{ 
-                                          fontSize: '11px', 
-                                          padding: '4px 8px', 
-                                          display: 'inline-flex', 
-                                          alignItems: 'center', 
-                                          gap: '4px',
-                                          width: 'fit-content' 
-                                        }}
-                                        onClick={() => {
-                                          if (isUrl) {
-                                            window.open(doc.documentReference, '_blank', 'noopener,noreferrer');
-                                          } else {
-                                            alert(`Document Reference ID: ${doc.documentReference || 'N/A'}\n(Direct file download coming soon!)`);
-                                          }
-                                        }}
-                                        title={isUrl ? "Open document in a new tab" : `Ref: ${doc.documentReference}`}
-                                      >
-                                        📄 {doc.documentName || `Doc ${doc.id}`} ({doc.documentType || 'File'})
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              ) : (
-                                <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                                  No Documents
-                                </span>
-                              )}
-                            </td>
-                            <td style={{ textAlign: 'right' }}>
-                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                {isCustomer ? (
-                                  <button
-                                    className="action-btn"
-                                    onClick={() => handleGetHistory(claim)}
-                                  >
-                                    Claim History
-                                  </button>
-                                ) : (
-                                  <button
-                                    className="action-btn accent"
-                                    onClick={() => handleReviewClaim(claim)}
-                                  >
-                                    Review Claim
-                                  </button>
-                                )}
-                                <DownloadButton
-                                  type="claim"
-                                  data={claim}
-                                  extraData={{ claimNum }}
-                                  label="📥"
-                                  title="Download PDF Claim Slip"
-                                  className="action-btn"
-                                  style={{
-                                    padding: '6px 10px',
-                                    fontSize: '14px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div className="filter-group">
+                    <label className="filter-label">Status</label>
+                    <select
+                      className="filter-input"
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="SUBMITTED">SUBMITTED</option>
+                      <option value="UNDER_REVIEW">UNDER_REVIEW</option>
+                      <option value="RECOMMENDED">RECOMMENDED</option>
+                      <option value="APPROVED">APPROVED</option>
+                      <option value="REJECTED">REJECTED</option>
+                    </select>
+                  </div>
+
+                  <div className="filter-group">
+                    <label className="filter-label">Min Amount (₹)</label>
+                    <input
+                      type="number"
+                      className="filter-input"
+                      placeholder="Min"
+                      value={minAmount}
+                      onChange={(e) => setMinAmount(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="filter-group" style={{ display: 'flex', flexDirection: 'row', gap: '8px', alignItems: 'flex-end' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label className="filter-label">Max Amount (₹)</label>
+                      <input
+                        type="number"
+                        className="filter-input"
+                        placeholder="Max"
+                        value={maxAmount}
+                        onChange={(e) => setMaxAmount(e.target.value)}
+                      />
+                    </div>
+                    {(searchQuery || statusFilter || minAmount || maxAmount) && (
+                      <button
+                        type="button"
+                        className="clear-filter-btn"
+                        onClick={handleClearFilters}
+                        title="Clear All Filters"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {filteredClaims.length === 0 ? (
+                  <div className="empty-state" style={{ marginTop: '0' }}>
+                    <span className="empty-state-icon">🔍</span>
+                    <h3>No Matching Claims</h3>
+                    <p>No claims match your filter criteria. Try adjusting your search query or status filters.</p>
+                    <button className="action-btn" style={{ marginTop: '12px' }} onClick={handleClearFilters}>
+                      Reset Filters
+                    </button>
+                  </div>
+                ) : (
+                  <div className="table-card">
+                    <div className="claims-table-wrapper">
+                      <table className="claims-table">
+                        <thead>
+                          <tr>
+                            <th>Claim ID</th>
+                            <th>Policy ID</th>
+                            <th>Incident Date</th>
+                            <th>Claim Reason</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                            <th>Documents</th>
+                            <th style={{ textAlign: 'right' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredClaims.map((claim, idx) => {
+                            const claimNum = claim.claimNumber || `CLM-${claim.id || idx}`;
+                            const status = (claim.claimStatus || 'SUBMITTED').toLowerCase();
+                            const assocPolicy = claim.policyNumber || 'N/A';
+                            const incidentDate = claim.incidentDate || 'N/A';
+                            const claimReason = claim.claimReason || 'No reason provided';
+                            const claimAmount = claim.claimAmount || 0;
+                            const agentRemarks = claim.agentRemarks === "null" || !claim.agentRemarks ? "Pending" : claim.agentRemarks;
+                            const adminRemarks = claim.adminRemarks === "null" || !claim.adminRemarks ? "Pending" : claim.adminRemarks;
+
+                            return (
+                              <tr key={claim.id || idx}>
+                                <td className="claim-number-cell">{claimNum}</td>
+                                <td className="policy-number-cell">{assocPolicy}</td>
+                                <td>{incidentDate}</td>
+                                <td>{claimReason}</td>
+                                <td className="amount-cell">₹{claimAmount.toLocaleString('en-IN')}</td>
+                                <td>
+                                  <span className={`status-badge ${status}`}>
+                                    {status}
+                                  </span>
+                                </td>
+                                <td>
+                                  <div className="remarks-block">
+                                    <span className="remark-item">
+                                      <strong>Agent:</strong> {agentRemarks}
+                                    </span>
+                                    <span className="remark-item">
+                                      <strong>Admin:</strong> {adminRemarks}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td>
+                                  {claim.documents && claim.documents.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                      {claim.documents.map((doc, docIdx) => {
+                                        const isUrl = doc.documentReference && (doc.documentReference.startsWith('http://') || doc.documentReference.startsWith('https://'));
+                                        return (
+                                          <button
+                                            key={doc.id || docIdx}
+                                            className="action-btn"
+                                            style={{ 
+                                              fontSize: '11px', 
+                                              padding: '4px 8px', 
+                                              display: 'inline-flex', 
+                                              alignItems: 'center', 
+                                              gap: '4px',
+                                              width: 'fit-content' 
+                                            }}
+                                            onClick={() => {
+                                              if (isUrl) {
+                                                window.open(doc.documentReference, '_blank', 'noopener,noreferrer');
+                                              } else {
+                                                alert(`Document Reference ID: ${doc.documentReference || 'N/A'}\n(Direct file download coming soon!)`);
+                                              }
+                                            }}
+                                            title={isUrl ? "Open document in a new tab" : `Ref: ${doc.documentReference}`}
+                                          >
+                                            📄 {doc.documentName || `Doc ${doc.id}`} ({doc.documentType || 'File'})
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : (
+                                    <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                      No Documents
+                                    </span>
+                                  )}
+                                </td>
+                                <td style={{ textAlign: 'right' }}>
+                                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                    {isCustomer ? (
+                                      <button
+                                        className="action-btn"
+                                        onClick={() => handleGetHistory(claim)}
+                                      >
+                                        Claim History
+                                      </button>
+                                    ) : (
+                                      userData?.role === 'ADMIN' && status === 'submitted' ? (
+                                        <span style={{ 
+                                          fontSize: '11px', 
+                                          fontWeight: '600', 
+                                          color: 'var(--text-secondary)', 
+                                          background: 'var(--surface)', 
+                                          padding: '4px 10px', 
+                                          borderRadius: '12px', 
+                                          border: '1px solid var(--border)',
+                                          textTransform: 'uppercase',
+                                          letterSpacing: '0.05em'
+                                        }}>
+                                          ⏳ Agent Review Pending
+                                        </span>
+                                      ) : (
+                                        <button
+                                          className="action-btn accent"
+                                          onClick={() => handleReviewClaim(claim)}
+                                        >
+                                          {userData?.role === 'AGENT' ? 'Review Claim' : 'Take Decision'}
+                                        </button>
+                                      )
+                                    )}
+                                    <DownloadButton
+                                      type="claim"
+                                      data={claim}
+                                      extraData={{ claimNum }}
+                                      label="📥"
+                                      title="Download PDF Claim Slip"
+                                      className="action-btn"
+                                      style={{
+                                        padding: '6px 10px',
+                                        fontSize: '14px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                      }}
+                                    />
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
 
                 {/* Pagination footer */}
                 {!isCustomer && totalPages > 1 && (
@@ -987,7 +1272,9 @@ const Claims = () => {
                 )}
               </div>
             )}
-          </div>
+          </>
+        )}
+      </div>
         </div>
       </div>
 
@@ -1417,6 +1704,129 @@ const Claims = () => {
               Close
             </button>
           </div>
+        </Modal>
+      )}
+
+      {/* Export Claims Modal */}
+      {showExportModal && (
+        <Modal
+          isOpen={showExportModal}
+          onClose={() => { if (!exporting) setShowExportModal(false); }}
+          title="📊 Export Claims Directory PDF"
+          maxWidth="460px"
+        >
+          <form onSubmit={handleExportSubmit} style={{ marginTop: '12px' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.4' }}>
+              Select your export range preference. The report will extract claims directly from the system database:
+            </p>
+
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Export Option</label>
+              
+              {isCustomer ? (
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="exportRange"
+                    checked={true}
+                    readOnly
+                  />
+                  My Claims list ({filteredClaims.length} records)
+                </label>
+              ) : (
+                <>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="exportRange"
+                      checked={exportRange === 'PAGE'}
+                      onChange={() => setExportRange('PAGE')}
+                      disabled={exporting}
+                    />
+                    Current Page ({filteredClaims.length} claims)
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="exportRange"
+                      checked={exportRange === 'FULL'}
+                      onChange={() => setExportRange('FULL')}
+                      disabled={exporting}
+                    />
+                    Full List ({totalElements} total claims)
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                    <input
+                      type="radio"
+                      name="exportRange"
+                      checked={exportRange === 'CUSTOM'}
+                      onChange={() => setExportRange('CUSTOM')}
+                      disabled={exporting}
+                    />
+                    Custom Quantity Limit
+                  </label>
+                </>
+              )}
+            </div>
+
+            {!isCustomer && exportRange === 'CUSTOM' && (
+              <div className="form-group" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label className="form-label">Quantity to Extract</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  min="1"
+                  max={totalElements}
+                  value={customExportLimit}
+                  onChange={(e) => setCustomExportLimit(parseInt(e.target.value) || '')}
+                  disabled={exporting}
+                  placeholder="e.g. 50"
+                  required
+                />
+              </div>
+            )}
+
+            <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <button
+                type="button"
+                className="btn-cancel"
+                onClick={() => setShowExportModal(false)}
+                disabled={exporting}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border)',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-confirm"
+                disabled={exporting}
+                style={{
+                  background: 'var(--primary)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '8px 16px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  opacity: exporting ? 0.6 : 1
+                }}
+              >
+                {exporting ? 'Generating...' : 'Export PDF'}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
     </>

@@ -436,6 +436,16 @@ const styles = `
 
 const Customers = () => {
   const { userData } = useAuth();
+
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [nomineeQuery, setNomineeQuery] = useState('');
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setNomineeQuery('');
+  };
+
   const fetchCustomersData = async () => {
     const response = await readAllCustomers();
     if (response && response.data) {
@@ -461,6 +471,38 @@ const Customers = () => {
 
   const customers = data?.customersList || [];
   const totalCount = data?.total || 0;
+
+  // Compute filtered customers list
+  const filteredCustomers = customers.filter(c => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const fullName = (c.fullName || '').toLowerCase();
+      const email = (c.email || '').toLowerCase();
+      const phone = (c.phoneNumber || '').toLowerCase();
+      const city = (c.city || '').toLowerCase();
+      const state = (c.state || '').toLowerCase();
+
+      if (
+        !fullName.includes(q) &&
+        !email.includes(q) &&
+        !phone.includes(q) &&
+        !city.includes(q) &&
+        !state.includes(q)
+      ) {
+        return false;
+      }
+    }
+    if (nomineeQuery) {
+      const q = nomineeQuery.toLowerCase();
+      const nomineeName = (c.nomineeName || '').toLowerCase();
+      const nomineeRelation = (c.nomineeRelation || '').toLowerCase();
+
+      if (!nomineeName.includes(q) && !nomineeRelation.includes(q)) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   const handleExportSubmit = async (e) => {
     e.preventDefault();
@@ -555,13 +597,17 @@ const Customers = () => {
               <p>Fetching customers directory...</p>
             </div>
           ) : error ? (
-            <div className="error-container">
+            <div className="error-container" style={{ textAlign: 'center', padding: '40px', color: 'var(--danger)' }}>
               <p>⚠️ {error}</p>
+            </div>
+          ) : customers.length === 0 ? (
+            <div className="empty-container" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+              <p>📋 No customer records found in the system database.</p>
             </div>
           ) : (
             <>
               {/* Active Customers Metric Card */}
-              <div className="summary-card">
+              <div className="summary-card" style={{ marginBottom: '24px' }}>
                 <div className="card-header">
                   <span className="card-title">Active Customers</span>
                   <span className="card-icon">👥</span>
@@ -570,9 +616,62 @@ const Customers = () => {
                 <div className="card-sub">Registered Customers with Complete profile</div>
               </div>
 
-              {customers.length === 0 ? (
-                <div className="empty-container">
-                  <p>📋 No customer records found in the system database.</p>
+              {/* Filter Bar */}
+              <div className="filter-bar" style={{ gridTemplateColumns: '2fr 1fr 1fr' }}>
+                <div className="filter-group">
+                  <label className="filter-label">Search</label>
+                  <input
+                    type="text"
+                    className="filter-input"
+                    placeholder="Search Customer Name, Email, Phone, Location..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                <div className="filter-group">
+                  <label className="filter-label">Nominee Search</label>
+                  <input
+                    type="text"
+                    className="filter-input"
+                    placeholder="Nominee Name or Relation..."
+                    value={nomineeQuery}
+                    onChange={(e) => setNomineeQuery(e.target.value)}
+                  />
+                </div>
+
+                <div className="filter-group" style={{ display: 'flex', flexDirection: 'row', gap: '8px', alignItems: 'flex-end' }}>
+                  {(searchQuery || nomineeQuery) && (
+                    <button
+                      type="button"
+                      className="clear-filter-btn"
+                      onClick={handleClearFilters}
+                      title="Clear All Filters"
+                      style={{ width: '100%' }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {filteredCustomers.length === 0 ? (
+                <div className="empty-state" style={{ 
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: 'var(--text-secondary)',
+                  fontSize: '13.5px',
+                  fontStyle: 'italic',
+                  border: '1px dashed var(--border)',
+                  borderRadius: '8px',
+                  background: 'var(--card)'
+                }}>
+                  <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🔍</span>
+                  <h3>No Matching Customers</h3>
+                  <p style={{ marginTop: '4px' }}>No customers match your filter criteria. Try adjusting your search query or nominee name.</p>
+                  <button className="action-btn" style={{ marginTop: '12px' }} onClick={handleClearFilters}>
+                    Reset Filters
+                  </button>
                 </div>
               ) : (
                 <div className="table-container">
@@ -590,7 +689,7 @@ const Customers = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {customers.map((c) => (
+                        {filteredCustomers.map((c) => (
                           <tr key={c.id || c.email}>
                             <td style={{ fontWeight: '600' }}>{c.fullName || 'N/A'}</td>
                             <td>{c.email || 'N/A'}</td>

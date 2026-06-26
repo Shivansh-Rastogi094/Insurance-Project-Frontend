@@ -431,6 +431,19 @@ const Policies = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
 
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [minCoverage, setMinCoverage] = useState('');
+  const [maxCoverage, setMaxCoverage] = useState('');
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('');
+    setMinCoverage('');
+    setMaxCoverage('');
+  };
+
   // Modal State
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [targetPolicy, setTargetPolicy] = useState(null);
@@ -456,6 +469,42 @@ const Policies = () => {
   const policiesList = data?.content || [];
   const totalPages = data?.totalPages || 1;
   const totalElements = data?.totalElements || 0;
+
+  // Compute filtered policies list
+  const filteredPolicies = policiesList.filter(policy => {
+    if (statusFilter && (policy.policyStatus || '').toUpperCase() !== statusFilter.toUpperCase()) {
+      return false;
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const policyNum = (policy.policyNumber || '').toLowerCase();
+      const planName = (policy.planName || '').toLowerCase();
+      const customerName = (policy.customerName || policy.customer?.fullName || '').toLowerCase();
+      const productType = (policy.productType || '').toLowerCase();
+
+      if (
+        !policyNum.includes(q) &&
+        !planName.includes(q) &&
+        !customerName.includes(q) &&
+        !productType.includes(q)
+      ) {
+        return false;
+      }
+    }
+    if (minCoverage) {
+      const min = parseFloat(minCoverage);
+      if (!isNaN(min) && (policy.coverageAmount || 0) < min) {
+        return false;
+      }
+    }
+    if (maxCoverage) {
+      const max = parseFloat(maxCoverage);
+      if (!isNaN(max) && (policy.coverageAmount || 0) > max) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   const initials = userData?.fullName
     ? userData.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
@@ -599,109 +648,193 @@ const Policies = () => {
               <p>📋 No policies registered in the system database.</p>
             </div>
           ) : (
-            <div className="table-container">
-              <div className="policies-table-wrapper">
-                <table className="policies-table">
-                  <thead>
-                    <tr>
-                      <th>Policy Number</th>
-                      <th>Plan Name</th>
-                      <th>Policyholder</th>
-                      <th>Product Type</th>
-                      <th>Coverage Limit</th>
-                      <th>Premium</th>
-                      <th>Start Date</th>
-                      <th>Status</th>
-                      <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {policiesList.map((policy) => {
-                      const policyholder = policy.customerName || policy.customer?.fullName || 'N/A';
-                      const planName = policy.planName || 'Insurance Plan';
-                      const productType = policy.productType || 'N/A';
-                      const coverage = policy.coverageAmount || 0;
-                      const premium = policy.premiumAmount || 0;
-                      const freq = policy.premiumType ? `/${policy.premiumType.toLowerCase()}` : '';
-                      const startDate = policy.startDate
-                        ? new Date(policy.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                        : 'N/A';
-                      const statusClass = (policy.policyStatus || 'PENDING').toLowerCase();
+            <>
+              {/* Filter Bar */}
+              <div className="filter-bar">
+                <div className="filter-group">
+                  <label className="filter-label">Search</label>
+                  <input
+                    type="text"
+                    className="filter-input"
+                    placeholder="Search Policy No, Plan, Customer, Product..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
 
-                      return (
-                        <tr key={policy.id}>
-                          <td className="policy-number">{policy.policyNumber}</td>
-                          <td style={{ fontWeight: '600' }}>{planName}</td>
-                          <td>{policyholder}</td>
-                          <td>{productType}</td>
-                          <td className="amount-val">₹{coverage.toLocaleString('en-IN')}</td>
-                          <td className="amount-val">₹{premium.toLocaleString('en-IN')}{freq}</td>
-                          <td>{startDate}</td>
-                          <td>
-                            <span className={`status-badge ${statusClass}`}>
-                              {policy.policyStatus || 'PENDING'}
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'right', paddingRight: '24px' }}>
-                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                              <DownloadButton
-                                type="policy"
-                                data={policy}
-                                extraData={{ customerName: policy.customerName || policy.customer?.fullName }}
-                                label="📥"
-                                title="Download Policy PDF"
-                                className="action-btn"
-                                style={{
-                                  padding: '6px 10px',
-                                  fontSize: '12px',
-                                  borderColor: 'var(--border)'
-                                }}
-                              />
-                              <button
-                                className="action-btn cancel-policy"
-                                onClick={() => handleCancelClick(policy)}
-                                disabled={policy.policyStatus === 'CANCELLED'}
-                                style={{
-                                  opacity: policy.policyStatus === 'CANCELLED' ? 0.5 : 1,
-                                  cursor: policy.policyStatus === 'CANCELLED' ? 'not-allowed' : 'pointer'
-                                }}
-                              >
-                                {policy.policyStatus === 'CANCELLED' ? 'Cancelled' : 'Cancel Policy'}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div className="filter-group">
+                  <label className="filter-label">Status</label>
+                  <select
+                    className="filter-input"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                  </select>
+                </div>
+
+                <div className="filter-group">
+                  <label className="filter-label">Min Coverage (₹)</label>
+                  <input
+                    type="number"
+                    className="filter-input"
+                    placeholder="Min"
+                    value={minCoverage}
+                    onChange={(e) => setMinCoverage(e.target.value)}
+                  />
+                </div>
+
+                <div className="filter-group" style={{ display: 'flex', flexDirection: 'row', gap: '8px', alignItems: 'flex-end' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label className="filter-label">Max Coverage (₹)</label>
+                    <input
+                      type="number"
+                      className="filter-input"
+                      placeholder="Max"
+                      value={maxCoverage}
+                      onChange={(e) => setMaxCoverage(e.target.value)}
+                    />
+                  </div>
+                  {(searchQuery || statusFilter || minCoverage || maxCoverage) && (
+                    <button
+                      type="button"
+                      className="clear-filter-btn"
+                      onClick={handleClearFilters}
+                      title="Clear All Filters"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Pagination footer */}
-              {totalPages > 1 && (
-                <div className="pagination-footer">
-                  <div className="pagination-info">
-                    Showing Page <strong>{currentPage + 1}</strong> of <strong>{totalPages}</strong> (<strong>{totalElements}</strong> total policies)
+              {filteredPolicies.length === 0 ? (
+                <div className="empty-state" style={{ 
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: 'var(--text-secondary)',
+                  fontSize: '13.5px',
+                  fontStyle: 'italic',
+                  border: '1px dashed var(--border)',
+                  borderRadius: '8px',
+                  background: 'var(--card)'
+                }}>
+                  <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🔍</span>
+                  <h3>No Matching Policies</h3>
+                  <p style={{ marginTop: '4px' }}>No policies match your filter criteria. Try adjusting your search query or status filters.</p>
+                  <button className="action-btn" style={{ marginTop: '12px' }} onClick={handleClearFilters}>
+                    Reset Filters
+                  </button>
+                </div>
+              ) : (
+                <div className="table-container">
+                  <div className="policies-table-wrapper">
+                    <table className="policies-table">
+                      <thead>
+                        <tr>
+                          <th>Policy Number</th>
+                          <th>Plan Name</th>
+                          <th>Policyholder</th>
+                          <th>Product Type</th>
+                          <th>Coverage Limit</th>
+                          <th>Premium</th>
+                          <th>Start Date</th>
+                          <th>Status</th>
+                          <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredPolicies.map((policy) => {
+                          const policyholder = policy.customerName || policy.customer?.fullName || 'N/A';
+                          const planName = policy.planName || 'Insurance Plan';
+                          const productType = policy.productType || 'N/A';
+                          const coverage = policy.coverageAmount || 0;
+                          const premium = policy.premiumAmount || 0;
+                          const freq = policy.premiumType ? `/${policy.premiumType.toLowerCase()}` : '';
+                          const startDate = policy.startDate
+                            ? new Date(policy.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                            : 'N/A';
+                          const statusClass = (policy.policyStatus || 'PENDING').toLowerCase();
+
+                          return (
+                            <tr key={policy.id}>
+                              <td className="policy-number">{policy.policyNumber}</td>
+                              <td style={{ fontWeight: '600' }}>{planName}</td>
+                              <td>{policyholder}</td>
+                              <td>{productType}</td>
+                              <td className="amount-val">₹{coverage.toLocaleString('en-IN')}</td>
+                              <td className="amount-val">₹{premium.toLocaleString('en-IN')}{freq}</td>
+                              <td>{startDate}</td>
+                              <td>
+                                <span className={`status-badge ${statusClass}`}>
+                                  {policy.policyStatus || 'PENDING'}
+                                </span>
+                              </td>
+                              <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                  <DownloadButton
+                                    type="policy"
+                                    data={policy}
+                                    extraData={{ customerName: policy.customerName || policy.customer?.fullName }}
+                                    label="📥"
+                                    title="Download Policy PDF"
+                                    className="action-btn"
+                                    style={{
+                                      padding: '6px 10px',
+                                      fontSize: '12px',
+                                      borderColor: 'var(--border)'
+                                    }}
+                                  />
+                                  <button
+                                    className="action-btn cancel-policy"
+                                    onClick={() => handleCancelClick(policy)}
+                                    disabled={policy.policyStatus === 'CANCELLED'}
+                                    style={{
+                                      opacity: policy.policyStatus === 'CANCELLED' ? 0.5 : 1,
+                                      cursor: policy.policyStatus === 'CANCELLED' ? 'not-allowed' : 'pointer'
+                                    }}
+                                  >
+                                    {policy.policyStatus === 'CANCELLED' ? 'Cancelled' : 'Cancel Policy'}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
-                  <div className="pagination-controls">
-                    <button
-                      className="page-btn"
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
-                      disabled={currentPage === 0 || loading}
-                    >
-                      Previous
-                    </button>
-                    <button
-                      className="page-btn"
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
-                      disabled={currentPage === totalPages - 1 || loading}
-                    >
-                      Next
-                    </button>
-                  </div>
+
+                  {/* Pagination footer */}
+                  {totalPages > 1 && (
+                    <div className="pagination-footer">
+                      <div className="pagination-info">
+                        Showing Page <strong>{currentPage + 1}</strong> of <strong>{totalPages}</strong> (<strong>{totalElements}</strong> total policies)
+                      </div>
+                      <div className="pagination-controls">
+                        <button
+                          className="page-btn"
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
+                          disabled={currentPage === 0 || loading}
+                        >
+                          Previous
+                        </button>
+                        <button
+                          className="page-btn"
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
+                          disabled={currentPage === totalPages - 1 || loading}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </div>

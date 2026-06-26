@@ -642,3 +642,67 @@ export const generateCustomerListPDF = (customers) => {
   drawFooter(doc, 1);
   doc.save(`customer_registry_report.pdf`);
 };
+
+// 9. Generate Bulk Claims List PDF
+export const generateClaimListPDF = (claims) => {
+  const doc = new jsPDF();
+  drawHeader(doc, "Claims Registry Directory");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(26, 60, 94);
+  doc.text("System Claims Directory Summary", 15, 52);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Total Records Extracted: ${claims.length}`, 15, 58);
+
+  const tableHeaders = [["Claim No.", "Policy ID/No.", "Incident Date", "Reason", "Amount", "Status", "Agent Remarks", "Admin Remarks"]];
+  const tableData = claims.map(c => [
+    c.claimNumber || `CLM-${c.id}`,
+    c.policyNumber || "N/A",
+    c.incidentDate || "N/A",
+    c.claimReason || "N/A",
+    `INR ${(c.claimAmount || 0).toLocaleString("en-IN")}`,
+    c.claimStatus || "SUBMITTED",
+    c.agentRemarks === "null" || !c.agentRemarks ? "Pending" : c.agentRemarks,
+    c.adminRemarks === "null" || !c.adminRemarks ? "Pending" : c.adminRemarks
+  ]);
+
+  autoTable(doc, {
+    startY: 65,
+    head: tableHeaders,
+    body: tableData,
+    theme: "striped",
+    headStyles: {
+      fillColor: [26, 60, 94],
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+      fontSize: 9
+    },
+    styles: {
+      fontSize: 8,
+      cellPadding: 3
+    },
+    columnStyles: {
+      0: { fontStyle: "bold", cellWidth: 25 },
+      1: { fontStyle: "bold", cellWidth: 20 },
+      5: { fontStyle: "bold", cellWidth: 25 }
+    },
+    didDrawCell: (data) => {
+      if (data.column.index === 5 && data.cell.section === "body") {
+        const text = data.cell.text[0];
+        const statusLower = text.toLowerCase();
+        const isApproved = statusLower === "approved" || statusLower === "recommended" || statusLower === "success" || statusLower === "active";
+        doc.setFillColor(data.row.index % 2 === 0 ? 255 : 245, 245, 245);
+        doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, "F");
+        drawStatusBadge(doc, data.cell.x + 3, data.cell.y + 4, text, isApproved);
+      }
+    }
+  });
+
+  drawFooter(doc, 1);
+  doc.save(`claims_registry_report.pdf`);
+};
+
