@@ -1,3 +1,4 @@
+import 'react-loading-skeleton/dist/skeleton.css';
 import React, { useEffect } from 'react'
 import './App.css'
 import AdminDashboard   from './pages/AdminDashboard'

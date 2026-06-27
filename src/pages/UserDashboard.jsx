@@ -417,7 +417,8 @@ const UserDashboard = () => {
   const myPolicies = async () => {
     try {
       const response = await readMyPolicies();    
-      setPolicy(response);
+      const sortedResponse = [...(response || [])].sort((a, b) => (b.id || b.policyId || 0) - (a.id || a.policyId || 0));
+      setPolicy(sortedResponse);
     } catch (e) {
       setPolicy([]);
     }
@@ -426,7 +427,8 @@ const UserDashboard = () => {
   const myClaims = async () => {
     try {
       const response = await readMyClaims();
-      setClaims(response);
+      const sortedResponse = [...(response || [])].sort((a, b) => (b.id || 0) - (a.id || 0));
+      setClaims(sortedResponse);
     } catch (e) {
       setClaims([]);
     }

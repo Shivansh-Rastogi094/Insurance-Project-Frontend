@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import React, { useEffect, useCallback, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
@@ -1019,10 +1020,10 @@ const Claims = () => {
 
           <div className="claims-container">
             {loading ? (
-              <div className="loading-container">
-                <div className="spinner"></div>
-                <p>Loading claims data...</p>
-              </div>
+              <div className="loading-container" style={{ width: '100%', padding: '20px 40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Skeleton height={60} />
+              <Skeleton count={5} height={50} style={{ marginBottom: '8px' }} />
+            </div>
             ) : claimsList.length === 0 ? (
               <div className="empty-state">
                 <span className="empty-state-icon">📋</span>

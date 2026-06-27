@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
@@ -697,9 +698,9 @@ const ProductCatalog = () => {
           <div className="divider" />
 
           {loading ? (
-            <div className="loading-container">
-              <div className="spinner"></div>
-              <p>Loading catalog items...</p>
+            <div className="loading-container" style={{ width: '100%', padding: '20px 40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Skeleton height={60} />
+              <Skeleton count={5} height={50} style={{ marginBottom: '8px' }} />
             </div>
           ) : error ? (
             <div className="error-container">

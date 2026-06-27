@@ -596,9 +596,13 @@ const Customers = () => {
           <div className="divider" />
 
           {loading ? (
-            <div className="loading-container">
-              <div className="spinner"></div>
-              <p>Fetching customers directory...</p>
+            <div className="loading-container" style={{ width: '100%', padding: '0 40px', alignItems: 'stretch' }}>
+              <div className="skeleton skeleton-row" style={{ height: '60px' }}></div>
+              <div className="skeleton skeleton-row"></div>
+              <div className="skeleton skeleton-row"></div>
+              <div className="skeleton skeleton-row"></div>
+              <div className="skeleton skeleton-row"></div>
+              <div className="skeleton skeleton-row"></div>
             </div>
           ) : error ? (
             <div className="error-container" style={{ textAlign: 'center', padding: '40px', color: 'var(--danger)' }}>

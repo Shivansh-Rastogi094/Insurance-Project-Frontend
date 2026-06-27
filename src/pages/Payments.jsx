@@ -1,3 +1,4 @@
+import Skeleton from 'react-loading-skeleton';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
@@ -699,10 +700,10 @@ const Payments = () => {
             <div className="section-card">
               <h3 className="section-title">🛡️ My Policies</h3>
               {policiesLoading ? (
-                <div className="loading-container">
-                  <div className="spinner"></div>
-                  <p>Loading policy billing records...</p>
-                </div>
+                <div className="loading-container" style={{ width: '100%', padding: '20px 40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Skeleton height={60} />
+              <Skeleton count={5} height={50} style={{ marginBottom: '8px' }} />
+            </div>
               ) : policiesList.length === 0 ? (
                 <div className="empty-state">
                   No policies found in your account directory.
@@ -789,10 +790,10 @@ const Payments = () => {
             <div className="section-card">
               <h3 className="section-title">📋 Recent Payment Transactions</h3>
               {transactionsLoading ? (
-                <div className="loading-container">
-                  <div className="spinner"></div>
-                  <p>Loading transactions log...</p>
-                </div>
+                <div className="loading-container" style={{ width: '100%', padding: '20px 40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Skeleton height={60} />
+              <Skeleton count={5} height={50} style={{ marginBottom: '8px' }} />
+            </div>
               ) : transactionsList.length === 0 ? (
                 <div className="empty-state">
                   No payment transactions have been logged yet.
