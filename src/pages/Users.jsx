@@ -812,7 +812,7 @@ const Users = () => {
               )}
               {userData?.role === 'ADMIN' && (
                 <button className="btn-primary" onClick={() => setShowAddAgentModal(true)}>
-                  + Add Agent
+                  + Add Officer
                 </button>
               )}
             </div>
@@ -864,7 +864,7 @@ const Users = () => {
                 >
                   <option value="ALL">All Roles</option>
                   <option value="CUSTOMER">Customer</option>
-                  <option value="AGENT">Agent</option>
+                  <option value="AGENT">Officer</option>
                   <option value="ADMIN">Admin</option>
                 </select>
               </div>
@@ -957,7 +957,7 @@ const Users = () => {
                               <td style={{ fontFamily: 'var(--font-mono)' }}>{user.phoneNumber || 'N/A'}</td>
                               <td>
                                 <span className={`user-badge ${roleClass}`}>
-                                  {user.role}
+                                  {user.role =="AGENT"? "Officer" : user.role}
                                 </span>
                               </td>
                               <td>
@@ -1234,7 +1234,7 @@ const Users = () => {
                   opacity: agentSubmitting ? 0.6 : 1
                 }}
               >
-                {agentSubmitting ? 'Creating...' : 'Create Agent'}
+                {agentSubmitting ? 'Creating...' : 'Create Officer'}
               </button>
             </div>
           </form>

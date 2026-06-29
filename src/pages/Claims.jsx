@@ -1153,7 +1153,7 @@ const Claims = () => {
                                 <td>
                                   <div className="remarks-block">
                                     <span className="remark-item">
-                                      <strong>Agent:</strong> {agentRemarks}
+                                      <strong>Officer:</strong> {agentRemarks}
                                     </span>
                                     <span className="remark-item">
                                       <strong>Admin:</strong> {adminRemarks}
@@ -1211,9 +1211,9 @@ const Claims = () => {
                                           className="action-btn" 
                                           disabled 
                                           style={{ cursor: 'not-allowed', opacity: 0.7 }}
-                                          title="Waiting for Agent recommendation"
+                                          title="Waiting for Officer recommendation"
                                         >
-                                          ⏳ Agent Review Pending
+                                          ⏳ Officer Review Pending
                                         </button>
                                       ) : (
                                         <button
@@ -1488,7 +1488,7 @@ const Claims = () => {
         <Modal
           isOpen={showReviewModal}
           onClose={() => { if (!reviewSubmitting) setShowReviewModal(false); }}
-          title={userData?.role === 'AGENT' ? "🔍 Agent Claim Verification" : "⚖️ Admin Claim Decision"}
+          title={userData?.role === 'AGENT' ? "🔍 Officer Claim Verification" : "⚖️ Admin Claim Decision"}
           maxWidth="500px"
         >
           <div className="modal-summary" style={{ background: 'var(--surface)', padding: '16px', borderRadius: '8px', marginBottom: '20px', border: '1px solid var(--border)' }}>

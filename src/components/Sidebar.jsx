@@ -222,7 +222,7 @@ const Sidebar = ({ title }) => {
             <h2>{displayTitle}</h2>
             <span>
               {userData?.role === 'AGENT'
-                ? 'Agent Panel'
+                ? 'Officer Panel'
                 : userData?.role === 'CUSTOMER'
                 ? 'Customer Portal'
                 : 'Admin Panel'}

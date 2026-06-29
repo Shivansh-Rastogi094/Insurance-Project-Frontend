@@ -573,7 +573,7 @@ const Policies = () => {
     <>
       <style>{styles}</style>
       <div className="page-container">
-        <Sidebar title={userData?.role === 'AGENT' ? 'Agent Workspace' : 'Admin Panel'} />
+        <Sidebar title={userData?.role === 'AGENT' ? 'Officer Workspace' : 'Admin Panel'} />
 
         <div className="main-content">
           <div className="topbar">

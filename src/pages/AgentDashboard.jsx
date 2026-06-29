@@ -177,21 +177,21 @@ const AgentDashboard = () => {
           <div className="topbar">
             <div className="topbar-logo">🛡️ InsureSpace</div>
             <div className="topbar-right">
-              <span className="role-badge">{userData?.role || "Agent"} | Workspace</span>
-              <div className="user-avatar" title={userData?.fullName || "Agent User"}>
-                {(userData?.fullName || "Agent").split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)}
+              <span className="role-badge">{userData?.role || "Officer"} | Workspace</span>
+              <div className="user-avatar" title={userData?.fullName || "Officer User"}>
+                {(userData?.fullName || "Officer").split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)}
               </div>
             </div>
           </div>
 
           <div className="header">
-            <h2>Welcome Back, {userData?.fullName || "Agent"} 👋</h2>
+            <h2>Welcome Back, {userData?.fullName || "Officer"} 👋</h2>
             <p>Here is an overview of clients, active policies, and outstanding claims.</p>
           </div>
 
           <div className="divider" />
 
-          <p className="section-label">Agent Overview</p>
+          <p className="section-label">Officer Overview</p>
           
           <div className="cards">
             <Card title="Clients" value={clients} icon="👥" accent="accent-blue" sub="Registered clients" />

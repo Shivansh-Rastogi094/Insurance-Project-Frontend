@@ -569,7 +569,7 @@ const UserDashboard = () => {
                           {status}
                         </span>
                        <span className="agent-remarks">
-                          Agent: {agentRemarks || "No remarks"}
+                          Officer: {agentRemarks || "No remarks"}
                         </span>
                         <span className="admin-remarks">
                           Admin: {adminRemarks || "No remarks"}
