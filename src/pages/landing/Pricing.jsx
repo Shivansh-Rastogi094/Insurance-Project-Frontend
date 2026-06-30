@@ -47,7 +47,7 @@ const Pricing = () => {
         <div className="pricing-inner">
           <div className="page-hero">
             <div className="ph-b1"/><div className="ph-b2"/>
-            <span className="page-hero-icon">💰</span>
+            <i className="page-hero-icon ph ph-coins"></i>
             <h1>Simple, Transparent Pricing</h1>
             <p>No hidden fees. Cancel anytime. Choose the plan that fits your protection needs.</p>
           </div>
@@ -55,7 +55,7 @@ const Pricing = () => {
           <div className="pricing-grid">
             {TIERS.map(p => (
               <div className={`pricing-card${p.popular ? " popular" : ""}`} key={p.tier}>
-                {p.popular && <div className="popular-badge">⭐ Most Popular</div>}
+                {p.popular && <div className="popular-badge"><i className="ph ph-star"></i> Most Popular</div>}
                 <div className="pricing-tier">{p.tier}</div>
                 <div><span className="pricing-price">{p.price}</span><span className="pricing-period">{p.period}</span></div>
                 <p className="pricing-desc">{p.desc}</p>

@@ -14,12 +14,15 @@ const Login = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState("");
 
   const handleChange = (e) => {
     setUser({
       ...user,
       [e.target.name]: e.target.value,
     });
+    setErrors({ ...errors, [e.target.name]: "" });
+    setApiError("");
   };
 
   const validate = () => {
@@ -48,6 +51,7 @@ const Login = () => {
     if (!validate()) return;
 
     try {
+      setApiError("");
       const response = await LoginService(user);
       
       login(response.data)
@@ -63,11 +67,12 @@ const Login = () => {
           navigate("/userdashboard");
           break;
         default:
-          alert("Unknown role");
+          setApiError("Unknown user role.");
       }
     } catch (error) {
       console.error(error);
-      alert("Login failed");
+      const msg = error?.response?.data?.message || "Login failed. Invalid email or password.";
+      setApiError(msg);
     }
   };
 
@@ -79,10 +84,12 @@ const Login = () => {
           handleLogin()
           }}>
             <div className="login-header">
-              <div className="login-logo">🛡️</div>
+              <div className="login-logo">C</div>
               <h2>Sign In</h2>
-              <p>Insurance Policy & Claims Management System</p>
+              <p>Secure access to your policies &amp; claims</p>
             </div>
+            
+            {apiError && <div className="login-api-error">{apiError}</div>}
             
             <div className="form-group">
               <label className="form-label">Email Address</label>
@@ -128,7 +135,7 @@ const Login = () => {
               <a onClick={() => navigate("/register")}>Register here</a>
             </p>
             <p style={{ marginTop: "12px", marginBlockEnd: 0 }}>
-              <a onClick={() => navigate("/")}>← Back to Landing Page</a>
+              <a className="login-footer-back" onClick={() => navigate("/")}>← Back to Landing Page</a>
             </p>
           </div>
       </div>

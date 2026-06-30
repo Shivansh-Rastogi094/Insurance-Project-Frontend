@@ -104,7 +104,7 @@ const AccessDenied = () => {
               justifyContent: 'center',
               border: '1px solid rgba(239, 68, 68, 0.2)'
             }}>
-              🚫
+              <i className="ph ph-prohibit"></i>
             </div>
             
             <h2 style={{

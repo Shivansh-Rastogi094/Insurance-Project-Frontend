@@ -2,35 +2,19 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../../styles/Navbar.css";
 
-/* ── Dark mode hook — sets data-theme on <html> ── */
-export const useDarkMode = () => {
-  const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
 
-  useEffect(() => {
-    const root = document.documentElement;
-    if (dark) {
-      root.setAttribute("data-theme", "dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      root.removeAttribute("data-theme");
-      localStorage.setItem("theme", "light");
-    }
-  }, [dark]);
-
-  return [dark, setDark];
-};
 
 const NAV_LINKS = [
-  { path: "/",          label: "Home",     icon: "🏠" },
+  { path: "/",          label: "Home",     icon: <i className="ph ph-house"></i> },
   { path: "/about",     label: "About",    icon: "ℹ️" },
-  { path: "/plans",     label: "Plans",    icon: "📋" },
-  { path: "/pricing",   label: "Pricing",  icon: "💰" },
-  { path: "/features",  label: "Features", icon: "✨" },
+  { path: "/plans",     label: "Plans",    icon: <i className="ph ph-clipboard"></i> },
+  { path: "/pricing",   label: "Pricing",  icon: <i className="ph ph-coin"></i> },
+  { path: "/features",  label: "Features", icon: <i className="ph ph-sparkle"></i> },
   { path: "/claims-info", label: "Claims",  icon: "🛡️" },
-  { path: "/register",  label: "Contact",  icon: "📞" },
+  { path: "/register",  label: "Contact",  icon: <i className="ph ph-phone"></i> },
 ];
 
-const Navbar = ({ dark, setDark }) => {
+const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
@@ -75,9 +59,6 @@ const Navbar = ({ dark, setDark }) => {
 
           {/* Actions */}
           <div className="ca-nav-actions">
-            <button className="ca-theme-btn" onClick={() => setDark(!dark)} title={dark ? "Light mode" : "Dark mode"}>
-              {dark ? "☀️" : "🌙"}
-            </button>
             <button className="ca-btn-ghost" onClick={() => navigate("/login")}>Login</button>
             <button className="ca-btn-primary" onClick={() => navigate("/register")}>Register</button>
             <button className="ca-hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
@@ -127,10 +108,9 @@ export const Footer = () => {
 
 /* ── Layout wrapper used by every landing sub-page ── */
 const LandingLayout = ({ children }) => {
-  const [dark, setDark] = useDarkMode();
   return (
     <>
-      <Navbar dark={dark} setDark={setDark} />
+      <Navbar />
       <div className="ca-page">
         {children}
         <Footer />

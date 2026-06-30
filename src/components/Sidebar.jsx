@@ -11,7 +11,7 @@ const styles = `
     top: 0;
     bottom: 0;
     background: var(--sidebar-bg);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     padding: 24px 0;
@@ -24,25 +24,27 @@ const styles = `
     align-items: center;
     gap: 12px;
     padding: 0 20px 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--border);
     margin-bottom: 24px;
   }
 
   .sidebar-brand-icon {
     width: 36px;
     height: 36px;
-    background: rgba(15, 168, 158, 0.15);
+    background: rgba(73, 79, 223, 0.15);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 18px;
     flex-shrink: 0;
+    color: #ffffff;
+    font-weight: 700;
   }
 
   .sidebar-brand h2 {
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
     color: #ffffff;
     letter-spacing: -0.2px;
     line-height: 1.2;
@@ -65,7 +67,7 @@ const styles = `
     color: var(--sidebar-text);
     opacity: 0.5;
     padding: 0 20px;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
   }
 
   .sidebar ul {
@@ -74,7 +76,7 @@ const styles = `
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
 
   .sidebar ul li a {
@@ -92,31 +94,20 @@ const styles = `
   }
 
   .sidebar ul li a:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
     color: #ffffff;
   }
 
   .sidebar ul li a.active-link {
-    background: rgba(15, 168, 158, 0.12);
-    color: var(--sidebar-active);
+    background: rgba(73, 79, 223, 0.15);
+    color: #ffffff;
     font-weight: 600;
-  }
-
-  .sidebar ul li a.active-link::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 25%;
-    bottom: 25%;
-    width: 3px;
-    background: var(--sidebar-active);
-    border-radius: 0 4px 4px 0;
   }
 
   .sidebar-footer {
     margin-top: auto;
     padding: 16px 20px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--border);
   }
 
   .sidebar-footer p {
@@ -124,6 +115,7 @@ const styles = `
     color: var(--sidebar-text);
     opacity: 0.5;
     font-weight: 400;
+    margin-top: 12px;
   }
 
   .logout-btn {
@@ -142,12 +134,36 @@ const styles = `
     cursor: pointer;
     transition: all 0.2s ease;
     font-family: inherit;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
   }
 
   .logout-btn:hover {
-    background: rgba(220, 38, 38, 0.15);
-    color: #ef4444;
+    background: rgba(226, 59, 74, 0.15);
+    color: #e23b4a;
+  }
+  
+  .theme-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-button);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--sidebar-text);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    margin-bottom: 8px;
+  }
+
+  .theme-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
   }
 `;
 
@@ -155,27 +171,12 @@ const Sidebar = ({ title }) => {
   const { userData, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [theme, setTheme] = useState(document.documentElement.getAttribute("data-theme") || "light");
-
   const defaultTitle = userData?.role === "ADMIN"
     ? "Admin Panel"
     : userData?.role === "AGENT"
     ? "Agent Workspace"
     : "Customer Portal";
   const displayTitle = title || defaultTitle;
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    document.documentElement.setAttribute("data-theme", savedTheme);
-    setTheme(savedTheme);
-  }, []);
-
-  const toggleTheme = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-    document.documentElement.setAttribute("data-theme", nextTheme);
-    localStorage.setItem("theme", nextTheme);
-  };
 
   const handleLogout = () => {
     logout();
@@ -217,7 +218,7 @@ const Sidebar = ({ title }) => {
       <style>{styles}</style>
       <div className="sidebar">
         <div className="sidebar-brand">
-          <div className="sidebar-brand-icon">🛡️</div>
+          <div className="sidebar-brand-icon"><i className="ph-fill ph-shield"></i></div>
           <div>
             <h2>{displayTitle}</h2>
             <span>
@@ -249,9 +250,6 @@ const Sidebar = ({ title }) => {
         </ul>
 
         <div className="sidebar-footer">
-          <button className="theme-btn" onClick={toggleTheme}>
-            {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
-          </button>
           <button className="logout-btn" onClick={handleLogout}>
             Logout
           </button>

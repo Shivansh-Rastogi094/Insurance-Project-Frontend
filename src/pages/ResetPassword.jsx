@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ResetPasswordService } from "../services/AuthService";
 import "../styles/Login.css";
+import { useToast } from '../components/ToastProvider';
 
 const ResetPassword = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -30,7 +32,7 @@ const ResetPassword = () => {
         otp: otp.trim(),
         newPassword: newPassword.trim()
       });
-      alert("Password has been reset successfully! Please sign in with your new password.");
+      toast.success("Password has been reset successfully! Please sign in with your new password.");
       navigate("/login");
     } catch (err) {
       console.error(err);

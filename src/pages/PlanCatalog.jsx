@@ -9,6 +9,7 @@ import { getCustomerProfile } from '../services/CustomerService';
 import { useFetch } from '../hooks/useFetch';
 import { useForm } from '../hooks/useForm';
 import Modal from '../components/Modal';
+import { useToast } from '../components/ToastProvider';
 
 const styles = `
   .page-container {
@@ -623,6 +624,7 @@ const fetchPlansList = async () => {
 };
 
 const PlanCatalog = () => {
+  const toast = useToast();
   const { type, productId } = useParams();
   const navigate = useNavigate();
   const { userData } = useAuth();
@@ -698,7 +700,7 @@ const PlanCatalog = () => {
 
   const handleBuyPlanClick = (plan) => {
     if (userData?.role === 'CUSTOMER' && !customerProfile) {
-      alert("⚠️ You must complete your customer profile before purchasing a policy. Redirecting to your profile page...");
+      toast.info("⚠️ You must complete your customer profile before purchasing a policy. Redirecting to your profile page...");
       navigate('/profile');
       return;
     }
@@ -727,7 +729,7 @@ const PlanCatalog = () => {
         startDate: purchaseDate
       };
       await purchasePolicy(payload);
-      alert(`Success! You have purchased the ${selectedPlan.planName} plan.`);
+      toast.success(`Success! You have purchased the ${selectedPlan.planName} plan.`);
       setSelectedPlan(null);
       
       // Redirect to customer dashboard to view updated policies
@@ -738,7 +740,7 @@ const PlanCatalog = () => {
       }
     } catch (err) {
       console.error("Error purchasing policy:", err);
-      alert("Failed to purchase policy. Please try again.");
+      toast.error("Failed to purchase policy. Please try again.");
     } finally {
       setPurchasing(false);
     }
@@ -789,7 +791,7 @@ const PlanCatalog = () => {
         active: newPlan.active
       };
       await createPlan(payload);
-      alert("Plan created successfully!");
+      toast.success("Plan created successfully!");
       setShowAddModal(false);
       setNewPlan({
         planName: '',
@@ -804,7 +806,7 @@ const PlanCatalog = () => {
       loadPlans();
     } catch (err) {
       console.error("Error creating plan:", err);
-      alert("Failed to create plan. Please check the backend console.");
+      toast.error("Failed to create plan. Please check the backend console.");
     } finally {
       setPurchasing(false);
     }
@@ -847,14 +849,14 @@ const PlanCatalog = () => {
         active: editingPlan.active
       };
       await updatePlan(editingPlan.id, payload);
-      alert("Plan updated successfully!");
+      toast.success("Plan updated successfully!");
       setShowEditModal(false);
       setEditingPlan(null);
       setFormErrors({});
       loadPlans();
     } catch (err) {
       console.error("Error updating plan:", err);
-      alert("Failed to update plan. Please check the backend console.");
+      toast.error("Failed to update plan. Please check the backend console.");
     } finally {
       setPurchasing(false);
     }
@@ -866,11 +868,11 @@ const PlanCatalog = () => {
         console.log("Deactivating plan with ID:", id);
         // setLoading(true);
         await deactivatePlan(id);
-        alert("Plan deactivated successfully!");
+        toast.success("Plan deactivated successfully!");
         loadPlans();
       } catch (err) {
         console.error("Error deactivating plan:", err);
-        alert("Failed to deactivate plan. Please check the backend console.");
+        toast.error("Failed to deactivate plan. Please check the backend console.");
       } finally {
         // setLoading(false);
       }
@@ -885,7 +887,10 @@ const PlanCatalog = () => {
 
         <div className="main-content">
           <div className="topbar">
-            <div className="topbar-logo">🛡️ InsureSpace</div>
+            <div className="topbar-logo">
+              <div className="brand-glyph-sm">C</div>
+              <span>Crown Assurance</span>
+            </div>
             <div className="topbar-right">
               <span className="role-badge">
                 {userData?.fullName || "User"} | {userData?.role || "GUEST"}
@@ -930,7 +935,7 @@ const PlanCatalog = () => {
             </div>
           ) : productPlans.length === 0 ? (
             <div className="empty-catalog-container">
-              <div className="empty-icon">📋</div>
+              <div className="empty-icon"><i className="ph ph-clipboard"></i></div>
               <h3>No Plans Offered</h3>
               <p>We couldn't find any active plans under {productName} right now. Please explore other products.</p>
               <button className="buy-btn" style={{ width: 'auto' }} onClick={() => navigate(`/policy/${type.toLowerCase()}`)}>
@@ -1082,7 +1087,7 @@ const PlanCatalog = () => {
       )}
 
       {/* Add Plan Modal */}
-      <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); setFormErrors({}); }} title="✨ Add New Plan" maxWidth="520px">
+      <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); setFormErrors({}); }} title={<><i className="ph ph-sparkle"></i> Add New Plan</>} maxWidth="520px">
             <form onSubmit={handleAddPlanSubmit} style={{ marginTop: '16px' }}>
               <div className="form-group">
                 <label className="form-label">Plan Name</label>

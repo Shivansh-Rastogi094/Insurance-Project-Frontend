@@ -7,6 +7,7 @@ import { readAllPolicies, cancelPolicy } from '../services/PolicyService';
 import Modal from '../components/Modal';
 import DownloadButton from '../components/DownloadButton';
 import { generatePolicyListPDF } from '../utils/pdfGenerator';
+import { useToast } from '../components/ToastProvider';
 
 const styles = `
   .page-container {
@@ -432,6 +433,7 @@ const styles = `
 `;
 
 const Policies = () => {
+  const toast = useToast();
   const { userData } = useAuth();
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
@@ -526,12 +528,12 @@ const Policies = () => {
     try {
       setCancelSubmitting(true);
       await cancelPolicy(targetPolicy.id);
-      alert(`Policy ${targetPolicy.policyNumber} has been successfully cancelled.`);
+      toast.success(`Policy ${targetPolicy.policyNumber} has been successfully cancelled.`);
       setShowCancelModal(false);
       loadPolicies(currentPage);
     } catch (err) {
       console.error("Policy cancellation failed:", err);
-      alert(`Operation failed: ${err?.response?.data?.message || err.message}`);
+      toast.error(`Operation failed: ${err?.response?.data?.message || err.message}`);
     } finally {
       setCancelSubmitting(false);
     }
@@ -547,7 +549,7 @@ const Policies = () => {
       } else {
         const limit = exportRange === 'FULL' ? totalElements : parseInt(customExportLimit);
         if (!limit || limit <= 0) {
-          alert("Please enter a valid count.");
+          toast.error("Please enter a valid count.");
           setExporting(false);
           return;
         }
@@ -556,14 +558,14 @@ const Policies = () => {
       }
 
       if (policiesToExport.length === 0) {
-        alert("No policies found inside chosen range.");
+        toast.error("No policies found inside chosen range.");
       } else {
         generatePolicyListPDF(policiesToExport);
       }
       setShowExportModal(false);
     } catch (err) {
       console.error("Export list failed:", err);
-      alert("Failed to export list. Please try again.");
+      toast.error("Failed to export list. Please try again.");
     } finally {
       setExporting(false);
     }
@@ -577,7 +579,10 @@ const Policies = () => {
 
         <div className="main-content">
           <div className="topbar">
-            <div className="topbar-logo">🛡️ InsureSpace</div>
+            <div className="topbar-logo">
+              <div className="brand-glyph-sm">C</div>
+              <span>Crown Assurance</span>
+            </div>
             <div className="topbar-right">
               <span className="role-badge">{userData?.role || 'STAFF'}</span>
               <div className="user-avatar" title={userData?.fullName || 'Staff User'}>
@@ -598,17 +603,9 @@ const Policies = () => {
                 setShowExportModal(true);
               }}
               title="Export Policies Report Options"
-              className="page-btn"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'var(--primary)',
-                color: '#ffffff',
-                border: 'none'
-              }}
+              className="btn-export"
             >
-              📊 Export List
+              <><i className="ph ph-chart-bar"></i> Export List</>
             </button>
           </div>
 
@@ -626,7 +623,7 @@ const Policies = () => {
             <div className="summary-card active-policies">
               <div className="card-header">
                 <span className="card-title">Active Insurances</span>
-                <span className="card-icon">🟢</span>
+                <i className="card-icon ph ph-check-circle" style={{color: "var(--success-color)"}}></i>
               </div>
               <div className="card-value">
                 {policiesList.length > 0
@@ -650,7 +647,7 @@ const Policies = () => {
             </div>
           ) : policiesList.length === 0 ? (
             <div className="loading-container">
-              <p>📋 No policies registered in the system database.</p>
+              <p><i className="ph ph-clipboard"></i> No policies registered in the system database.</p>
             </div>
           ) : (
             <>
@@ -727,7 +724,7 @@ const Policies = () => {
                   borderRadius: '8px',
                   background: 'var(--card)'
                 }}>
-                  <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🔍</span>
+                  <i className="ph ph-magnifying-glass" style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}></i>
                   <h3>No Matching Policies</h3>
                   <p style={{ marginTop: '4px' }}>No policies match your filter criteria. Try adjusting your search query or status filters.</p>
                   <button className="action-btn" style={{ marginTop: '12px' }} onClick={handleClearFilters}>
@@ -787,7 +784,7 @@ const Policies = () => {
                                     type="policy"
                                     data={policy}
                                     extraData={{ customerName: policy.customerName || policy.customer?.fullName }}
-                                    label="📥"
+                                    label={<i className="ph ph-download" />}
                                     title="Download Policy PDF"
                                     className="action-btn"
                                     style={{
@@ -828,14 +825,14 @@ const Policies = () => {
                           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
                           disabled={currentPage === 0 || loading}
                         >
-                          Previous
+                          <i className="ph ph-arrow-left"></i> Previous
                         </button>
                         <button
                           className="page-btn"
                           onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
                           disabled={currentPage === totalPages - 1 || loading}
                         >
-                          Next
+                          Next <i className="ph ph-arrow-right"></i>
                         </button>
                       </div>
                     </div>
@@ -908,7 +905,7 @@ const Policies = () => {
         <Modal
           isOpen={showExportModal}
           onClose={() => { if (!exporting) setShowExportModal(false); }}
-          title="📊 Export Policies Directory PDF"
+          title={<><i className="ph ph-chart-bar"></i> Export Policies Directory PDF</>}
           maxWidth="460px"
         >
           <form onSubmit={handleExportSubmit} style={{ marginTop: '12px' }}>

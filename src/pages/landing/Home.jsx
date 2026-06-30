@@ -8,11 +8,11 @@ const Home = () => {
 
   const QUICK_PAGES = [
     { icon: "ℹ️", label: "About Us",  desc: "Our story, mission, and values",   path: "/about"      },
-    { icon: "📋", label: "Plans",     desc: "Life, Health & Motor plans",        path: "/plans"      },
-    { icon: "💰", label: "Pricing",   desc: "Simple transparent pricing",        path: "/pricing"    },
-    { icon: "✨", label: "Features",  desc: "What makes us different",           path: "/features"   },
+    { icon: <i className="ph ph-clipboard"></i>, label: "Plans",     desc: "Life, Health & Motor plans",        path: "/plans"      },
+    { icon: <i className="ph ph-coin"></i>, label: "Pricing",   desc: "Simple transparent pricing",        path: "/pricing"    },
+    { icon: <i className="ph ph-sparkle"></i>, label: "Features",  desc: "What makes us different",           path: "/features"   },
     { icon: "🛡️", label: "Claims",   desc: "How our claims process works",      path: "/claims-info"},
-    { icon: "📞", label: "Contact",   desc: "Get started — create an account",   path: "/register"   },
+    { icon: <i className="ph ph-phone"></i>, label: "Contact",   desc: "Get started — create an account",   path: "/register"   },
   ];
 
   return (
@@ -23,7 +23,7 @@ const Home = () => {
         <div className="home-blob hblob1" />
         <div className="home-blob hblob2" />
         <div className="home-content">
-          <div className="hero-badge">✨ Trusted by 1,00,000+ customers</div>
+          <div className="hero-badge"><i className="ph ph-sparkle"></i> Trusted by 1,00,000+ customers</div>
           <h1 className="hero-title">
             India's Smartest<br />
             <span className="grad">Insurance Platform</span>
@@ -33,8 +33,8 @@ const Home = () => {
             with AI-powered policy management, instant claims, and dedicated agents.
           </p>
           <div className="hero-btns">
-            <button className="btn-hprimary" onClick={() => navigate("/register")}>🚀 Get Started Free</button>
-            <button className="btn-hghost"   onClick={() => navigate("/plans")}>📋 Browse Plans</button>
+            <button className="btn-hprimary" onClick={() => navigate("/register")}><i className="ph ph-rocket"></i> Get Started Free</button>
+            <button className="btn-hghost"   onClick={() => navigate("/plans")}><i className="ph ph-clipboard"></i> Browse Plans</button>
           </div>
           <div className="hero-stats">
             {[["₹500Cr+","Claims Settled"],["1L+","Happy Customers"],["99.8%","Claim Approval"],["24/7","Agent Support"]].map(([v,l]) => (
@@ -50,7 +50,7 @@ const Home = () => {
       {/* ── Trust Strip ── */}
       <div className="trust-strip">
         <div className="trust-inner">
-          {[["🏛️","IRDAI Regulated"],["🔒","ISO 27001 Certified"],["⚡","Instant Policy"],["🤝","Zero Hidden Fees"],["📱","100% Digital"]].map(([ic,tx]) => (
+          {[[<i className="ph ph-bank"></i>,"IRDAI Regulated"],[<i className="ph ph-lock-key"></i>,"ISO 27001 Certified"],[<i className="ph ph-lightning"></i>,"Instant Policy"],[<i className="ph ph-handshake"></i>,"Zero Hidden Fees"],[<i className="ph ph-device-mobile"></i>,"100% Digital"]].map(([ic,tx]) => (
             <div className="trust-item" key={tx}>
               <span className="trust-icon">{ic}</span>
               <span className="trust-text">{tx}</span>

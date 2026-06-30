@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ForgotPasswordService } from "../services/AuthService";
 import "../styles/Login.css";
+import { useToast } from '../components/ToastProvider';
 
 const ForgotPassword = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,7 +19,7 @@ const ForgotPassword = () => {
     setError("");
     try {
       await ForgotPasswordService(email.trim());
-      alert("A 6-digit recovery OTP code has been sent to your email!");
+      toast.info("A 6-digit recovery OTP code has been sent to your email!");
       navigate("/reset-password", { state: { email: email.trim() } });
     } catch (err) {
       console.error(err);
@@ -32,7 +34,7 @@ const ForgotPassword = () => {
       <div className="login-card">
         <form onSubmit={handleSubmit}>
           <div className="login-header">
-            <div className="login-logo">🔑</div>
+            <div className="login-logo"><i className="ph ph-key"></i></div>
             <h2>Password Recovery</h2>
             <p>Enter your registered email address to receive a secure recovery code.</p>
           </div>

@@ -78,9 +78,9 @@ const Register = () => {
     <div className="register-page">
       <div className="register-card">
         <div className="register-header">
-          <div className="register-logo">🛡️</div>
+          <div className="register-logo">C</div>
           <h2>Create Account</h2>
-          <p>Insurance Policy &amp; Claims Management System</p>
+          <p>Secure registration for policies &amp; claims</p>
         </div>
 
         {apiError && <div className="reg-api-error">{apiError}</div>}
@@ -163,7 +163,7 @@ const Register = () => {
             <a onClick={() => navigate("/login")}>Sign in here</a>
           </p>
           <p style={{ marginTop: "12px", marginBlockEnd: 0 }}>
-            <a onClick={() => navigate("/")}>← Back to Landing Page</a>
+            <a className="register-footer-back" onClick={() => navigate("/")}>← Back to Landing Page</a>
           </p>
         </div>
       </div>

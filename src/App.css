@@ -37,7 +37,6 @@
   padding: 24px;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-card);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
@@ -46,25 +45,13 @@
 }
 
 .card:hover {
-  box-shadow: var(--shadow-premium);
-  transform: translateY(-4px);
-  border-color: rgba(37, 99, 168, 0.2);
+  transform: translateY(-2px);
+  border-color: var(--primary-light);
 }
 
 .card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  display: none; /* Removed the top color stripe for a cleaner look */
 }
-
-.card.accent-blue::before { background: var(--primary-light); }
-.card.accent-green::before { background: var(--success); }
-.card.accent-amber::before { background: var(--warning); }
-.card.accent-danger::before { background: var(--danger); }
 
 .card-header {
   display: flex;
@@ -114,4 +101,59 @@
   font-size: 11px;
   color: var(--text-secondary);
   margin-top: 6px;
+}
+
+/* Brand Glyph for Topbar */
+.brand-glyph-sm {
+  width: 28px;
+  height: 28px;
+  background-color: var(--primary);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+  color: #ffffff;
+}
+
+.topbar-logo {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+}
+
+/* Topbar theme integration */
+.topbar {
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+  height: 64px !important;
+}
+
+.role-badge {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary) !important;
+  background: var(--border) !important;
+  padding: 6px 12px !important;
+  border-radius: var(--radius-badge) !important;
+}
+
+.user-avatar {
+  background: var(--border) !important;
+  color: var(--text-primary) !important;
+  border: none !important;
+}
+
+/* Global button styles for confirmation */
+.btn-confirm {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+}
+
+.btn-confirm:hover {
+  background: var(--primary-light) !important;
 }

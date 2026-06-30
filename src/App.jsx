@@ -1,54 +1,41 @@
 import 'react-loading-skeleton/dist/skeleton.css';
 import React, { useEffect } from 'react'
 import './App.css'
-import AdminDashboard   from './pages/AdminDashboard'
-import AgentDashboard   from './pages/AgentDashboard'
+import AdminDashboard from './pages/AdminDashboard'
+import AgentDashboard from './pages/AgentDashboard'
 import { Routes, Route } from 'react-router-dom'
-import Login            from "./pages/Login"
-import UserDashboard    from './pages/UserDashboard'
-import Policy           from './pages/Policy'
-import Claims           from './pages/Claims'
-import Payments         from './pages/Payments'
-import Profile          from './pages/Profile'
-import ProductCatalog   from './pages/ProductCatalog'
-import PlanCatalog      from './pages/PlanCatalog'
-import Customers        from './pages/Customers'
-import Users            from './pages/Users'
-import Policies         from './pages/Policies'
-import Register         from './pages/Register'
-import VerifyOtp        from './pages/VerifyOtp'
-import ForgotPassword   from './pages/ForgotPassword'
-import ResetPassword    from './pages/ResetPassword'
+import Login from "./pages/Login"
+import UserDashboard from './pages/UserDashboard'
+import Policy from './pages/Policy'
+import Claims from './pages/Claims'
+import Payments from './pages/Payments'
+import Profile from './pages/Profile'
+import ProductCatalog from './pages/ProductCatalog'
+import PlanCatalog from './pages/PlanCatalog'
+import Customers from './pages/Customers'
+import Users from './pages/Users'
+import Policies from './pages/Policies'
+import Register from './pages/Register'
+import VerifyOtp from './pages/VerifyOtp'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { ToastProvider } from './components/ToastProvider'
 
-// Landing sub-pages
-import Home        from './pages/landing/Home'
-import About       from './pages/landing/About'
-import Plans       from './pages/landing/Plans'
-import Pricing     from './pages/landing/Pricing'
-import Features    from './pages/landing/Features'
-import ClaimsInfo  from './pages/landing/ClaimsInfo'
+// Landing Page (Redesigned Single Page)
+import LandingPage from './pages/landing/LandingPage'
 
 function App() {
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-      document.documentElement.setAttribute("data-theme", "dark");
-    } else {
-      document.documentElement.removeAttribute("data-theme");
-    }
-  }, []);
-
   return (
-    <>
+    <ToastProvider>
       <Routes>
         {/* ── Landing (public) ── */}
-        <Route path="/"            element={<Home />} />
-        <Route path="/about"       element={<About />} />
-        <Route path="/plans"       element={<Plans />} />
-        <Route path="/pricing"     element={<Pricing />} />
-        <Route path="/features"    element={<Features />} />
-        <Route path="/claims-info" element={<ClaimsInfo />} />
+        <Route path="/"            element={<LandingPage />} />
+        <Route path="/about"       element={<LandingPage />} />
+        <Route path="/plans"       element={<LandingPage />} />
+        <Route path="/pricing"     element={<LandingPage />} />
+        <Route path="/features"    element={<LandingPage />} />
+        <Route path="/claims-info" element={<LandingPage />} />
 
         {/* ── Auth ── */}
         <Route path="/login"       element={<Login />} />
@@ -119,10 +106,8 @@ function App() {
           </ProtectedRoute>
         } />
       </Routes>
-      {/* Everything works as expected project complete */}
-    </>
+    </ToastProvider>
   )
 }
 
 export default App
-
