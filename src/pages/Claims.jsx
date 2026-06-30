@@ -8,6 +8,7 @@ import { readMyPolicies } from '../services/PolicyService';
 import Modal from '../components/Modal';
 import DownloadButton from '../components/DownloadButton';
 import { generateClaimListPDF } from '../utils/pdfGenerator';
+import { readAllUsers } from '../services/UserService';
 import { useToast } from '../components/ToastProvider';
 
 const styles = `
@@ -887,7 +888,66 @@ const Claims = () => {
   const [claimHistoryList, setClaimHistoryList] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+  const [usersMap, setUsersMap] = useState({});
 
+  useEffect(() => {
+    const loadUsersLookup = async () => {
+      if (userData?.role === 'ADMIN') {
+        try {
+          const res = await readAllUsers(0, 500);
+          const list = res?.data?.content || res?.content || [];
+          const map = {};
+          list.forEach(u => {
+            if (u.email && u.fullName) {
+              map[u.email.toLowerCase()] = u.fullName;
+            }
+          });
+          setUsersMap(map);
+        } catch (err) {
+          console.error("Failed to load users for lookup:", err);
+        }
+      }
+    };
+    loadUsersLookup();
+  }, [userData]);
+
+  const getUpdaterDisplayName = (email) => {
+    if (!email) return 'N/A';
+    const lowerEmail = email.toLowerCase();
+    
+    // Check users map
+    if (usersMap && usersMap[lowerEmail]) {
+      return `${usersMap[lowerEmail]} (${email})`;
+    }
+    
+    // Check hardcoded defaults
+    if (lowerEmail === 'admin@insurance.com') {
+      return `System Admin (${email})`;
+    }
+    if (lowerEmail === 'agent@insurance.com') {
+      return `Company Agent (${email})`;
+    }
+    if (lowerEmail === 'customer@insurance.com') {
+      return `John Doe (${email})`;
+    }
+    
+    // Check if it's the current user
+    if (userData && userData.email && userData.email.toLowerCase() === lowerEmail) {
+      return `${userData.fullName} (${email})`;
+    }
+    
+    // Fallback: parse the email prefix and capitalize
+    const namePart = email.split('@')[0];
+    if (namePart) {
+      const formattedName = namePart
+        .split(/[\._\-]/)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+      return `${formattedName} (${email})`;
+    }
+    
+    return email;
+  };
 
   const handleGetHistory = async (claim) => {
     setSelectedHistoryClaim(claim);
@@ -1684,7 +1744,7 @@ const Claims = () => {
                       </div>
 
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                        Updated by: <strong style={{ color: 'var(--text-primary)' }}>{item.updatedBy}</strong>
+                        Updated by: <strong style={{ color: 'var(--text-primary)' }}>{getUpdaterDisplayName(item.updatedBy)}</strong>
                       </div>
                     </div>
                   </div>
