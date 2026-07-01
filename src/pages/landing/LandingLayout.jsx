@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTheme } from "../../context/ThemeContext";
 import "../../styles/Navbar.css";
 
 
@@ -17,6 +18,7 @@ const NAV_LINKS = [
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -59,6 +61,9 @@ const Navbar = () => {
 
           {/* Actions */}
           <div className="ca-nav-actions">
+            <button className="ca-theme-btn" onClick={toggleTheme} title={theme === 'dark' ? "Light mode" : "Dark mode"}>
+              {theme === 'dark' ? <i className="ph ph-sun"></i> : <i className="ph ph-moon"></i>}
+            </button>
             <button className="ca-btn-ghost" onClick={() => navigate("/login")}>Login</button>
             <button className="ca-btn-primary" onClick={() => navigate("/register")}>Register</button>
             <button className="ca-hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">

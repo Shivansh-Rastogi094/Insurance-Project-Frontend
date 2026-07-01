@@ -21,13 +21,15 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { ToastProvider } from './components/ToastProvider'
+import { ThemeProvider } from './context/ThemeContext'
 
 // Landing Page (Redesigned Single Page)
 import LandingPage from './pages/landing/LandingPage'
 
 function App() {
   return (
-    <ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
       <Routes>
         {/* ── Landing (public) ── */}
         <Route path="/"            element={<LandingPage />} />
@@ -107,6 +109,7 @@ function App() {
         } />
       </Routes>
     </ToastProvider>
+    </ThemeProvider>
   )
 }
 

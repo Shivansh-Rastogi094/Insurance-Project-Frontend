@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 const styles = `
   .sidebar {
     font-family: var(--font-body);
@@ -170,6 +171,7 @@ const styles = `
 const Sidebar = ({ title }) => {
   const { userData, logout } = useAuth();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   const defaultTitle = userData?.role === "ADMIN"
     ? "Admin Panel"
@@ -250,6 +252,9 @@ const Sidebar = ({ title }) => {
         </ul>
 
         <div className="sidebar-footer">
+          <button className="theme-btn" onClick={toggleTheme}>
+            {theme === 'dark' ? <><i className="ph ph-sun"></i> Light Mode</> : <><i className="ph ph-moon"></i> Dark Mode</>}
+          </button>
           <button className="logout-btn" onClick={handleLogout}>
             Logout
           </button>
