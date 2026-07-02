@@ -262,6 +262,7 @@
 }
 
 .rev-nav-login:hover {
+  cursor: pointer;
   opacity: 0.8;
 }
 
