@@ -47,7 +47,7 @@ const ResetPassword = () => {
       <div className="login-card">
         <form onSubmit={handleSubmit}>
           <div className="login-header">
-            <div className="login-logo">🛡️</div>
+            <img src="/logo1.png" alt="Crown Assurance Logo" className="login-logo-premium" />
             <h2>Reset Password</h2>
             <p>Setup your new password using the recovery OTP code sent to your email.</p>
           </div>

@@ -34,7 +34,7 @@ const ForgotPassword = () => {
       <div className="login-card">
         <form onSubmit={handleSubmit}>
           <div className="login-header">
-            <div className="login-logo"><i className="ph ph-key"></i></div>
+            <img src="/logo1.png" alt="Crown Assurance Logo" className="login-logo-premium" />
             <h2>Password Recovery</h2>
             <p>Enter your registered email address to receive a secure recovery code.</p>
           </div>

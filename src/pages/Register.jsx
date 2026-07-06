@@ -78,7 +78,7 @@ const Register = () => {
     <div className="register-page">
       <div className="register-card">
         <div className="register-header">
-          <div className="register-logo">C</div>
+          <img src="/logo1.png" alt="Crown Assurance Logo" className="register-logo-premium" />
           <h2>Create Account</h2>
           <p>Secure registration for policies &amp; claims</p>
         </div>

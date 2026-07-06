@@ -101,7 +101,7 @@ const Login = () => {
           handleLogin();
         }}>
           <div className="login-header">
-            <div className="login-logo-container">C</div>
+            <img src="/logo1.png" alt="Crown Assurance Logo" className="login-logo-premium" />
             <h2>Sign In</h2>
             <p>Secure access to your policies &amp; claims</p>
           </div>

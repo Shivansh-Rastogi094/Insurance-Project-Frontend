@@ -214,7 +214,7 @@ const LandingPage = () => {
         <div className="rev-nav-inner">
           {/* Logo */}
           <a className="rev-nav-logo" onClick={() => handleNavClick("home")}>
-            <div className="rev-logo-glyph">C</div>
+            <img src="/logo1.png" alt="Crown Assurance Logo" className="rev-logo-img" />
             <span>Crown Assurance</span>
           </a>
 
@@ -542,7 +542,7 @@ const LandingPage = () => {
           <div className="rev-footer-grid">
             <div className="rev-footer-info">
               <div className="rev-footer-logo">
-                <div className="rev-logo-glyph">C</div>
+                <img src="/logo1.png" alt="Crown Assurance Logo" className="rev-logo-img" />
                 <span>Crown Assurance</span>
               </div>
               <p className="rev-footer-desc">

@@ -73,6 +73,15 @@
   box-shadow: 0 4px 20px rgba(73, 79, 223, 0.3);
 }
 
+.login-logo-premium {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+  margin-bottom: 16px;
+  display: inline-block;
+  filter: drop-shadow(0 4px 10px rgba(73, 79, 223, 0.3));
+}
+
 .login-header h2 {
   font-size: 28px;
   font-weight: 500;
