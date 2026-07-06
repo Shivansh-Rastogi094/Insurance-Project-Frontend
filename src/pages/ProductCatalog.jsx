@@ -5,6 +5,7 @@ import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { readAllProducts, updateProduct, deactivateProduct } from '../services/ProductService';
 import { readAllPlans } from '../services/PlanService';
+import { useToast } from '../components/ToastProvider';
 
 const styles = `
   .page-container {
@@ -548,6 +549,7 @@ const styles = `
 `;
 
 const ProductCatalog = () => {
+  const toast = useToast();
   const { type } = useParams();
   const navigate = useNavigate();
   const { userData } = useAuth();
@@ -573,12 +575,12 @@ const ProductCatalog = () => {
         active: editingProduct.active
       };
       await updateProduct(editingProduct.id, payload);
-      alert("Product updated successfully!");
+      toast.success("Product updated successfully!");
       setEditingProduct(null);
       loadCatalogData();
     } catch (err) {
       console.error("Error updating product:", err);
-      alert("Failed to update product. Please try again.");
+      toast.error("Failed to update product. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -590,11 +592,11 @@ const ProductCatalog = () => {
     }
     try {
       await deactivateProduct(product.id);
-      alert("Product deactivated successfully!");
+      toast.success("Product deactivated successfully!");
       loadCatalogData();
     } catch (err) {
       console.error("Error deactivating product:", err);
-      alert("Failed to deactivate product. Please try again.");
+      toast.error("Failed to deactivate product. Please try again.");
     }
   };
 
@@ -603,13 +605,13 @@ const ProductCatalog = () => {
   const getCategoryMeta = () => {
     switch (categoryTypeCode) {
       case 'LIFE':
-        return { title: 'Life Insurance', icon: '👥', className: 'card-life' };
+        return { title: 'Life Insurance', icon: <i className="ph ph-users"></i>, className: 'card-life' };
       case 'HEALTH':
-        return { title: 'Health Insurance', icon: '🏥', className: 'card-health' };
+        return { title: 'Health Insurance', icon: <i className="ph ph-hospital"></i>, className: 'card-health' };
       case 'MOTOR':
-        return { title: 'Motor Insurance', icon: '🚗', className: 'card-motor' };
+        return { title: 'Motor Insurance', icon: <i className="ph ph-car"></i>, className: 'card-motor' };
       case 'TRAVEL':
-        return { title: 'Travel Insurance', icon: '✈️', className: 'card-travel' };
+        return { title: 'Travel Insurance', icon: <i className="ph ph-airplane"></i>, className: 'card-travel' };
       default:
         return { title: `${type} Insurance`, icon: '🛡️', className: 'card-life' };
     }
@@ -672,7 +674,10 @@ const ProductCatalog = () => {
 
         <div className="main-content">
           <div className="topbar">
-            <div className="topbar-logo">🛡️ InsureSpace</div>
+            <div className="topbar-logo">
+              <div className="brand-glyph-sm">C</div>
+              <span>Crown Assurance</span>
+            </div>
             <div className="topbar-right">
               <span className="role-badge">
                 {userData?.fullName || "User"} | {userData?.role || "GUEST"}
@@ -712,7 +717,7 @@ const ProductCatalog = () => {
             </div>
           ) : categoryProducts.length === 0 ? (
             <div className="empty-catalog-container">
-              <div className="empty-icon">📂</div>
+              <div className="empty-icon"><i className="ph ph-folder-open"></i></div>
               <h3>No Products Available</h3>
               <p>We couldn't find any active products under {categoryMeta.title} at this moment. Please check back later or explore other categories.</p>
               <button className="explore-btn" style={{ width: 'auto' }} onClick={() => navigate('/policy')}>
@@ -746,7 +751,7 @@ const ProductCatalog = () => {
                     </div>
                     <div>
                       <div className="plans-badge" style={{ marginBottom: '20px' }}>
-                        📋 {planCount} {planCount === 1 ? 'Plan' : 'Plans'} Available
+                        <i className="ph ph-clipboard"></i> {planCount} {planCount === 1 ? 'Plan' : 'Plans'} Available
                       </div>
                       {userData?.role === "ADMIN" ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

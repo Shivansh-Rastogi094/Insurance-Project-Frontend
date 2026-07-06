@@ -7,6 +7,7 @@ import { useFetch } from '../hooks/useFetch';
 import { useForm } from '../hooks/useForm';
 import Modal from '../components/Modal';
 import DownloadButton from '../components/DownloadButton';
+import { useToast } from '../components/ToastProvider';
 
 const styles = `
   .page-container {
@@ -428,6 +429,7 @@ const styles = `
 `;
 
 const Profile = () => {
+  const toast = useToast();
   const { userData } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -548,12 +550,12 @@ const Profile = () => {
           }
         }
         await updateCustomerProfile(updateId, payload);
-        alert("Profile updated successfully!");
+        toast.success("Profile updated successfully!");
         setShowModal(false);
         loadProfile();
       } catch (err) {
         console.error("Error updating profile:", err);
-        alert("Failed to update profile. Please check the backend console logs.");
+        toast.error("Failed to update profile. Please check the backend console logs.");
       } finally {
         setSubmitting(false);
       }
@@ -571,12 +573,12 @@ const Profile = () => {
           nomineeRelation: formData.nomineeRelation.trim()
         };
         await createCustomerProfile(payload);
-        alert("Profile completed successfully!");
+        toast.success("Profile completed successfully!");
         setShowModal(false);
         loadProfile();
       } catch (err) {
         console.error("Error creating profile:", err);
-        alert("Failed to complete profile. Please check the backend console logs.");
+        toast.error("Failed to complete profile. Please check the backend console logs.");
       } finally {
         setSubmitting(false);
       }
@@ -595,7 +597,10 @@ const Profile = () => {
 
         <div className="main-content">
           <div className="topbar">
-            <div className="topbar-logo">🛡️ InsureSpace</div>
+            <div className="topbar-logo">
+              <div className="brand-glyph-sm">C</div>
+              <span>Crown Assurance</span>
+            </div>
             <div className="topbar-right">
               <span className="role-badge">{userData?.role || "CUSTOMER"}</span>
               <div className="user-avatar" title={userData?.fullName || "User"}>
@@ -653,7 +658,7 @@ const Profile = () => {
                       nomineeName: profile.nomineeName,
                       nomineeRelation: profile.nomineeRelation
                     }}
-                    label="📥 Download Profile PDF"
+                    label={<><i className="ph ph-download" /> Download Profile PDF</>}
                     title="Download Profile Details PDF"
                     className="cta-btn"
                     style={{
@@ -669,7 +674,7 @@ const Profile = () => {
 
               <div className="profile-details-card">
                 <div>
-                  <div className="details-section-title">📍 Address & Residence</div>
+                  <div className="details-section-title"><i className="ph ph-map-pin"></i> Address & Residence</div>
                   <div className="details-grid">
                     <div className="detail-item" style={{ gridColumn: 'span 2' }}>
                       <span className="detail-label">Street Address</span>
@@ -702,7 +707,7 @@ const Profile = () => {
                 </div>
 
                 <div>
-                  <div className="details-section-title">👥 Personal & Nominee Details</div>
+                  <div className="details-section-title"><i className="ph ph-users"></i> Personal & Nominee Details</div>
                   <div className="details-grid">
                     <div className="detail-item">
                       <span className="detail-label">Date of Birth</span>

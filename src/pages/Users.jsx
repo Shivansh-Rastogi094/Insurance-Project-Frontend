@@ -7,6 +7,7 @@ import { readAllUsers, activateUser, deactivateUser, createAgentAccount } from '
 import Modal from '../components/Modal';
 import DownloadButton from '../components/DownloadButton';
 import { generateUserListPDF } from '../utils/pdfGenerator';
+import { useToast } from '../components/ToastProvider';
 
 const styles = `
   .page-container {
@@ -584,6 +585,7 @@ const styles = `
 `;
 
 const Users = () => {
+  const toast = useToast();
   const { userData } = useAuth();
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
@@ -625,14 +627,14 @@ const Users = () => {
   const handleAddAgentSubmit = async (e) => {
     e.preventDefault();
     if (!agentData.fullName.trim() || !agentData.email.trim() || !agentData.password.trim() || !agentData.phoneNumber.trim()) {
-      alert("All fields are required.");
+      toast.error("All fields are required.");
       return;
     }
 
     try {
       setAgentSubmitting(true);
       await createAgentAccount(agentData);
-      alert("Agent account created successfully!");
+      toast.success("Agent account created successfully!");
       setShowAddAgentModal(false);
       // Reset form
       setAgentData({
@@ -646,7 +648,7 @@ const Users = () => {
       loadUsers(currentPage);
     } catch (err) {
       console.error("Failed to create agent:", err);
-      alert(`Failed to create agent: ${err?.response?.data?.message || err.message}`);
+      toast.error(`Failed to create agent: ${err?.response?.data?.message || err.message}`);
     } finally {
       setAgentSubmitting(false);
     }
@@ -699,7 +701,7 @@ const Users = () => {
     e.preventDefault();
     if (!targetUser) return;
     if (!remarks.trim()) {
-      alert("Please enter remarks explaining your decision.");
+      toast.error("Please enter remarks explaining your decision.");
       return;
     }
 
@@ -709,17 +711,17 @@ const Users = () => {
       
       if (targetUser.active) {
         await deactivateUser(targetUser.id, payload);
-        alert(`User "${targetUser.fullName}" deactivated successfully.`);
+        toast.success(`User "${targetUser.fullName}" deactivated successfully.`);
       } else {
         await activateUser(targetUser.id, payload);
-        alert(`User "${targetUser.fullName}" activated successfully.`);
+        toast.success(`User "${targetUser.fullName}" activated successfully.`);
       }
 
       setShowActionModal(false);
       loadUsers(currentPage);
     } catch (err) {
       console.error("Action execution failed:", err);
-      alert(`Operation failed: ${err?.response?.data?.message || err.message}`);
+      toast.error(`Operation failed: ${err?.response?.data?.message || err.message}`);
     } finally {
       setModalSubmitting(false);
     }
@@ -735,7 +737,7 @@ const Users = () => {
       } else {
         const limit = exportRange === 'FULL' ? totalElements : parseInt(customExportLimit);
         if (!limit || limit <= 0) {
-          alert("Please enter a valid count.");
+          toast.error("Please enter a valid count.");
           setExporting(false);
           return;
         }
@@ -760,14 +762,14 @@ const Users = () => {
       }
 
       if (usersToExport.length === 0) {
-        alert("No users found matching current filters inside chosen range.");
+        toast.error("No users found matching current filters inside chosen range.");
       } else {
         generateUserListPDF(usersToExport, { role: roleFilter, status: statusFilter, search: searchQuery });
       }
       setShowExportModal(false);
     } catch (err) {
       console.error("Export list failed:", err);
-      alert("Failed to export list. Please try again.");
+      toast.error("Failed to export list. Please try again.");
     } finally {
       setExporting(false);
     }
@@ -781,7 +783,10 @@ const Users = () => {
 
         <div className="main-content">
           <div className="topbar">
-            <div className="topbar-logo">🛡️ InsureSpace</div>
+            <div className="topbar-logo">
+              <div className="brand-glyph-sm">C</div>
+              <span>Crown Assurance</span>
+            </div>
             <div className="topbar-right">
               <span className="role-badge">{userData?.role || 'ADMIN'}</span>
               <div className="user-avatar" title={userData?.fullName || 'Admin User'}>
@@ -798,8 +803,7 @@ const Users = () => {
             <div style={{ display: 'flex', gap: '12px' }}>
               {filteredUsers.length > 0 && (
                 <button
-                  className="btn-primary"
-                  style={{ background: "var(--accent)", border: "none" }}
+                  className="btn-export"
                   onClick={() => {
                     setExportRange('PAGE');
                     setCustomExportLimit('50');
@@ -807,7 +811,7 @@ const Users = () => {
                   }}
                   title="Export Users Report Options"
                 >
-                  📊 Export List
+                  <><i className="ph ph-chart-bar"></i> Export List</>
                 </button>
               )}
               {userData?.role === 'ADMIN' && (
@@ -825,14 +829,14 @@ const Users = () => {
             <div className="summary-card">
               <div className="card-header">
                 <span className="card-title">Registered Accounts</span>
-                <span className="card-icon">👥</span>
+                <i className="card-icon ph ph-users"></i>
               </div>
               <div className="card-value">{totalElements}</div>
             </div>
             <div className="summary-card active-users">
               <div className="card-header">
                 <span className="card-title">Active Logins</span>
-                <span className="card-icon">🟢</span>
+                <i className="card-icon ph ph-check-circle" style={{color: "var(--success-color)"}}></i>
               </div>
               <div className="card-value">
                 {usersList.length > 0 
@@ -906,7 +910,7 @@ const Users = () => {
             </div>
           ) : usersList.length === 0 ? (
             <div className="loading-container">
-              <p>📋 No registered user accounts found.</p>
+              <p><i className="ph ph-clipboard"></i> No registered user accounts found.</p>
             </div>
           ) : (
             <>
@@ -922,7 +926,7 @@ const Users = () => {
                   background: 'var(--card)',
                   margin: '0 40px 40px'
                 }}>
-                  <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🔍</span>
+                  <i className="ph ph-magnifying-glass" style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}></i>
                   <h3>No Matching Users</h3>
                   <p style={{ marginTop: '4px' }}>No user accounts match your filter criteria. Try adjusting your search query or role/status filters.</p>
                   <button className="btn-primary" style={{ marginTop: '12px', background: 'var(--primary)' }} onClick={handleClearFilters}>
@@ -969,7 +973,7 @@ const Users = () => {
                                 <DownloadButton
                                   type="user"
                                   data={user}
-                                  label="📥 PDF"
+                                  label={<><i className="ph ph-download" /> PDF</>}
                                   title="Download Profile Receipt PDF"
                                   className="action-btn"
                                   style={{
@@ -1009,14 +1013,14 @@ const Users = () => {
                           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
                           disabled={currentPage === 0 || loading}
                         >
-                          ⬅️ Previous
+                          <i className="ph ph-arrow-left"></i> Previous
                         </button>
                         <button
                           className="page-btn"
                           onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
                           disabled={currentPage === totalPages - 1 || loading}
                         >
-                          Next ➡️
+                          Next <i className="ph ph-arrow-right"></i>
                         </button>
                       </div>
                     </div>
@@ -1033,7 +1037,7 @@ const Users = () => {
         <Modal
           isOpen={showActionModal}
           onClose={() => { if (!modalSubmitting) setShowActionModal(false); }}
-          title={targetUser.active ? "🔒 Confirm User Deactivation" : "🔓 Confirm User Activation"}
+          title={targetUser.active ? <><i className="ph ph-lock-key"></i> Confirm User Deactivation</> : <><i className="ph ph-lock-key-open"></i> Confirm User Activation</>}
           maxWidth="460px"
         >
           <form onSubmit={handleConfirmAction} style={{ marginTop: '12px' }}>
@@ -1111,7 +1115,7 @@ const Users = () => {
         <Modal
           isOpen={showAddAgentModal}
           onClose={() => { if (!agentSubmitting) setShowAddAgentModal(false); }}
-          title="✨ Add New Agent"
+          title={<><i className="ph ph-sparkle"></i> Add New Agent</>}
           maxWidth="480px"
         >
           <form onSubmit={handleAddAgentSubmit} style={{ marginTop: '16px' }}>
@@ -1246,7 +1250,7 @@ const Users = () => {
         <Modal
           isOpen={showExportModal}
           onClose={() => { if (!exporting) setShowExportModal(false); }}
-          title="📊 Export Users Directory PDF"
+          title={<><i className="ph ph-chart-bar"></i> Export Users Directory PDF</>}
           maxWidth="460px"
         >
           <form onSubmit={handleExportSubmit} style={{ marginTop: '12px' }}>

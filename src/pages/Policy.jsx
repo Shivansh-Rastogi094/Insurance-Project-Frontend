@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { readAllProducts, createProduct } from '../services/ProductService';
+import { useToast } from '../components/ToastProvider';
 
 const styles = `
   .page-container {
@@ -169,8 +170,8 @@ const styles = `
   }
 
   .tall-card:hover {
-    box-shadow: var(--shadow-premium);
-    transform: translateY(-6px);
+    transform: translateY(-2px);
+    border-color: var(--primary-light);
   }
 
   .tall-card::before {
@@ -182,10 +183,45 @@ const styles = `
     height: 5px;
   }
 
-  .card-life::before { background: linear-gradient(90deg, #3B82F6, #1D4ED8); }
-  .card-health::before { background: linear-gradient(90deg, #10B981, #047857); }
-  .card-motor::before { background: linear-gradient(90deg, #F59E0B, #B45309); }
-  .card-travel::before { background: linear-gradient(90deg, #8B5CF6, #6D28D9); }
+  .card-life {
+    background: radial-gradient(circle at top, rgba(59, 130, 246, 0.04) 0%, transparent 50%), var(--card);
+  }
+  .card-life:hover {
+    background: radial-gradient(circle at top, rgba(59, 130, 246, 0.1) 0%, transparent 50%), var(--card);
+  }
+  .card-life::before {
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  }
+
+  .card-health {
+    background: radial-gradient(circle at top, rgba(0, 168, 126, 0.04) 0%, transparent 50%), var(--card);
+  }
+  .card-health:hover {
+    background: radial-gradient(circle at top, rgba(0, 168, 126, 0.1) 0%, transparent 50%), var(--card);
+  }
+  .card-health::before {
+    background: linear-gradient(90deg, #00a87e, #34d399);
+  }
+
+  .card-motor {
+    background: radial-gradient(circle at top, rgba(236, 126, 0, 0.04) 0%, transparent 50%), var(--card);
+  }
+  .card-motor:hover {
+    background: radial-gradient(circle at top, rgba(236, 126, 0, 0.1) 0%, transparent 50%), var(--card);
+  }
+  .card-motor::before {
+    background: linear-gradient(90deg, #ec7e00, #fbbf24);
+  }
+
+  .card-travel {
+    background: radial-gradient(circle at top, rgba(139, 92, 246, 0.04) 0%, transparent 50%), var(--card);
+  }
+  .card-travel:hover {
+    background: radial-gradient(circle at top, rgba(139, 92, 246, 0.1) 0%, transparent 50%), var(--card);
+  }
+  .card-travel::before {
+    background: linear-gradient(90deg, #8b5cf6, #c084fc);
+  }
 
   .card-header-section {
     display: flex;
@@ -485,6 +521,7 @@ const styles = `
 `;
 
 const Policy = () => {
+  const toast = useToast();
   const { userData } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
@@ -504,7 +541,7 @@ const Policy = () => {
     try {
       setSubmitting(true);
       await createProduct(newProduct);
-      alert("Product created successfully!");
+      toast.success("Product created successfully!");
       setIsAddModalOpen(false);
       // Reset form
       setNewProduct({
@@ -517,7 +554,7 @@ const Policy = () => {
       fetchProducts();
     } catch (err) {
       console.error("Error creating product:", err);
-      alert("Failed to create product. Please try again.");
+      toast.error("Failed to create product. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -559,7 +596,7 @@ const Policy = () => {
       typeCode: 'LIFE',
       title: 'Life Insurance',
       subtitle: 'Protection for your loved ones',
-      icon: '👥',
+      icon: <i className="ph ph-users-three"></i>,
       className: 'card-life'
     },
     {
@@ -567,7 +604,7 @@ const Policy = () => {
       typeCode: 'HEALTH',
       title: 'Health Insurance',
       subtitle: 'Medical security & support',
-      icon: '🏥',
+      icon: <i className="ph ph-heartbeat"></i>,
       className: 'card-health'
     },
     {
@@ -575,7 +612,7 @@ const Policy = () => {
       typeCode: 'MOTOR',
       title: 'Motor Insurance',
       subtitle: 'Vehicle damage & safety cover',
-      icon: '🚗',
+      icon: <i className="ph ph-car"></i>,
       className: 'card-motor'
     },
     {
@@ -583,7 +620,7 @@ const Policy = () => {
       typeCode: 'TRAVEL',
       title: 'Travel Insurance',
       subtitle: 'Secure your journeys',
-      icon: '✈️',
+      icon: <i className="ph ph-airplane"></i>,
       className: 'card-travel'
     }
   ];
@@ -596,7 +633,10 @@ const Policy = () => {
 
         <div className="main-content">
           <div className="topbar">
-            <div className="topbar-logo">🛡️ InsureSpace</div>
+            <div className="topbar-logo">
+              <div className="brand-glyph-sm">C</div>
+              <span>Crown Assurance</span>
+            </div>
             <div className="topbar-right">
               <span className="role-badge">
                 {userData?.fullName || "User"} | {userData?.role || "GUEST"}
@@ -687,7 +727,7 @@ const Policy = () => {
       {isAddModalOpen && (
         <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">📦 Add New Product</h3>
+            <h3 className="modal-title"><i className="ph ph-package"></i> Add New Product</h3>
             <form onSubmit={handleCreateProduct}>
               <div className="form-group">
                 <label className="form-label">Product Name</label>

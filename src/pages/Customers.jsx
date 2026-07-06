@@ -6,6 +6,7 @@ import { useFetch } from '../hooks/useFetch';
 import Modal from '../components/Modal';
 import DownloadButton from '../components/DownloadButton';
 import { generateCustomerListPDF } from '../utils/pdfGenerator';
+import { useToast } from '../components/ToastProvider';
 
 const styles = `
   .page-container {
@@ -439,6 +440,7 @@ const styles = `
 `;
 
 const Customers = () => {
+  const toast = useToast();
   const { userData } = useAuth();
 
   // Filter States
@@ -518,7 +520,7 @@ const Customers = () => {
       } else {
         const limit = exportRange === 'FULL' ? totalCount : parseInt(customExportLimit);
         if (!limit || limit <= 0) {
-          alert("Please enter a valid count.");
+          toast.error("Please enter a valid count.");
           setExporting(false);
           return;
         }
@@ -527,14 +529,14 @@ const Customers = () => {
       }
 
       if (customersToExport.length === 0) {
-        alert("No customers found inside chosen range.");
+        toast.error("No customers found inside chosen range.");
       } else {
         generateCustomerListPDF(customersToExport);
       }
       setShowExportModal(false);
     } catch (err) {
       console.error("Export list failed:", err);
-      alert("Failed to export list. Please try again.");
+      toast.error("Failed to export list. Please try again.");
     } finally {
       setExporting(false);
     }
@@ -552,7 +554,10 @@ const Customers = () => {
 
         <div className="main-content">
           <div className="topbar">
-            <div className="topbar-logo">🛡️ InsureSpace</div>
+            <div className="topbar-logo">
+              <div className="brand-glyph-sm">C</div>
+              <span>Crown Assurance</span>
+            </div>
             <div className="topbar-right">
               <span className="role-badge">{userData?.role || 'STAFF'}</span>
               <div className="user-avatar" title={userData?.fullName || 'User'}>
@@ -573,23 +578,9 @@ const Customers = () => {
                 setShowExportModal(true);
               }}
               title="Export Customers Report Options"
-              className="page-btn"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'var(--primary)',
-                color: '#ffffff',
-                border: 'none',
-                padding: '10px 18px',
-                fontSize: '13px',
-                fontWeight: '600',
-                borderRadius: 'var(--radius-button)',
-                cursor: 'pointer',
-                fontFamily: 'inherit'
-              }}
+              className="btn-export"
             >
-              📊 Export List
+              <><i className="ph ph-chart-bar"></i> Export List</>
             </button>
           </div>
 
@@ -610,7 +601,7 @@ const Customers = () => {
             </div>
           ) : customers.length === 0 ? (
             <div className="empty-container" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-              <p>📋 No customer records found in the system database.</p>
+              <p><i className="ph ph-clipboard"></i> No customer records found in the system database.</p>
             </div>
           ) : (
             <>
@@ -618,7 +609,7 @@ const Customers = () => {
               <div className="summary-card" style={{ marginBottom: '24px' }}>
                 <div className="card-header">
                   <span className="card-title">Active Customers</span>
-                  <span className="card-icon">👥</span>
+                  <i className="card-icon ph ph-users"></i>
                 </div>
                 <div className="card-value">{totalCount}</div>
                 <div className="card-sub">Registered Customers with Complete profile</div>
@@ -674,7 +665,7 @@ const Customers = () => {
                   borderRadius: '8px',
                   background: 'var(--card)'
                 }}>
-                  <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🔍</span>
+                  <i className="ph ph-magnifying-glass" style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}></i>
                   <h3>No Matching Customers</h3>
                   <p style={{ marginTop: '4px' }}>No customers match your filter criteria. Try adjusting your search query or nominee name.</p>
                   <button className="action-btn" style={{ marginTop: '12px' }} onClick={handleClearFilters}>
@@ -719,7 +710,7 @@ const Customers = () => {
                               <DownloadButton
                                 type="customer"
                                 data={c}
-                                label="📥"
+                                label={<i className="ph ph-download" />}
                                 title="Download Customer PDF Profile"
                                 className="action-btn"
                                 style={{
@@ -746,7 +737,7 @@ const Customers = () => {
         <Modal
           isOpen={showExportModal}
           onClose={() => { if (!exporting) setShowExportModal(false); }}
-          title="📊 Export Customers Directory PDF"
+          title={<><i className="ph ph-chart-bar"></i> Export Customers Directory PDF</>}
           maxWidth="460px"
         >
           <form onSubmit={handleExportSubmit} style={{ marginTop: '12px' }}>

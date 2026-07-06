@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ForgotPasswordService } from "../services/AuthService";
 import "../styles/Login.css";
+import { useToast } from '../components/ToastProvider';
 
 const ForgotPassword = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,7 +19,7 @@ const ForgotPassword = () => {
     setError("");
     try {
       await ForgotPasswordService(email.trim());
-      alert("A 6-digit recovery OTP code has been sent to your email!");
+      toast.info("A 6-digit recovery OTP code has been sent to your email!");
       navigate("/reset-password", { state: { email: email.trim() } });
     } catch (err) {
       console.error(err);
@@ -32,7 +34,7 @@ const ForgotPassword = () => {
       <div className="login-card">
         <form onSubmit={handleSubmit}>
           <div className="login-header">
-            <div className="login-logo">🔑</div>
+            <img src="/logo1.png" alt="Crown Assurance Logo" className="login-logo-premium" />
             <h2>Password Recovery</h2>
             <p>Enter your registered email address to receive a secure recovery code.</p>
           </div>
@@ -43,7 +45,7 @@ const ForgotPassword = () => {
             <label className="form-label">Email Address</label>
             <input
               type="email"
-              className="form-input"
+              className="auth-form-input"
               placeholder="e.g. user@insurance.com"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError(""); }}
@@ -52,12 +54,12 @@ const ForgotPassword = () => {
             />
           </div>
 
-          <button type="submit" className="login-btn" style={{ marginTop: "24px" }} disabled={loading}>
+          <button type="submit" className="login-btn-premium" style={{ marginTop: "24px" }} disabled={loading}>
             {loading ? "Sending OTP..." : "Request Recovery Code"}
           </button>
         </form>
 
-        <div className="login-footer">
+        <div className="login-footer-premium">
           <p style={{ margin: 0 }}>
             Remembered your password?{" "}
             <a onClick={() => navigate("/login")} style={{ cursor: "pointer" }}>Back to Sign In</a>

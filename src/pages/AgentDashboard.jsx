@@ -175,7 +175,10 @@ const AgentDashboard = () => {
         <Sidebar title="Agent Dashboard" />
         <div className="main-content">
           <div className="topbar">
-            <div className="topbar-logo">🛡️ InsureSpace</div>
+            <div className="topbar-logo">
+              <div className="brand-glyph-sm">C</div>
+              <span>Crown Assurance</span>
+            </div>
             <div className="topbar-right">
               <span className="role-badge">{userData?.role || "Officer"} | Workspace</span>
               <div className="user-avatar" title={userData?.fullName || "Officer User"}>
@@ -185,7 +188,7 @@ const AgentDashboard = () => {
           </div>
 
           <div className="header">
-            <h2>Welcome Back, {userData?.fullName || "Officer"} 👋</h2>
+            <h2>Welcome Back, {userData?.fullName || "Officer"} <i className="ph ph-hand-waving"></i></h2>
             <p>Here is an overview of clients, active policies, and outstanding claims.</p>
           </div>
 
@@ -194,11 +197,11 @@ const AgentDashboard = () => {
           <p className="section-label">Officer Overview</p>
           
           <div className="cards">
-            <Card title="Clients" value={clients} icon="👥" accent="accent-blue" sub="Registered clients" />
-            <Card title="Insurance Products" value={products} icon="📦" accent="accent-blue" sub="Active offerings" />
-            <Card title="Issued Policies" value={policies} icon="🗂️" accent="accent-blue" sub="Managed policies" />
-            <Card title="Claims Filed" value={claims} icon="📄" accent="accent-amber" sub="Outstanding claims" />
-            <Card title="Premium Collected" value={totalPremium.toLocaleString('en-IN')} icon="✅" accent="accent-green" prefix="₹" sub="Cumulative client payments" />
+            <Card title="Clients" value={clients} icon={<i className="ph ph-users"></i>} accent="accent-blue" sub="Registered clients" />
+            <Card title="Insurance Products" value={products} icon={<i className="ph ph-package"></i>} accent="accent-blue" sub="Active offerings" />
+            <Card title="Issued Policies" value={policies} icon={<i className="ph ph-file-text"></i>} accent="accent-blue" sub="Managed policies" />
+            <Card title="Claims Filed" value={claims} icon={<i className="ph ph-file-arrow-up"></i>} accent="accent-amber" sub="Outstanding claims" />
+            <Card title="Premium Collected" value={totalPremium.toLocaleString('en-IN')} icon={<i className="ph ph-check-circle"></i>} accent="accent-green" prefix="₹" sub="Cumulative client payments" />
           </div>
         </div>
       </div>

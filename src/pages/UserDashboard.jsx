@@ -476,7 +476,10 @@ const UserDashboard = () => {
         
         <div className="main-content">
           <div className="topbar">
-            <div className="topbar-logo">🛡️ InsureSpace</div>
+            <div className="topbar-logo">
+              <div className="brand-glyph-sm">C</div>
+              <span>Crown Assurance</span>
+            </div>
             <div className="topbar-right">
               <span className="role-badge">{userData.fullName} | {userData.role}</span>
               <div className="user-avatar" title={userData?.fullName || "User"}>
@@ -487,7 +490,7 @@ const UserDashboard = () => {
 
           <div className="header">
             <div className="header-text">
-              <h2>Good Morning, {userData?.fullName} 👋</h2>
+              <h2>Good Morning, {userData?.fullName} <i className="ph ph-hand-waving"></i></h2>
               <p>Welcome back to your dashboard. Here is your policy health-check.</p>
             </div>
             <button className="btn-primary" onClick={()=>{navigate("/policy")}}>+ Buy Policy</button>
@@ -498,10 +501,10 @@ const UserDashboard = () => {
           <p className="section-label">Account Summary</p>
 
           <div className="cards">
-            <Card title="Active Policies" value={activePoliciesCount} icon="🛡️" accent="accent-blue" sub="Currently active coverage" />
-            <Card title="Pending Claims" value={pendingClaimsCount} icon="⏳" accent="accent-amber" sub="Awaiting review" />
-            <Card title="Total Premium Paid" value={totalPremiumPaidVal.toLocaleString('en-IN')} icon="💵" prefix="₹" accent="accent-green" sub="Total premiums settled" />
-            <Card title="Total Claim Available" value={totalClaimAvailableVal.toLocaleString('en-IN')} icon="💰" prefix="₹" accent="accent-blue" sub="Max cover available" />
+            <Card title="Active Policies" value={activePoliciesCount} icon={<i className="ph ph-shield-check"></i>} accent="accent-blue" sub="Currently active coverage" />
+            <Card title="Pending Claims" value={pendingClaimsCount} icon={<i className="ph ph-hourglass-high"></i>} accent="accent-amber" sub="Awaiting review" />
+            <Card title="Total Premium Paid" value={totalPremiumPaidVal.toLocaleString('en-IN')} icon={<i className="ph ph-credit-card"></i>} prefix="₹" accent="accent-green" sub="Total premiums settled" />
+            <Card title="Total Claim Available" value={totalClaimAvailableVal.toLocaleString('en-IN')} icon={<i className="ph ph-bank"></i>} prefix="₹" accent="accent-blue" sub="Max cover available" />
           </div>
 
           <div className="dashboard-grid">

@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ResetPasswordService } from "../services/AuthService";
 import "../styles/Login.css";
+import { useToast } from '../components/ToastProvider';
 
 const ResetPassword = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -30,7 +32,7 @@ const ResetPassword = () => {
         otp: otp.trim(),
         newPassword: newPassword.trim()
       });
-      alert("Password has been reset successfully! Please sign in with your new password.");
+      toast.success("Password has been reset successfully! Please sign in with your new password.");
       navigate("/login");
     } catch (err) {
       console.error(err);
@@ -45,7 +47,7 @@ const ResetPassword = () => {
       <div className="login-card">
         <form onSubmit={handleSubmit}>
           <div className="login-header">
-            <div className="login-logo">🛡️</div>
+            <img src="/logo1.png" alt="Crown Assurance Logo" className="login-logo-premium" />
             <h2>Reset Password</h2>
             <p>Setup your new password using the recovery OTP code sent to your email.</p>
           </div>
@@ -56,7 +58,7 @@ const ResetPassword = () => {
             <label className="form-label">Email Address</label>
             <input
               type="email"
-              className="form-input"
+              className="auth-form-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -69,7 +71,7 @@ const ResetPassword = () => {
             <label className="form-label">Recovery OTP Code</label>
             <input
               type="text"
-              className="form-input"
+              className="auth-form-input"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               maxLength={6}
@@ -84,7 +86,7 @@ const ResetPassword = () => {
             <label className="form-label">New Password</label>
             <input
               type="password"
-              className="form-input"
+              className="auth-form-input"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
@@ -93,12 +95,12 @@ const ResetPassword = () => {
             />
           </div>
 
-          <button type="submit" className="login-btn" style={{ marginTop: "24px" }} disabled={loading}>
+          <button type="submit" className="login-btn-premium" style={{ marginTop: "24px" }} disabled={loading}>
             {loading ? "Resetting..." : "Save Password & Sign In"}
           </button>
         </form>
 
-        <div className="login-footer">
+        <div className="login-footer-premium">
           <p style={{ margin: 0 }}>
             Did not receive OTP?{" "}
             <a onClick={() => navigate("/forgot-password")} style={{ cursor: "pointer" }}>Resend Request</a>

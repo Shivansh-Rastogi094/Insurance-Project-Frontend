@@ -9,6 +9,7 @@ import Modal from '../components/Modal';
 import DownloadButton from '../components/DownloadButton';
 import { generateClaimListPDF } from '../utils/pdfGenerator';
 import { readAllUsers } from '../services/UserService';
+import { useToast } from '../components/ToastProvider';
 
 const styles = `
   .page-container {
@@ -585,6 +586,7 @@ const styles = `
 `;
 
 const Claims = () => {
+  const toast = useToast();
   const { userData } = useAuth();
   const isCustomer = userData?.role === 'CUSTOMER';
   const [currentPage, setCurrentPage] = useState(0);
@@ -622,7 +624,7 @@ const Claims = () => {
         } else {
           const limit = exportRange === 'FULL' ? totalElements : parseInt(customExportLimit);
           if (!limit || limit <= 0) {
-            alert("Please enter a valid count.");
+            toast.error("Please enter a valid count.");
             setExporting(false);
             return;
           }
@@ -632,14 +634,14 @@ const Claims = () => {
       }
 
       if (claimsToExport.length === 0) {
-        alert("No claims found inside chosen range.");
+        toast.error("No claims found inside chosen range.");
       } else {
         generateClaimListPDF(claimsToExport);
       }
       setShowExportModal(false);
     } catch (err) {
       console.error("Export list failed:", err);
-      alert("Failed to export claims list. Please try again.");
+      toast.error("Failed to export claims list. Please try again.");
     } finally {
       setExporting(false);
     }
@@ -828,7 +830,7 @@ const Claims = () => {
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       const firstErr = Object.values(errors)[0];
-      alert(`Validation Error: ${firstErr}`);
+      toast.error(`Validation Error: ${firstErr}`);
       return;
     }
 
@@ -859,12 +861,12 @@ const Claims = () => {
       });
 
       await createClaim(formData);
-      alert("Claim filed successfully!");
+      toast.success("Claim filed successfully!");
       setShowFileModal(false);
       loadClaims(currentPage);
     } catch (err) {
       console.error("Failed to file claim:", err);
-      alert("Filing claim failed. Please check your inputs or backend logs.");
+      toast.error("Filing claim failed. Please check your inputs or backend logs.");
     } finally {
       setSubmitting(false);
     }
@@ -982,7 +984,7 @@ const Claims = () => {
 
     if (Object.keys(errors).length > 0) {
       setReviewErrors(errors);
-      alert(`Validation Error: ${Object.values(errors)[0]}`);
+      toast.error(`Validation Error: ${Object.values(errors)[0]}`);
       return;
     }
 
@@ -996,21 +998,21 @@ const Claims = () => {
           remarks: reviewForm.remarks.trim()
         };
         await agentReviewClaim(selectedReviewClaim.id, payload);
-        alert(`Claim review submitted successfully as ${reviewForm.status}.`);
+        toast.success(`Claim review submitted successfully as ${reviewForm.status}.`);
       } else {
         const payload = {
           finalDecisionStatus: reviewForm.status,
           remarks: reviewForm.remarks.trim()
         };
         await adminDecisionClaim(selectedReviewClaim.id, payload);
-        alert(`Claim decision submitted successfully as ${reviewForm.status}.`);
+        toast.success(`Claim decision submitted successfully as ${reviewForm.status}.`);
       }
 
       setShowReviewModal(false);
       loadClaims(currentPage);
     } catch (err) {
       console.error("Error submitting review:", err);
-      alert("Failed to submit claim review/decision. Please check inputs or logs.");
+      toast.error("Failed to submit claim review/decision. Please check inputs or logs.");
     } finally {
       setReviewSubmitting(false);
     }
@@ -1024,7 +1026,10 @@ const Claims = () => {
 
         <div className="main-content">
           <div className="topbar">
-            <div className="topbar-logo">🛡️ InsureSpace</div>
+            <div className="topbar-logo">
+              <div className="brand-glyph-sm">C</div>
+              <span>Crown Assurance</span>
+            </div>
             <div className="topbar-right">
               <span className="role-badge">{userData?.role || "GUEST"}</span>
               <div className="user-avatar" title={userData?.fullName || "User"}>
@@ -1050,23 +1055,9 @@ const Claims = () => {
                   setShowExportModal(true);
                 }}
                 title="Export Claims Report Options"
-                className="page-btn"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'var(--primary)',
-                  color: '#ffffff',
-                  border: 'none',
-                  height: '40px',
-                  padding: '10px 18px',
-                  fontSize: '13.5px',
-                  fontWeight: '600',
-                  borderRadius: 'var(--radius-button)',
-                  cursor: 'pointer'
-                }}
+                className="btn-export"
               >
-                📊 Export List
+                <><i className="ph ph-chart-bar"></i> Export List</>
               </button>
               {isCustomer && (
                 <button className="file-claim-btn" onClick={handleFileClaim} style={{ height: '40px' }}>
@@ -1086,7 +1077,7 @@ const Claims = () => {
             </div>
             ) : claimsList.length === 0 ? (
               <div className="empty-state">
-                <span className="empty-state-icon">📋</span>
+                <i className="empty-state-icon ph ph-clipboard"></i>
                 <h3>No Claims Found</h3>
                 <p>
                   {isCustomer
@@ -1162,7 +1153,7 @@ const Claims = () => {
 
                 {filteredClaims.length === 0 ? (
                   <div className="empty-state" style={{ marginTop: '0' }}>
-                    <span className="empty-state-icon">🔍</span>
+                    <i className="empty-state-icon ph ph-magnifying-glass"></i>
                     <h3>No Matching Claims</h3>
                     <p>No claims match your filter criteria. Try adjusting your search query or status filters.</p>
                     <button className="action-btn" style={{ marginTop: '12px' }} onClick={handleClearFilters}>
@@ -1241,12 +1232,12 @@ const Claims = () => {
                                               if (isUrl) {
                                                 window.open(doc.documentReference, '_blank', 'noopener,noreferrer');
                                               } else {
-                                                alert(`Document Reference ID: ${doc.documentReference || 'N/A'}\n(Direct file download coming soon!)`);
+                                                toast.info(`Document Reference ID: ${doc.documentReference || 'N/A'}\n(Direct file download coming soon!)`);
                                               }
                                             }}
                                             title={isUrl ? "Open document in a new tab" : `Ref: ${doc.documentReference}`}
                                           >
-                                            📄 {doc.documentName || `Doc ${doc.id}`} ({doc.documentType || 'File'})
+                                            <i className="ph ph-file-text"></i> {doc.documentName || `Doc ${doc.id}`} ({doc.documentType || 'File'})
                                           </button>
                                         );
                                       })}
@@ -1273,7 +1264,7 @@ const Claims = () => {
                                           style={{ cursor: 'not-allowed', opacity: 0.7 }}
                                           title="Waiting for Officer recommendation"
                                         >
-                                          ⏳ Officer Review Pending
+                                          <i className="ph ph-hourglass"></i> Officer Review Pending
                                         </button>
                                       ) : (
                                         <button
@@ -1291,7 +1282,7 @@ const Claims = () => {
                                       type="claim"
                                       data={claim}
                                       extraData={{ claimNum }}
-                                      label="📥"
+                                      label={<i className="ph ph-download" />}
                                       title="Download PDF Claim Slip"
                                       className="action-btn"
                                       style={{
@@ -1323,14 +1314,14 @@ const Claims = () => {
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
                         disabled={currentPage === 0 || loading}
                       >
-                        Previous
+                        <i className="ph ph-arrow-left"></i> Previous
                       </button>
                       <button
                         className="page-btn"
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
                         disabled={currentPage === totalPages - 1 || loading}
                       >
-                        Next
+                        Next <i className="ph ph-arrow-right"></i>
                       </button>
                     </div>
                   </div>
@@ -1348,7 +1339,7 @@ const Claims = () => {
         <Modal
           isOpen={showFileModal}
           onClose={() => { if (!submitting) setShowFileModal(false); }}
-          title="📝 File New Insurance Claim"
+          title={<><i className="ph ph-file-text"></i> File New Insurance Claim</>}
           maxWidth="550px"
         >
           <form onSubmit={handleConfirmClaim} style={{ marginTop: '12px' }}>
@@ -1426,7 +1417,7 @@ const Claims = () => {
                   onClick={handleAddDocumentRow}
                   disabled={submitting}
                 >
-                  ➕ Add Document
+                  <i className="ph ph-plus"></i> Add Document
                 </button>
               </div>
 
@@ -1508,7 +1499,7 @@ const Claims = () => {
                       gap: '4px',
                       whiteSpace: 'nowrap'
                     }}>
-                      📁 Choose File
+                      <i className="ph ph-folder"></i> Choose File
                       <input
                         type="file"
                         style={{ display: 'none' }}
@@ -1533,7 +1524,7 @@ const Claims = () => {
               <button
                 type="submit"
                 className="btn-confirm"
-                style={{ background: 'var(--accent)' }}
+                style={{ background: 'var(--primary)' }}
                 disabled={submitting}
               >
                 {submitting ? 'Submitting...' : 'Submit Claim'}
@@ -1548,7 +1539,7 @@ const Claims = () => {
         <Modal
           isOpen={showReviewModal}
           onClose={() => { if (!reviewSubmitting) setShowReviewModal(false); }}
-          title={userData?.role === 'AGENT' ? "🔍 Officer Claim Verification" : "⚖️ Admin Claim Decision"}
+          title={userData?.role === 'AGENT' ? <><i className="ph ph-magnifying-glass"></i> Officer Claim Verification</> : <><i className="ph ph-scales"></i> Admin Claim Decision</>}
           maxWidth="500px"
         >
           <div className="modal-summary" style={{ background: 'var(--surface)', padding: '16px', borderRadius: '8px', marginBottom: '20px', border: '1px solid var(--border)' }}>
@@ -1629,7 +1620,7 @@ const Claims = () => {
               <button
                 type="submit"
                 className="btn-confirm"
-                style={{ background: 'var(--accent)' }}
+                style={{ background: 'var(--primary)' }}
                 disabled={reviewSubmitting}
               >
                 {reviewSubmitting ? 'Submitting...' : 'Submit Decision'}
@@ -1644,7 +1635,7 @@ const Claims = () => {
         <Modal
           isOpen={showHistoryModal}
           onClose={() => { if (!loadingHistory) setShowHistoryModal(false); }}
-          title="📋 Claim Status Audit History"
+          title={<><i className="ph ph-clipboard"></i> Claim Status Audit History</>}
           maxWidth="600px"
         >
           <div className="modal-summary" style={{ background: 'var(--surface)', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid var(--border)' }}>
@@ -1719,7 +1710,7 @@ const Claims = () => {
                       zIndex: 2,
                       flexShrink: 0
                     }}>
-                      {item.newStatus === 'APPROVED' ? '✅' : item.newStatus === 'REJECTED' ? '❌' : '⏳'}
+                      {item.newStatus === 'APPROVED' ? <i className="ph ph-check-circle"></i> : item.newStatus === 'REJECTED' ? <i className="ph ph-x-circle"></i> : <i className="ph ph-hourglass"></i>}
                     </div>
 
                     {/* Content details card */}
@@ -1780,7 +1771,7 @@ const Claims = () => {
         <Modal
           isOpen={showExportModal}
           onClose={() => { if (!exporting) setShowExportModal(false); }}
-          title="📊 Export Claims Directory PDF"
+          title={<><i className="ph ph-chart-bar"></i> Export Claims Directory PDF</>}
           maxWidth="460px"
         >
           <form onSubmit={handleExportSubmit} style={{ marginTop: '12px' }}>

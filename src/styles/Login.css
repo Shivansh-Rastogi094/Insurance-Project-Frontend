@@ -1,21 +1,56 @@
+/* ==========================================
+   Revolut-Style Login Stylesheet
+   ========================================== */
+
 .login-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 10% 20%, rgb(15, 37, 64) 0%, rgb(26, 60, 94) 90%);
+  background-color: #000000;
+  color: #ffffff;
+  font-family: 'Inter', -apple-system, sans-serif;
+  position: relative;
+  overflow: hidden;
   padding: 24px;
-  font-family: var(--font-body);
+  box-sizing: border-box;
+}
+
+/* Background Atmospheric Glow */
+.login-page::before {
+  content: '';
+  position: absolute;
+  top: -10%;
+  right: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(73, 79, 223, 0.12) 0%, transparent 70%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.login-page::after {
+  content: '';
+  position: absolute;
+  bottom: -10%;
+  left: -10%;
+  width: 40vw;
+  height: 40vw;
+  background: radial-gradient(circle, rgba(0, 168, 126, 0.05) 0%, transparent 70%);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .login-card {
-  background: var(--card);
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
+  background-color: #16181a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
   padding: 40px;
-  border-radius: var(--radius-card);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border);
+  box-sizing: border-box;
+  z-index: 2;
+  position: relative;
 }
 
 .login-header {
@@ -23,42 +58,60 @@
   margin-bottom: 32px;
 }
 
-.login-logo {
-  font-size: 48px;
-  margin-bottom: 12px;
+.login-logo-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background-color: var(--primary);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 24px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(73, 79, 223, 0.3);
+}
+
+.login-logo-premium {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+  margin-bottom: 16px;
   display: inline-block;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 4px 10px rgba(73, 79, 223, 0.3));
 }
 
 .login-header h2 {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.5px;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin-bottom: 8px;
 }
 
 .login-header p {
-  font-size: 13.5px;
-  color: var(--text-secondary);
-  margin-top: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
   line-height: 1.4;
+  margin: 0;
 }
 
 .form-group {
-  margin-bottom: 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-bottom: 24px;
+  position: relative;
 }
 
 .form-label {
-  font-size: 11.5px;
+  display: block;
+  font-size: 13px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
 }
 
+/* Input Icon Wrapper & Premium Input Styles */
 .input-wrapper {
   position: relative;
   display: flex;
@@ -66,98 +119,172 @@
   width: 100%;
 }
 
-.form-input {
-  width: 100%;
-  padding: 12px 16px;
-  font-size: 14.5px;
-  font-family: inherit;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-input);
-  color: var(--text-primary);
-  background-color: var(--surface);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+.input-icon-left {
+  position: absolute;
+  left: 16px;
+  color: rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-size: 18px;
 }
 
-.form-input:focus {
+.auth-form-input {
+  width: 100%;
+  height: 56px;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0 16px;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.auth-form-input:focus {
   outline: none;
-  border-color: var(--primary-light);
-  box-shadow: 0 0 0 3px rgba(37, 99, 168, 0.15);
+  border-color: var(--primary);
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.auth-form-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.form-input-premium {
+  width: 100%;
+  height: 56px;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0 16px 0 48px; /* Extra left padding to make room for icon */
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.form-input-premium:focus {
+  outline: none;
+  border-color: var(--primary);
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.form-input-premium::placeholder {
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .password-toggle-btn {
   position: absolute;
-  right: 12px;
+  right: 16px;
   background: transparent;
   border: none;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   display: flex;
   align-items: center;
-  font-size: 14px;
-  padding: 0;
-  transition: color 0.2s ease;
+  justify-content: center;
+  padding: 4px;
+  transition: color 0.2s, transform 0.1s;
+  font-size: 18px;
+  z-index: 5;
 }
 
 .password-toggle-btn:hover {
-  color: var(--primary-light);
+  color: #ffffff;
+}
+
+.password-toggle-btn:active {
+  transform: scale(0.9);
 }
 
 .error-text {
   font-size: 12px;
   color: var(--danger);
-  font-weight: 500;
-  margin-top: 4px;
+  margin-top: 6px;
+  margin-bottom: 0;
 }
 
-.login-btn {
+.login-btn-premium {
   width: 100%;
-  padding: 13px 20px;
-  font-size: 14.5px;
-  font-weight: 600;
-  font-family: inherit;
-  color: #ffffff;
-  background: var(--primary);
+  height: 48px;
+  background-color: #ffffff;
+  color: #000000;
   border: none;
-  border-radius: var(--radius-button);
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
-  margin-top: 8px;
-  box-shadow: 0 4px 6px -1px rgba(26, 60, 94, 0.2);
-}
-
-.login-btn:hover {
-  background: var(--primary-light);
-  box-shadow: 0 10px 15px -3px rgba(26, 60, 94, 0.3);
-}
-
-.login-btn:active {
-  transform: scale(0.98);
-}
-
-.login-btn:disabled {
-  background: var(--border);
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.login-footer {
-  margin-top: 24px;
-  text-align: center;
-  font-size: 13.5px;
-  color: var(--text-secondary);
-  border-top: 1px solid var(--border);
-  padding-top: 20px;
-}
-
-.login-footer a {
-  color: var(--primary-light);
+  border-radius: 9999px;
+  font-size: 16px;
   font-weight: 600;
-  text-decoration: none;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: background-color 0.2s, transform 0.1s;
+  margin-top: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.login-footer a:hover {
-  color: var(--accent);
-  text-decoration: underline;
+.login-btn-premium:hover {
+  background-color: #e2e2e7;
 }
+
+.login-btn-premium:active {
+  transform: scale(0.97);
+}
+
+.login-footer-premium {
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 24px;
+}
+
+.login-footer-premium p {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+.login-footer-premium a {
+  color: var(--primary-light);
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.login-footer-premium a:hover {
+  color: var(--accent);
+}
+
+.login-footer-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-weight: 500 !important;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.login-footer-back:hover {
+  color: #ffffff !important;
+}
+
+.login-api-error {
+  background-color: rgba(226, 59, 74, 0.1);
+  border: 1px solid rgba(226, 59, 74, 0.2);
+  color: var(--danger);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-bottom: 24px;
+  line-height: 1.4;
+  text-align: center;
+}
+

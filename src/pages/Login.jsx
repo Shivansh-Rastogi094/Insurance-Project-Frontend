@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LoginService } from "../services/AuthService";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../components/ToastProvider";
 import "../styles/Login.css";
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const toast = useToast();
 
   const [user, setUser] = useState({
     email: "",
@@ -14,6 +16,7 @@ const Login = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -34,6 +37,7 @@ const Login = () => {
   const handleQuickFill = (email, password) => {
     setUser({ email, password });
     setErrors({});
+    setApiError("");
   };
 
   const validate = () => {
@@ -63,6 +67,7 @@ const Login = () => {
 
     try {
       setLoading(true);
+      setApiError("");
       const response = await LoginService(user);
 
       login(response.data);
@@ -78,11 +83,11 @@ const Login = () => {
           navigate("/userdashboard");
           break;
         default:
-          alert("Unknown role");
+          setApiError("Unknown user role.");
       }
     } catch (error) {
       console.error(error);
-      alert("Login failed: " + (error?.response?.data?.message || "Invalid credentials"));
+      toast.error("Login failed: " + (error?.response?.data?.message || "Invalid credentials"));
     } finally {
       setLoading(false);
     }
@@ -96,15 +101,17 @@ const Login = () => {
           handleLogin();
         }}>
           <div className="login-header">
-            <div className="login-logo-container">🛡️</div>
+            <img src="/logo1.png" alt="Crown Assurance Logo" className="login-logo-premium" />
             <h2>Sign In</h2>
-            <p>Insurance Policy & Claims Management System</p>
+            <p>Secure access to your policies &amp; claims</p>
           </div>
+            
+            {apiError && <div className="login-api-error">{apiError}</div>}
 
           <div className="form-group">
             <label className="form-label">Email Address</label>
             <div className="input-wrapper">
-              <span className="input-icon-left">✉️</span>
+              <span className="input-icon-left"><i className="ph ph-envelope"></i></span>
               <input
                 type="email"
                 name="email"
@@ -120,7 +127,7 @@ const Login = () => {
           <div className="form-group">
             <label className="form-label">Password</label>
             <div className="input-wrapper">
-              <span className="input-icon-left">🔒</span>
+              <span className="input-icon-left"><i className="ph ph-lock"></i></span>
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
@@ -135,7 +142,7 @@ const Login = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 title={showPassword ? "Hide Password" : "Show Password"}
               >
-                {showPassword ? "🙈" : "👁️"}
+                {showPassword ? <i className="ph ph-eye-slash"></i> : <i className="ph ph-eye"></i>}
               </button>
             </div>
             {errors.password && <p className="error-text">{errors.password}</p>}
@@ -159,7 +166,7 @@ const Login = () => {
             className="login-btn-premium"
             disabled={loading}
           >
-            {loading ? "Signing In..." : "Sign In →"}
+            {loading ? "Signing In..." : <>Sign In <i className="ph ph-arrow-right"></i></>}
           </button>
         </form>
 
@@ -169,7 +176,7 @@ const Login = () => {
             <a onClick={() => navigate("/register")}>Register here</a>
           </p>
           <p style={{ marginTop: "12px", marginBottom: 0 }}>
-            <a onClick={() => navigate("/")}>← Back to Landing Page</a>
+            <a className="login-footer-back" onClick={() => navigate("/")}><i className="ph ph-arrow-left"></i> Back to Landing Page</a>
           </p>
         </div>
       </div>

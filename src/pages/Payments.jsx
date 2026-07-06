@@ -8,6 +8,7 @@ import { readMyPayements, createPayment } from '../services/PaymentService';
 import { useFetch } from '../hooks/useFetch';
 import Modal from '../components/Modal';
 import DownloadButton from '../components/DownloadButton';
+import { useToast } from '../components/ToastProvider';
 
 const styles = `
   .page-container {
@@ -584,6 +585,7 @@ const styles = `
 `;
 
 const Payments = () => {
+  const toast = useToast();
   const { userData } = useAuth();
   const navigate = useNavigate();
 
@@ -644,7 +646,7 @@ const Payments = () => {
       };
 
       await createPayment(payload);
-      alert(`Payment of ₹${selectedPolicy.premiumAmount.toLocaleString('en-IN')} successful! Policy is now active.`);
+      toast.success(`Payment of ₹${selectedPolicy.premiumAmount.toLocaleString('en-IN')} successful! Policy is now active.`);
       
       // Close modal & reload lists
       setSelectedPolicy(null);
@@ -652,7 +654,7 @@ const Payments = () => {
       loadPayments();
     } catch (err) {
       console.error('Error submitting payment:', err);
-      alert('Payment processing failed. Please try again.');
+      toast.error('Payment processing failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -666,7 +668,10 @@ const Payments = () => {
 
         <div className="main-content">
           <div className="topbar">
-            <div className="topbar-logo">🛡️ InsureSpace</div>
+            <div className="topbar-logo">
+              <div className="brand-glyph-sm">C</div>
+              <span>Crown Assurance</span>
+            </div>
             <div className="topbar-right">
               <span className="role-badge">
                 {userData?.fullName || "User"} | {userData?.role || "GUEST"}
@@ -757,7 +762,7 @@ const Payments = () => {
                             type="policy"
                             data={policy}
                             extraData={{ customerName: userData?.fullName }}
-                            label="📥 Download Schedule"
+                            label={<><i className="ph ph-download" /> Download Schedule</>}
                             title="Download Policy PDF Schedule"
                             className="btn-pay"
                             style={{
@@ -788,7 +793,7 @@ const Payments = () => {
 
             {/* Right Column: Transaction Logs */}
             <div className="section-card">
-              <h3 className="section-title">📋 Recent Payment Transactions</h3>
+              <h3 className="section-title"><i className="ph ph-clipboard"></i> Recent Payment Transactions</h3>
               {transactionsLoading ? (
                 <div className="loading-container" style={{ width: '100%', padding: '20px 40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <Skeleton height={60} />
@@ -839,7 +844,7 @@ const Payments = () => {
                             type="payment"
                             data={txn}
                             extraData={{ formattedDate, formattedTime }}
-                            label="📥"
+                            label={<i className="ph ph-download" />}
                             title="Download PDF Receipt"
                             className="action-btn"
                             style={{
@@ -868,7 +873,7 @@ const Payments = () => {
         <Modal 
           isOpen={!!selectedPolicy} 
           onClose={() => { if (!submitting) setSelectedPolicy(null); }} 
-          title="💳 Secure Payment Portal"
+          title={<><i className="ph ph-credit-card"></i> Secure Payment Portal</>}
           maxWidth="500px"
         >
           <form onSubmit={handleConfirmPayment} style={{ marginTop: '12px' }}>

@@ -12,7 +12,7 @@ const DownloadButton = ({
   type, 
   data, 
   extraData = {}, 
-  label = "📥", 
+  label = <i className="ph ph-download-simple"></i>, 
   title = "Download PDF Document",
   className = "action-btn",
   style = {} 

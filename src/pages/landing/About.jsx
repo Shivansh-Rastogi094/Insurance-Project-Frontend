@@ -7,10 +7,10 @@ const About = () => {
   const navigate = useNavigate();
 
   const TEAM = [
-    { avatar: "👨‍💼", name: "Rajesh Sharma",   role: "CEO & Founder"       },
-    { avatar: "👩‍💻", name: "Priya Nair",       role: "CTO"                 },
-    { avatar: "👨‍⚖️", name: "Amit Verma",      role: "Head of Claims"      },
-    { avatar: "👩‍📊", name: "Sneha Patel",      role: "Chief Risk Officer"  },
+    { avatar: <i className="ph ph-user-tie"></i>, name: "Rajesh Sharma",   role: "CEO & Founder"       },
+    { avatar: <i className="ph ph-user"></i>, name: "Priya Nair",       role: "CTO"                 },
+    { avatar: <i className="ph ph-scales"></i>, name: "Amit Verma",      role: "Head of Claims"      },
+    { avatar: <i className="ph ph-user-focus"></i>, name: "Sneha Patel",      role: "Chief Risk Officer"  },
   ];
 
   return (
@@ -28,7 +28,7 @@ const About = () => {
           {/* Story */}
           <div className="about-grid">
             <div className="about-visual">
-              <span className="about-visual-icon">🏆</span>
+              <i className="about-visual-icon ph ph-trophy"></i>
               <div className="about-visual-title">Crown Assurance Pvt. &amp; Ltd.</div>
               <div className="about-visual-sub">Est. 2020 &bull; IRDAI Regulated &bull; ISO Certified</div>
             </div>
@@ -67,7 +67,7 @@ const About = () => {
           <div className="about-cta">
             <h2>Ready to Join the Crown Family?</h2>
             <p>Get insured in minutes — completely digital, completely transparent.</p>
-            <button className="btn-about-cta" onClick={() => navigate("/register")}>🚀 Create Free Account</button>
+            <button className="btn-about-cta" onClick={() => navigate("/register")}><i className="ph ph-rocket"></i> Create Free Account</button>
           </div>
         </div>
       </div>

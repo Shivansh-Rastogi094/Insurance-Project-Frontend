@@ -4,11 +4,11 @@ import LandingLayout from "./LandingLayout";
 import "../../styles/ClaimsInfo.css";
 
 const STEPS = [
-  { step: "01", icon: "📝", title: "File a Claim",       desc: "Log in to your dashboard, select the policy, and fill out the incident details form." },
-  { step: "02", icon: "📎", title: "Upload Documents",    desc: "Attach supporting documents — photos, FIR, medical reports, certificates — directly from your device." },
-  { step: "03", icon: "🔍", title: "Agent Review",        desc: "Your assigned agent verifies the documents and submits a recommendation within 48 business hours." },
-  { step: "04", icon: "✅", title: "Admin Decision",      desc: "Admin approves or rejects the claim. You receive an instant email notification with full details." },
-  { step: "05", icon: "💳", title: "Settlement",          desc: "Approved claim amounts are transferred directly to your registered bank account within 3–5 working days." },
+  { step: "01", icon: <i className="ph ph-file-text"></i>, title: "File a Claim",       desc: "Log in to your dashboard, select the policy, and fill out the incident details form." },
+  { step: "02", icon: <i className="ph ph-paperclip"></i>, title: "Upload Documents",    desc: "Attach supporting documents — photos, FIR, medical reports, certificates — directly from your device." },
+  { step: "03", icon: <i className="ph ph-magnifying-glass"></i>, title: "Agent Review",        desc: "Your assigned agent verifies the documents and submits a recommendation within 48 business hours." },
+  { step: "04", icon: <i className="ph ph-check-circle"></i>, title: "Admin Decision",      desc: "Admin approves or rejects the claim. You receive an instant email notification with full details." },
+  { step: "05", icon: <i className="ph ph-credit-card"></i>, title: "Settlement",          desc: "Approved claim amounts are transferred directly to your registered bank account within 3–5 working days." },
 ];
 
 const FAQS = [
@@ -34,7 +34,7 @@ const ClaimsInfo = () => {
           </div>
 
           <div className="steps-section">
-            <div className="steps-title">📋 The Claims Process</div>
+            <div className="steps-title"><i className="ph ph-clipboard"></i> The Claims Process</div>
             {STEPS.map(s => (
               <div className="step-row" key={s.step}>
                 <div className="step-num-circle">{s.step}</div>

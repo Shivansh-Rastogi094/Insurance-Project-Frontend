@@ -106,7 +106,7 @@ const VerifyOtp = () => {
     try {
       if (step === 1) {
         await VerifyOtpService({ email, otp: otp.join("") });
-        setSuccessMsg("📧 Email OTP verified successfully! Now please verify your mobile OTP...");
+        setSuccessMsg("Email OTP verified successfully! Now please verify your mobile OTP...");
         setTimeout(() => {
           setStep(2);
           setOtp(["", "", "", "", "", ""]);
@@ -114,7 +114,7 @@ const VerifyOtp = () => {
         }, 1500);
       } else {
         await VerifyMobileOtpService({ email, otp: otp.join("") });
-        setSuccessMsg("📱 Mobile OTP verified successfully! Account is now activated. Redirecting to login...");
+        setSuccessMsg("Mobile OTP verified successfully! Account is now activated. Redirecting to login...");
         setTimeout(() => navigate("/login"), 2000);
       }
     } catch (error) {
@@ -138,7 +138,7 @@ const VerifyOtp = () => {
     setSuccessMsg("");
     try {
       await ResendOtpService(email);
-      setSuccessMsg("📧 OTP resent. Please check your email inbox / phone messages.");
+      setSuccessMsg("OTP resent. Please check your email inbox / phone messages.");
       setCooldown(RESEND_COOLDOWN);
       // Clear OTP boxes
       setOtp(["", "", "", "", "", ""]);
@@ -161,7 +161,7 @@ const VerifyOtp = () => {
 
         {/* Header */}
         <div className="otp-header">
-          <div className="otp-icon">{step === 1 ? "📧" : "📱"}</div>
+          <div className="otp-icon">{step === 1 ? <i className="ph ph-envelope"></i> : <i className="ph ph-device-mobile"></i>}</div>
           <h2>{step === 1 ? "Verify Your Email" : "Verify Your Mobile Number"}</h2>
           <p>
             {step === 1 ? (
