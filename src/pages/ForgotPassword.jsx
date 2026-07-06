@@ -45,7 +45,7 @@ const ForgotPassword = () => {
             <label className="form-label">Email Address</label>
             <input
               type="email"
-              className="form-input"
+              className="auth-form-input"
               placeholder="e.g. user@insurance.com"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError(""); }}
@@ -54,12 +54,12 @@ const ForgotPassword = () => {
             />
           </div>
 
-          <button type="submit" className="login-btn" style={{ marginTop: "24px" }} disabled={loading}>
+          <button type="submit" className="login-btn-premium" style={{ marginTop: "24px" }} disabled={loading}>
             {loading ? "Sending OTP..." : "Request Recovery Code"}
           </button>
         </form>
 
-        <div className="login-footer">
+        <div className="login-footer-premium">
           <p style={{ margin: 0 }}>
             Remembered your password?{" "}
             <a onClick={() => navigate("/login")} style={{ cursor: "pointer" }}>Back to Sign In</a>

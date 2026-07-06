@@ -58,7 +58,7 @@ const ResetPassword = () => {
             <label className="form-label">Email Address</label>
             <input
               type="email"
-              className="form-input"
+              className="auth-form-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -71,7 +71,7 @@ const ResetPassword = () => {
             <label className="form-label">Recovery OTP Code</label>
             <input
               type="text"
-              className="form-input"
+              className="auth-form-input"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               maxLength={6}
@@ -86,7 +86,7 @@ const ResetPassword = () => {
             <label className="form-label">New Password</label>
             <input
               type="password"
-              className="form-input"
+              className="auth-form-input"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
@@ -95,12 +95,12 @@ const ResetPassword = () => {
             />
           </div>
 
-          <button type="submit" className="login-btn" style={{ marginTop: "24px" }} disabled={loading}>
+          <button type="submit" className="login-btn-premium" style={{ marginTop: "24px" }} disabled={loading}>
             {loading ? "Resetting..." : "Save Password & Sign In"}
           </button>
         </form>
 
-        <div className="login-footer">
+        <div className="login-footer-premium">
           <p style={{ margin: 0 }}>
             Did not receive OTP?{" "}
             <a onClick={() => navigate("/forgot-password")} style={{ cursor: "pointer" }}>Resend Request</a>
