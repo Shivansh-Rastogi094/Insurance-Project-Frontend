@@ -38,7 +38,9 @@ export const VerifyOtpService = async (payload) => {
 // POST /api/auth/resend-otp
 export const ResendOtpService = async (email) => {
     try {
-        const response = await api.post(`auth/resend-otp`, { email });
+        const response = await api.post(`auth/resend-otp`, null, {
+            params: { email }
+        });
         return response;
     } catch (error) {
         console.error("Error in ResendOtpService:", error);
