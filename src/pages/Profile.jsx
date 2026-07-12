@@ -555,7 +555,7 @@ const Profile = () => {
         loadProfile();
       } catch (err) {
         console.error("Error updating profile:", err);
-        toast.error("Failed to update profile. Please check the backend console logs.");
+        toast.error(err?.response?.data?.message || "Failed to update profile. Please check the backend console logs.");
       } finally {
         setSubmitting(false);
       }
@@ -578,7 +578,7 @@ const Profile = () => {
         loadProfile();
       } catch (err) {
         console.error("Error creating profile:", err);
-        toast.error("Failed to complete profile. Please check the backend console logs.");
+        toast.error(err?.response?.data?.message || "Failed to complete profile. Please check the backend console logs.");
       } finally {
         setSubmitting(false);
       }

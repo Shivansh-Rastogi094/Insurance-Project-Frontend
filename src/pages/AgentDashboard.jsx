@@ -137,11 +137,11 @@ const styles = `
 
 const fetchDashboardData = async () => {
   const [customerRes, productRes, claimRes, policyRes, paymentRes] = await Promise.all([
-    readAllCustomers().catch(err => { console.warn("readAllCustomers failed:", err); return { data: { content: [] } }; }),
-    readAllProducts().catch(err => { console.warn("readAllProducts failed:", err); return { data: { content: [] } }; }),
-    readAllClaims().catch(err => { console.warn("readAllClaims failed:", err); return { data: { content: [] } }; }),
-    readAllPolicies().catch(err => { console.warn("readAllPolicies failed:", err); return { data: { content: [] } }; }),
-    readAllPayments().catch(err => { console.warn("readAllPayments failed:", err); return { data: { content: [] } }; })
+    readAllCustomers(0, 1000).catch(err => { console.warn("readAllCustomers failed:", err); return { data: { content: [] } }; }),
+    readAllProducts(0, 1000).catch(err => { console.warn("readAllProducts failed:", err); return { data: { content: [] } }; }),
+    readAllClaims(0, 1000).catch(err => { console.warn("readAllClaims failed:", err); return { data: { content: [] } }; }),
+    readAllPolicies(0, 1000).catch(err => { console.warn("readAllPolicies failed:", err); return { data: { content: [] } }; }),
+    readAllPayments(0, 1000).catch(err => { console.warn("readAllPayments failed:", err); return { data: { content: [] } }; })
   ]);
 
   const paymentsSum = paymentRes?.data?.content
@@ -149,10 +149,10 @@ const fetchDashboardData = async () => {
     : 0;
 
   return {
-    clients: customerRes?.data?.content?.length || 0,
-    products: productRes?.data?.content?.length || 0,
-    policies: policyRes?.data?.content?.length || 0,
-    claims: claimRes?.data?.content?.length || 0,
+    clients: customerRes?.data?.totalElements ?? customerRes?.data?.content?.length ?? 0,
+    products: productRes?.data?.totalElements ?? productRes?.data?.content?.length ?? 0,
+    policies: policyRes?.data?.totalElements ?? policyRes?.data?.content?.length ?? 0,
+    claims: claimRes?.data?.totalElements ?? claimRes?.data?.content?.length ?? 0,
     totalPremium: paymentsSum
   };
 };

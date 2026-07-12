@@ -1,588 +1,16 @@
-import Skeleton from 'react-loading-skeleton';
 import React, { useEffect, useState, useCallback } from 'react';
+import Skeleton from 'react-loading-skeleton';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useFetch } from '../hooks/useFetch';
-import { readAllUsers, activateUser, deactivateUser, createAgentAccount } from '../services/UserService';
+import { readAllUsers, activateUser, deactivateUser } from '../services/UserService';
 import Modal from '../components/Modal';
-import DownloadButton from '../components/DownloadButton';
 import { generateUserListPDF } from '../utils/pdfGenerator';
 import { useToast } from '../components/ToastProvider';
-
-const styles = `
-  .page-container {
-    font-family: var(--font-body);
-    background: var(--surface);
-    min-height: 100vh;
-    display: flex;
-    position: relative;
-  }
-
-  .main-content {
-    flex: 1;
-    margin-left: 240px;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .topbar {
-    height: 60px;
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 40px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-
-  .topbar-logo {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--primary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .role-badge {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--primary-light);
-    background: rgba(37, 99, 168, 0.1);
-    padding: 4px 10px;
-    border-radius: var(--radius-badge);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .user-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--primary);
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 600;
-    border: 2px solid var(--border);
-    cursor: pointer;
-  }
-
-  .header {
-    padding: 32px 40px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .header-text h2 {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: -0.5px;
-  }
-
-  .header-text p {
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin-top: 4px;
-  }
-
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 8px 40px 24px;
-  }
-
-  .metrics-row {
-    display: flex;
-    gap: 24px;
-    padding: 0 40px 24px;
-    flex-wrap: wrap;
-  }
-
-  .summary-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    padding: 20px 24px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: var(--shadow-card);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-height: 100px;
-    width: 260px;
-  }
-
-  .summary-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--primary-light);
-  }
-
-  .summary-card.active-users::before {
-    background: var(--success);
-  }
-
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .card-title {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-  }
-
-  .card-icon {
-    font-size: 18px;
-    background: rgba(37, 99, 168, 0.08);
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .summary-card.active-users .card-icon {
-    background: rgba(16, 185, 129, 0.08);
-  }
-
-  .card-value {
-    font-size: 26px;
-    font-weight: 700;
-    color: var(--text-primary);
-    font-family: var(--font-mono);
-    margin-top: 8px;
-  }
-
-  .table-container {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    overflow: hidden;
-    margin: 0 40px 40px;
-    box-shadow: var(--shadow-card);
-  }
-
-  .users-table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-  }
-
-  .users-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-    font-size: 14px;
-  }
-
-  .users-table th {
-    background: rgba(255, 255, 255, 0.01);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 24px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.05em;
-  }
-
-  .users-table td {
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-primary);
-    white-space: nowrap;
-    vertical-align: middle;
-  }
-
-  .users-table tr:last-child td {
-    border-bottom: none;
-  }
-
-  .users-table tr:hover td {
-    background: rgba(37, 99, 168, 0.02);
-  }
-
-  .user-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  .user-badge.admin {
-    background: rgba(147, 51, 234, 0.1);
-    color: #a855f7;
-    border: 1px solid rgba(147, 51, 234, 0.2);
-  }
-
-  .user-badge.agent {
-    background: rgba(37, 99, 168, 0.1);
-    color: var(--primary-light);
-    border: 1px solid rgba(37, 99, 168, 0.2);
-  }
-
-  .user-badge.customer {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.2);
-  }
-
-  .status-dot {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 500;
-  }
-
-  .status-dot::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-  }
-
-  .status-dot.active::before {
-    background-color: #10b981;
-    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
-  }
-
-  .status-dot.inactive::before {
-    background-color: #ef4444;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
-  }
-
-  .action-btn {
-    background: var(--card);
-    border: 1px solid var(--border);
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-primary);
-    border-radius: var(--radius-button);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .action-btn.deactivate {
-    color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.2);
-    background: rgba(239, 68, 68, 0.02);
-  }
-
-  .action-btn.deactivate:hover {
-    background: #ef4444;
-    color: #ffffff;
-    border-color: #ef4444;
-    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
-  }
-
-  .action-btn.activate {
-    color: #10b981;
-    border-color: rgba(16, 185, 129, 0.2);
-    background: rgba(16, 185, 129, 0.02);
-  }
-
-  .action-btn.activate:hover {
-    background: #10b981;
-    color: #ffffff;
-    border-color: #10b981;
-    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
-  }
-
-  .pagination-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 24px;
-    background: rgba(255, 255, 255, 0.01);
-    border-top: 1px solid var(--border);
-  }
-
-  .pagination-info {
-    font-size: 12.5px;
-    color: var(--text-secondary);
-  }
-
-  .pagination-controls {
-    display: flex;
-    gap: 8px;
-  }
-
-  .page-btn {
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    padding: 6px 12px;
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: var(--radius-button);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .page-btn:hover:not(:disabled) {
-    border-color: var(--primary-light);
-    color: var(--primary-light);
-  }
-
-  .page-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px;
-    color: var(--text-secondary);
-  }
-
-  .spinner {
-    border: 3.5px solid var(--border);
-    border-top: 3.5px solid var(--primary-light);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin-bottom: 16px;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  @media (max-width: 968px) {
-    .main-content {
-      margin-left: 0;
-    }
-    .table-container {
-      margin: 0 20px 20px;
-    }
-    .metrics-row,
-    .header {
-      padding: 24px 20px 16px;
-    }
-    .divider {
-      margin: 8px 20px 24px;
-    }
-  }
-
-  .btn-primary {
-    background: var(--primary);
-    color: #ffffff;
-    border: none;
-    padding: 10px 18px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: inherit;
-    border-radius: var(--radius-button);
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    box-shadow: 0 4px 6px -1px rgba(26, 60, 94, 0.15);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .btn-primary:hover {
-    background: var(--primary-light);
-  }
-
-  .btn-primary:active {
-    transform: scale(0.98);
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 16px;
-  }
-
-  .form-label {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-  }
-
-  .form-input {
-    width: 100%;
-    padding: 12px;
-    font-size: 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-input);
-    color: var(--text-primary);
-    background-color: var(--surface);
-    font-family: inherit;
-  }
-
-  .form-input:focus {
-    outline: none;
-    border-color: var(--primary-light);
-    background-color: var(--card);
-  }
-
-  /* Modal Styles */
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    animation: fadeIn 0.2s ease;
-  }
-
-  .modal-content {
-    background: var(--card);
-    border-radius: var(--radius-card);
-    width: 100%;
-    max-width: 480px;
-    box-shadow: var(--shadow-premium);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 32px;
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-
-  .modal-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .modal-body {
-    margin-bottom: 24px;
-    font-size: 14px;
-    color: var(--text-secondary);
-  }
-
-  .modal-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-  }
-
-  .btn-cancel {
-    background: transparent;
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
-    padding: 10px 18px;
-    font-size: 13.5px;
-    font-weight: 600;
-    border-radius: var(--radius-button);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .btn-cancel:hover {
-    background: var(--surface);
-    color: var(--text-primary);
-  }
-
-  .btn-confirm {
-    background: var(--primary);
-    color: #ffffff;
-    border: none;
-    padding: 10px 18px;
-    font-size: 13.5px;
-    font-weight: 600;
-    border-radius: var(--radius-button);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .btn-confirm:hover {
-    background: var(--primary-light);
-  }
-
-  .filter-bar {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    padding: 20px 24px;
-    margin: 0 40px 24px;
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto;
-    gap: 16px;
-    align-items: end;
-    box-shadow: var(--shadow-card);
-  }
-
-  .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .filter-label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-  }
-
-  @media (max-width: 768px) {
-    .filter-bar {
-      grid-template-columns: 1fr;
-      margin: 0 20px 24px;
-    }
-  }
-`;
+import UserFilterBar from '../components/users/UserFilterBar';
+import UsersTable from '../components/users/UsersTable';
+import AddUserModal from '../components/users/AddUserModal';
+import '../styles/Users.css';
 
 const Users = () => {
   const toast = useToast();
@@ -596,13 +24,16 @@ const Users = () => {
   const [remarks, setRemarks] = useState('');
   const [modalSubmitting, setModalSubmitting] = useState(false);
 
-  // Export Modal state
+  // Add Officer Modal
+  const [showAddAgentModal, setShowAddAgentModal] = useState(false);
+
+  // Export Modal
   const [showExportModal, setShowExportModal] = useState(false);
-  const [exportRange, setExportRange] = useState('PAGE'); // 'PAGE', 'FULL', 'CUSTOM'
+  const [exportRange, setExportRange] = useState('PAGE');
   const [customExportLimit, setCustomExportLimit] = useState('50');
   const [exporting, setExporting] = useState(false);
 
-  // Filters state
+  // Filters State
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -611,63 +42,6 @@ const Users = () => {
     setSearchQuery('');
     setRoleFilter('ALL');
     setStatusFilter('ALL');
-  };
-
-  // Add Agent Modal state
-  const [showAddAgentModal, setShowAddAgentModal] = useState(false);
-  const [agentData, setAgentData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    phoneNumber: '',
-    role: 'AGENT',
-    specialization: 'HEALTH'
-  });
-  const [agentSubmitting, setAgentSubmitting] = useState(false);
-
-  const handleAddAgentSubmit = async (e) => {
-    e.preventDefault();
-    if (!agentData.fullName.trim() || !agentData.email.trim() || !agentData.password.trim() || !agentData.phoneNumber.trim()) {
-      toast.error("All fields are required.");
-      return;
-    }
-    if (agentData.role === 'AGENT' && !agentData.specialization) {
-      toast.error("Specialization is required for Agent role.");
-      return;
-    }
-
-    // Build payload: SUPER_AGENT doesn't need specialization (auto-set to SUPER by backend)
-    const payload = {
-      fullName: agentData.fullName,
-      email: agentData.email,
-      password: agentData.password,
-      phoneNumber: agentData.phoneNumber,
-      role: agentData.role,
-      ...(agentData.role === 'AGENT' ? { specialization: agentData.specialization } : {})
-    };
-
-    try {
-      setAgentSubmitting(true);
-      await createAgentAccount(payload);
-      toast.success("Agent account created successfully!");
-      setShowAddAgentModal(false);
-      // Reset form
-      setAgentData({
-        fullName: '',
-        email: '',
-        password: '',
-        phoneNumber: '',
-        role: 'AGENT',
-        specialization: 'HEALTH'
-      });
-      // Refresh list
-      loadUsers(currentPage);
-    } catch (err) {
-      console.error("Failed to create agent:", err);
-      toast.error(`Failed to create agent: ${err?.response?.data?.message || err.message}`);
-    } finally {
-      setAgentSubmitting(false);
-    }
   };
 
   const fetchUsersData = useCallback(async (page = 0) => {
@@ -699,9 +73,6 @@ const Users = () => {
 
     return matchesSearch && matchesRole && matchesStatus;
   });
-  
-  // Calculate active and total count from fetched page (or display metrics)
-  const activeCount = usersList.filter(u => u.active).length;
 
   const initials = userData?.fullName
     ? userData.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
@@ -758,23 +129,7 @@ const Users = () => {
           return;
         }
         const res = await readAllUsers(0, limit);
-        const list = res?.data?.content || res?.content || [];
-        
-        // Apply filters to the fetched list
-        usersToExport = list.filter(user => {
-          const matchesSearch = !searchQuery || 
-            user.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (user.phoneNumber && user.phoneNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            user.role?.toLowerCase().includes(searchQuery.toLowerCase());
-
-          const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
-          const matchesStatus = statusFilter === 'ALL' ||
-            (statusFilter === 'ACTIVE' && user.active) ||
-            (statusFilter === 'DEACTIVATED' && !user.active);
-
-          return matchesSearch && matchesRole && matchesStatus;
-        });
+        usersToExport = res?.data?.content || res?.content || [];
       }
 
       if (usersToExport.length === 0) {
@@ -793,8 +148,7 @@ const Users = () => {
 
   return (
     <>
-      <style>{styles}</style>
-      <div className="page-container">
+      <div className="users-page page-container">
         <Sidebar title="Admin Panel" />
 
         <div className="main-content">
@@ -811,7 +165,7 @@ const Users = () => {
             </div>
           </div>
 
-          <div className="header">
+          <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div className="header-text">
               <h2>Users Directory</h2>
               <p>Manage system credentials, user activation status, and administrative role rights</p>
@@ -864,53 +218,15 @@ const Users = () => {
 
           {/* Filters section */}
           {!loading && !error && usersList.length > 0 && (
-            <div className="filter-bar">
-              <div className="filter-group">
-                <label className="filter-label">Search</label>
-                <input
-                  type="text"
-                  className="filter-input"
-                  placeholder="Search Name, Email, Phone..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <div className="filter-group">
-                <label className="filter-label">Filter by Role</label>
-                <select 
-                  className="filter-input" 
-                  value={roleFilter} 
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                >
-                  <option value="ALL">All Roles</option>
-                  <option value="CUSTOMER">Customer</option>
-                  <option value="AGENT">Officer (Agent)</option>
-                  <option value="SUPER_AGENT">Super Officer</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
-              </div>
-              <div className="filter-group">
-                <label className="filter-label">Filter by Login Status</label>
-                <select 
-                  className="filter-input" 
-                  value={statusFilter} 
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="ALL">All Statuses</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="DEACTIVATED">Deactivated</option>
-                </select>
-              </div>
-              {(searchQuery || roleFilter !== 'ALL' || statusFilter !== 'ALL') && (
-                <button 
-                  className="clear-filter-btn" 
-                  onClick={handleClearFilters}
-                  title="Clear All Filters"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
+            <UserFilterBar
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              roleFilter={roleFilter}
+              setRoleFilter={setRoleFilter}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              handleClearFilters={handleClearFilters}
+            />
           )}
 
           {loading ? (
@@ -951,103 +267,12 @@ const Users = () => {
                   </button>
                 </div>
               ) : (
-                <div className="table-container">
-                  <div className="users-table-wrapper">
-                    <table className="users-table">
-                      <thead>
-                        <tr>
-                          <th>Full Name</th>
-                          <th>Email Address</th>
-                          <th>Phone Number</th>
-                          <th>Role & Specialization</th>
-                          <th>Login Status</th>
-                          <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredUsers.map((user) => {
-                          const isSelf = user.email === userData?.email;
-                          const roleClass = (user.role || 'CUSTOMER').toLowerCase();
-                          
-                          return (
-                            <tr key={user.id}>
-                              <td style={{ fontWeight: '600' }}>
-                                {user.fullName} {isSelf && <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>(You)</span>}
-                              </td>
-                              <td>{user.email}</td>
-                              <td style={{ fontFamily: 'var(--font-mono)' }}>{user.phoneNumber || 'N/A'}</td>
-                              <td>
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                  <span className={`user-badge ${roleClass}`}>
-                                    {user.role === 'AGENT' ? 'Officer' : user.role === 'SUPER_AGENT' ? 'Super Officer' : user.role}
-                                  </span>
-                                  {(user.role === 'AGENT' || user.role === 'SUPER_AGENT') && user.specialization && (
-                                    <span style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      padding: '3px 8px',
-                                      borderRadius: '10px',
-                                      fontSize: '11px',
-                                      fontWeight: '600',
-                                      textTransform: 'uppercase',
-                                      letterSpacing: '0.03em',
-                                      background: user.specialization === 'SUPER' ? 'rgba(147,51,234,0.1)' :
-                                                  user.specialization === 'HEALTH' ? 'rgba(16,185,129,0.1)' :
-                                                  user.specialization === 'MOTOR' ? 'rgba(245,158,11,0.1)' :
-                                                  user.specialization === 'LIFE' ? 'rgba(37,99,168,0.1)' :
-                                                  'rgba(239,68,68,0.1)',
-                                      color: user.specialization === 'SUPER' ? '#a855f7' :
-                                             user.specialization === 'HEALTH' ? '#10b981' :
-                                             user.specialization === 'MOTOR' ? '#f59e0b' :
-                                             user.specialization === 'LIFE' ? 'var(--primary-light)' :
-                                             '#ef4444',
-                                      border: `1px solid ${user.specialization === 'SUPER' ? 'rgba(147,51,234,0.2)' :
-                                               user.specialization === 'HEALTH' ? 'rgba(16,185,129,0.2)' :
-                                               user.specialization === 'MOTOR' ? 'rgba(245,158,11,0.2)' :
-                                               user.specialization === 'LIFE' ? 'rgba(37,99,168,0.2)' :
-                                               'rgba(239,68,68,0.2)'}`
-                                    }}>
-                                      {user.specialization}
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td>
-                                <span className={`status-dot ${user.active ? 'active' : 'inactive'}`}>
-                                  {user.active ? 'Active' : 'Deactivated'}
-                                </span>
-                              </td>
-                              <td style={{ textAlign: 'right', paddingRight: '24px', display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                <DownloadButton
-                                  type="user"
-                                  data={user}
-                                  label={<><i className="ph ph-download" /> PDF</>}
-                                  title="Download Profile Receipt PDF"
-                                  className="action-btn"
-                                  style={{
-                                    background: "rgba(37, 99, 168, 0.05)",
-                                    border: "1px solid rgba(37, 99, 168, 0.1)",
-                                    color: "var(--primary-light)",
-                                    padding: "6px 10px",
-                                    fontSize: "12px"
-                                  }}
-                                />
-                                <button
-                                  className={`action-btn ${user.active ? 'deactivate' : 'activate'}`}
-                                  onClick={() => handleActionClick(user)}
-                                  disabled={isSelf}
-                                  title={isSelf ? "You cannot deactivate or activate your own admin account" : ""}
-                                  style={{ opacity: isSelf ? 0.4 : 1, cursor: isSelf ? 'not-allowed' : 'pointer' }}
-                                >
-                                  {user.active ? 'Deactivate' : 'Activate'}
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                <>
+                  <UsersTable
+                    users={filteredUsers}
+                    userData={userData}
+                    onActionClick={handleActionClick}
+                  />
 
                   {/* Pagination footer */}
                   {totalPages > 1 && (
@@ -1073,7 +298,7 @@ const Users = () => {
                       </div>
                     </div>
                   )}
-                </div>
+                </>
               )}
             </>
           )}
@@ -1158,199 +383,17 @@ const Users = () => {
           </form>
         </Modal>
       )}
+
       {/* Add Agent Modal */}
       {showAddAgentModal && (
-        <Modal
-          isOpen={showAddAgentModal}
-          onClose={() => { if (!agentSubmitting) setShowAddAgentModal(false); }}
-          title={<><i className="ph ph-sparkle"></i> Add New Agent</>}
-          maxWidth="480px"
-        >
-          <form onSubmit={handleAddAgentSubmit} style={{ marginTop: '16px' }}>
-            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Full Name</label>
-              <input
-                type="text"
-                required
-                className="form-input"
-                placeholder="e.g. Alex Kumar"
-                value={agentData.fullName}
-                onChange={(e) => setAgentData({ ...agentData, fullName: e.target.value })}
-                disabled={agentSubmitting}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                  background: 'var(--surface)',
-                  color: 'var(--text-primary)'
-                }}
-              />
-            </div>
-
-            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Email Address</label>
-              <input
-                type="email"
-                required
-                className="form-input"
-                placeholder="e.g. alexkumar@gmail.com"
-                value={agentData.email}
-                onChange={(e) => setAgentData({ ...agentData, email: e.target.value })}
-                disabled={agentSubmitting}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                  background: 'var(--surface)',
-                  color: 'var(--text-primary)'
-                }}
-              />
-            </div>
-
-            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Password</label>
-              <input
-                type="password"
-                required
-                className="form-input"
-                placeholder="Min. 8 characters"
-                value={agentData.password}
-                onChange={(e) => setAgentData({ ...agentData, password: e.target.value })}
-                disabled={agentSubmitting}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                  background: 'var(--surface)',
-                  color: 'var(--text-primary)'
-                }}
-              />
-            </div>
-
-            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Phone Number</label>
-              <input
-                type="text"
-                required
-                className="form-input"
-                placeholder="e.g. 9876543211"
-                value={agentData.phoneNumber}
-                onChange={(e) => setAgentData({ ...agentData, phoneNumber: e.target.value })}
-                disabled={agentSubmitting}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                  background: 'var(--surface)',
-                  color: 'var(--text-primary)'
-                }}
-              />
-            </div>
-
-            {/* Role Selector */}
-            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Agent Role</label>
-              <select
-                required
-                className="form-input"
-                value={agentData.role}
-                onChange={(e) => setAgentData({ ...agentData, role: e.target.value, specialization: e.target.value === 'AGENT' ? 'HEALTH' : '' })}
-                disabled={agentSubmitting}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                  background: 'var(--surface)',
-                  color: 'var(--text-primary)',
-                  fontFamily: 'inherit'
-                }}
-              >
-                <option value="AGENT">Agent — Specialization-restricted</option>
-                <option value="SUPER_AGENT">Super Agent — All policy types</option>
-              </select>
-              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                {agentData.role === 'SUPER_AGENT'
-                  ? '⚡ Super Agent can review claims across ALL policy types (SUPER specialization auto-assigned).'
-                  : '🎯 Agent is restricted to claims matching their selected policy specialization.'}
-              </span>
-            </div>
-
-            {/* Specialization — only for regular AGENT */}
-            {agentData.role === 'AGENT' && (
-              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-                <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Policy Specialization</label>
-                <select
-                  required
-                  className="form-input"
-                  value={agentData.specialization}
-                  onChange={(e) => setAgentData({ ...agentData, specialization: e.target.value })}
-                  disabled={agentSubmitting}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid var(--border)',
-                    borderRadius: '6px',
-                    background: 'var(--surface)',
-                    color: 'var(--text-primary)',
-                    fontFamily: 'inherit'
-                  }}
-                >
-                  <option value="HEALTH">HEALTH — Health insurance claims</option>
-                  <option value="MOTOR">MOTOR — Motor / vehicle claims</option>
-                  <option value="LIFE">LIFE — Life insurance claims</option>
-                  <option value="TRAVEL">TRAVEL — Travel insurance claims</option>
-                </select>
-              </div>
-            )}
-
-            <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-              <button
-                type="button"
-                className="btn-cancel"
-                onClick={() => setShowAddAgentModal(false)}
-                disabled={agentSubmitting}
-                style={{
-                  background: 'transparent',
-                  color: 'var(--text-secondary)',
-                  border: '1px solid var(--border)',
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  borderRadius: '6px',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn-confirm"
-                disabled={agentSubmitting}
-                style={{
-                  background: 'var(--primary)',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  opacity: agentSubmitting ? 0.6 : 1
-                }}
-              >
-                {agentSubmitting ? 'Creating...' : 'Create Officer'}
-              </button>
-            </div>
-          </form>
-        </Modal>
+        <AddUserModal
+          show={showAddAgentModal}
+          onClose={() => setShowAddAgentModal(false)}
+          onUserCreated={() => loadUsers(currentPage)}
+        />
       )}
 
-      {/* Export Modal */}
+      {/* Export Users Modal */}
       {showExportModal && (
         <Modal
           isOpen={showExportModal}
@@ -1359,72 +402,60 @@ const Users = () => {
           maxWidth="460px"
         >
           <form onSubmit={handleExportSubmit} style={{ marginTop: '12px' }}>
-            <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '16px' }}>
-              Select your export range preference. The report will respect your current filters: 
-              <strong style={{ color: 'var(--text-primary)' }}> Role: {roleFilter}</strong> and 
-              <strong style={{ color: 'var(--text-primary)' }}> Status: {statusFilter}</strong>.
-            </div>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.4' }}>
+              Select your export range preference. The report will extract accounts matching current status and role filter criteria:
+            </p>
 
-            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Export Option</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="exportRange"
-                    value="PAGE"
-                    checked={exportRange === 'PAGE'}
-                    onChange={() => setExportRange('PAGE')}
-                    disabled={exporting}
-                  />
-                  Current Page List (max {pageSize} users)
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="exportRange"
-                    value="FULL"
-                    checked={exportRange === 'FULL'}
-                    onChange={() => setExportRange('FULL')}
-                    disabled={exporting}
-                  />
-                  Full System Directory ({totalElements} users)
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name="exportRange"
-                    value="CUSTOM"
-                    checked={exportRange === 'CUSTOM'}
-                    onChange={() => setExportRange('CUSTOM')}
-                    disabled={exporting}
-                  />
-                  Custom Quantity
-                </label>
-              </div>
+              
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="exportRange"
+                  checked={exportRange === 'PAGE'}
+                  onChange={() => setExportRange('PAGE')}
+                  disabled={exporting}
+                />
+                Current Page ({filteredUsers.length} accounts)
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="exportRange"
+                  checked={exportRange === 'FULL'}
+                  onChange={() => setExportRange('FULL')}
+                  disabled={exporting}
+                />
+                Full List ({totalElements} total registered accounts)
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="exportRange"
+                  checked={exportRange === 'CUSTOM'}
+                  onChange={() => setExportRange('CUSTOM')}
+                  disabled={exporting}
+                />
+                Custom Quantity Limit
+              </label>
             </div>
 
             {exportRange === 'CUSTOM' && (
-              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-                <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Quantity to Extract</label>
+              <div className="form-group" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label className="form-label">Quantity to Extract</label>
                 <input
                   type="number"
-                  min="1"
-                  max="10000"
-                  required
                   className="form-input"
+                  min="1"
+                  max={totalElements}
                   value={customExportLimit}
                   onChange={(e) => setCustomExportLimit(parseInt(e.target.value) || '')}
                   disabled={exporting}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid var(--border)',
-                    borderRadius: '6px',
-                    background: 'var(--surface)',
-                    color: 'var(--text-primary)'
-                  }}
                   placeholder="e.g. 50"
+                  required
                 />
               </div>
             )}
@@ -1464,7 +495,7 @@ const Users = () => {
                   opacity: exporting ? 0.6 : 1
                 }}
               >
-                {exporting ? 'Exporting...' : 'Generate PDF'}
+                {exporting ? 'Generating...' : 'Export PDF'}
               </button>
             </div>
           </form>

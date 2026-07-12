@@ -137,11 +137,11 @@ const styles = `
 `;
 const fetchDashboardData = async () => {
   const [userRes, productRes, claimRes, policyRes, paymentRes] = await Promise.all([
-    readAllUsers(),
-    readAllProducts(),
-    readAllClaims(),
-    readAllPolicies(),
-    readAllPayments()
+    readAllUsers(0, 1000),
+    readAllProducts(0, 1000),
+    readAllClaims(0, 1000),
+    readAllPolicies(0, 1000),
+    readAllPayments(0, 1000)
   ]);
   
   const payments = paymentRes?.data?.content
@@ -155,11 +155,11 @@ const fetchDashboardData = async () => {
   return {
     totalPayments: payments,
     totalClaims: claims,
-    users: userRes?.data?.content?.length || 0,
-    products: productRes?.data?.content?.length || 0,
-    claimsCount: claimRes?.data?.content?.length || 0,
-    policies: policyRes?.data?.content?.length || 0,
-    paymentsCount: paymentRes?.data?.content?.length || 0
+    users: userRes?.data?.totalElements ?? userRes?.data?.content?.length ?? 0,
+    products: productRes?.data?.totalElements ?? productRes?.data?.content?.length ?? 0,
+    claimsCount: claimRes?.data?.totalElements ?? claimRes?.data?.content?.length ?? 0,
+    policies: policyRes?.data?.totalElements ?? policyRes?.data?.content?.length ?? 0,
+    paymentsCount: paymentRes?.data?.totalElements ?? paymentRes?.data?.content?.length ?? 0
   };
 };
 

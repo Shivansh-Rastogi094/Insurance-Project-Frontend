@@ -580,7 +580,7 @@ const ProductCatalog = () => {
       loadCatalogData();
     } catch (err) {
       console.error("Error updating product:", err);
-      toast.error("Failed to update product. Please try again.");
+      toast.error(err?.response?.data?.message || "Failed to update product. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -596,7 +596,7 @@ const ProductCatalog = () => {
       loadCatalogData();
     } catch (err) {
       console.error("Error deactivating product:", err);
-      toast.error("Failed to deactivate product. Please try again.");
+      toast.error(err?.response?.data?.message || "Failed to deactivate product. Please try again.");
     }
   };
 

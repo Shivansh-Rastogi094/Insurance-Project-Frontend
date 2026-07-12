@@ -1,674 +1,19 @@
-import Skeleton from 'react-loading-skeleton';
 import React, { useEffect, useCallback, useState } from 'react';
+import Skeleton from 'react-loading-skeleton';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useFetch } from '../hooks/useFetch';
-import { readAllClaims, readMyClaims, createClaim, agentReviewClaim, adminDecisionClaim, readClaimHistory } from '../services/ClaimService';
+import { readAllClaims, readMyClaims } from '../services/ClaimService';
 import { readMyPolicies } from '../services/PolicyService';
 import Modal from '../components/Modal';
-import DownloadButton from '../components/DownloadButton';
 import { generateClaimListPDF } from '../utils/pdfGenerator';
-import { readAllUsers } from '../services/UserService';
 import { useToast } from '../components/ToastProvider';
-
-const styles = `
-  .page-container {
-    font-family: var(--font-body);
-    background: var(--surface);
-    min-height: 100vh;
-    display: flex;
-    position: relative;
-  }
-
-  .main-content {
-    flex: 1;
-    margin-left: 240px;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .topbar {
-    height: 60px;
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 40px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-
-  .topbar-logo {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--primary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .role-badge {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--primary-light);
-    background: rgba(37, 99, 168, 0.1);
-    padding: 4px 10px;
-    border-radius: var(--radius-badge);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .user-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--primary);
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 600;
-    border: 2px solid var(--border);
-    cursor: pointer;
-  }
-
-  .header {
-    padding: 32px 40px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .header-text h2 {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: -0.5px;
-  }
-
-  .header-text p {
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin-top: 4px;
-  }
-
-  .file-claim-btn {
-    background: linear-gradient(135deg, var(--primary-light), var(--primary));
-    color: #ffffff;
-    border: none;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: var(--radius-button);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 10px rgba(37, 99, 168, 0.2);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .file-claim-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(37, 99, 168, 0.3);
-    filter: brightness(1.1);
-  }
-
-  .divider {
-    height: 1px;
-    background: var(--border);
-    margin: 8px 40px 32px;
-  }
-
-  .claims-container {
-    padding: 0 40px 40px;
-    max-width: 1400px;
-    width: 100%;
-    margin: 0 auto;
-    min-width: 0;
-  }
-
-  .table-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-    overflow: hidden;
-  }
-
-  .claims-table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-  }
-
-  .claims-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-    min-width: 800px;
-    table-layout: fixed;
-  }
-
-  .claims-table th {
-    background: var(--surface);
-    padding: 16px 20px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .claims-table td {
-    padding: 18px 20px;
-    font-size: 13.5px;
-    color: var(--text-primary);
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-  }
-
-  .claims-table tr:last-child td {
-    border-bottom: none;
-  }
-
-  .claims-table tr.main-row {
-    cursor: pointer;
-  }
-
-  .claims-table tr.main-row:hover td {
-    background-color: rgba(73, 79, 223, 0.04);
-  }
-
-  .claims-table tr.detail-row:hover td {
-    background-color: var(--surface) !important;
-  }
-
-  .detail-row td {
-    background-color: var(--surface) !important;
-    border-bottom: 1px solid var(--border);
-    padding: 24px !important;
-  }
-
-  .detail-row-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 16px;
-  }
-
-  .detail-col {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .detail-col-title {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-    letter-spacing: 0.05em;
-  }
-
-  .detail-col-content {
-    font-size: 13.5px;
-    color: var(--text-primary);
-    line-height: 1.5;
-    white-space: pre-line;
-    word-break: break-word;
-  }
-
-  .detail-docs-section {
-    border-top: 1px dashed var(--border);
-    padding-top: 16px;
-  }
-
-  .chevron-btn {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    color: var(--text-secondary);
-    transition: all 0.2s ease;
-  }
-
-  .chevron-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: var(--text-primary);
-  }
-
-  .chevron-btn.expanded {
-    transform: rotate(180deg);
-  }
-
-  .claim-number-cell {
-    font-family: var(--font-mono);
-    font-weight: 700;
-    color: var(--primary-light);
-  }
-
-  .policy-number-cell {
-    font-family: var(--font-mono);
-    font-weight: 500;
-    color: var(--text-secondary);
-  }
-
-  .amount-cell {
-    font-family: var(--font-mono);
-    font-weight: 700;
-    color: var(--text-primary);
-  }
-
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .status-badge.submitted,
-  .status-badge.pending {
-    background: rgba(245, 158, 11, 0.1);
-    color: #F59E0B;
-    border: 1px solid rgba(245, 158, 11, 0.2);
-  }
-
-  .status-badge.approved,
-  .status-badge.success {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10B981;
-    border: 1px solid rgba(16, 185, 129, 0.2);
-  }
-
-  .status-badge.rejected {
-    background: rgba(239, 68, 68, 0.1);
-    color: #EF4444;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-  }
-
-  .status-badge.under_review {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-  }
-
-  .status-badge.recommended {
-    background: rgba(139, 92, 246, 0.1);
-    color: #8b5cf6;
-    border: 1px solid rgba(139, 92, 246, 0.2);
-  }
-
-  .remarks-block {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-width: 250px;
-  }
-
-  .remark-item {
-    font-size: 11px;
-    color: var(--text-secondary);
-    line-height: 1.3;
-  }
-
-  .remark-item strong {
-    color: var(--text-primary);
-  }
-
-  .action-btn {
-    background: var(--card);
-    border: 1px solid var(--border);
-    padding: 8px 14px;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--text-primary);
-    border-radius: var(--radius-button);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-  }
-
-  .action-btn:hover {
-    background: var(--surface);
-    border-color: var(--primary-light);
-    color: var(--primary-light);
-  }
-
-  .action-btn.accent {
-    background: var(--accent);
-    color: #ffffff;
-    border: none;
-    box-shadow: 0 2px 4px rgba(15, 168, 158, 0.15);
-  }
-
-  .action-btn.accent:hover {
-    background: #0d968d;
-    color: #ffffff;
-    box-shadow: 0 4px 8px rgba(15, 168, 158, 0.25);
-  }
-
-  /* Modal Styles */
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    animation: fadeIn 0.2s ease;
-  }
-
-  .modal-content {
-    background: var(--card);
-    border-radius: var(--radius-card);
-    width: 100%;
-    max-width: 550px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: var(--shadow-premium);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 32px;
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-
-  .modal-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 12px;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: 16px;
-  }
-
-  .form-label {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-  }
-
-  .form-input {
-    width: 100%;
-    padding: 12px;
-    font-size: 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-input);
-    color: var(--text-primary);
-    background-color: var(--surface);
-    font-family: inherit;
-  }
-
-  .form-input:focus {
-    outline: none;
-    border-color: var(--primary-light);
-    background-color: var(--card);
-  }
-
-  .form-error {
-    color: #EF4444;
-    font-size: 11.5px;
-    margin-top: 4px;
-    font-weight: 500;
-  }
-
-  .modal-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    margin-top: 24px;
-  }
-
-  .btn-cancel {
-    background: transparent;
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
-    padding: 10px 18px;
-    font-size: 13.5px;
-    font-weight: 600;
-    border-radius: var(--radius-button);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .btn-cancel:hover {
-    background: var(--surface);
-    color: var(--text-primary);
-  }
-
-  .btn-confirm {
-    background: var(--accent);
-    color: #ffffff;
-    border: none;
-    padding: 10px 18px;
-    font-size: 13.5px;
-    font-weight: 600;
-    border-radius: var(--radius-button);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .btn-confirm:hover {
-    background: #0d968d;
-  }
-
-  .btn-confirm:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  .loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px;
-    color: var(--text-secondary);
-  }
-
-  .spinner {
-    border: 3.5px solid var(--border);
-    border-top: 3.5px solid var(--primary-light);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin-bottom: 16px;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 60px 40px;
-    color: var(--text-secondary);
-    font-size: 14px;
-    border: 1.5px dashed var(--border);
-    border-radius: var(--radius-card);
-    background: var(--card);
-    max-width: 600px;
-    margin: 20px auto;
-  }
-
-  .empty-state-icon {
-    font-size: 32px;
-    margin-bottom: 16px;
-    display: block;
-  }
-
-  .pagination-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 24px;
-    background: rgba(255, 255, 255, 0.01);
-    border-top: 1px solid var(--border);
-  }
-
-  .pagination-info {
-    font-size: 12.5px;
-    color: var(--text-secondary);
-  }
-
-  .pagination-controls {
-    display: flex;
-    gap: 8px;
-  }
-
-  .page-btn {
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    padding: 6px 12px;
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: var(--radius-button);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .page-btn:hover:not(:disabled) {
-    border-color: var(--primary-light);
-    color: var(--primary-light);
-  }
-
-  .page-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  @media (max-width: 968px) {
-    .main-content {
-      margin-left: 0;
-    }
-    .claims-container,
-    .header {
-      padding: 24px 20px 16px;
-    }
-    .divider {
-      margin: 8px 20px 24px;
-    }
-  }
-
-  /* Claims Filter Bar Styles */
-  .filter-bar {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    padding: 20px 24px;
-    margin-bottom: 24px;
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
-    gap: 16px;
-    align-items: end;
-    box-shadow: var(--shadow-card);
-  }
-
-  .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .filter-label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-  }
-
-  .filter-input {
-    padding: 10px 12px;
-    font-size: 13.5px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-input);
-    color: var(--text-primary);
-    background-color: var(--surface);
-    font-family: inherit;
-    width: 100%;
-    height: 40px;
-    transition: all 0.2s ease;
-  }
-
-  .filter-input:focus {
-    outline: none;
-    border-color: var(--primary-light);
-    background-color: var(--card);
-  }
-
-  .clear-filter-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    padding: 10px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: var(--radius-button);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    height: 40px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .clear-filter-btn:hover {
-    background: var(--surface);
-    color: var(--text-primary);
-    border-color: var(--primary-light);
-  }
-
-  @media (max-width: 768px) {
-    .filter-bar {
-      grid-template-columns: 1fr;
-    }
-  }
-`;
+import ClaimFilterBar from '../components/claims/ClaimFilterBar';
+import ClaimsTable from '../components/claims/ClaimsTable';
+import ClaimHistoryTimeline from '../components/claims/ClaimHistoryTimeline';
+import FileClaimModal from '../components/claims/FileClaimModal';
+import ClaimReviewModal from '../components/claims/ClaimReviewModal';
+import '../styles/Claims.css';
 
 const Claims = () => {
   const toast = useToast();
@@ -684,6 +29,7 @@ const Claims = () => {
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
   const [myAssignedOnly, setMyAssignedOnly] = useState(false);
+  const [matchSpecializationOnly, setMatchSpecializationOnly] = useState(false);
 
   const handleClearFilters = () => {
     setSearchQuery('');
@@ -691,6 +37,7 @@ const Claims = () => {
     setMinAmount('');
     setMaxAmount('');
     setMyAssignedOnly(false);
+    setMatchSpecializationOnly(false);
   };
 
   // Export Modal States
@@ -699,41 +46,16 @@ const Claims = () => {
   const [customExportLimit, setCustomExportLimit] = useState('50');
   const [exporting, setExporting] = useState(false);
 
-  const handleExportSubmit = async (e) => {
-    e.preventDefault();
-    setExporting(true);
-    try {
-      let claimsToExport = [];
-      if (isCustomer) {
-        claimsToExport = filteredClaims;
-      } else {
-        if (exportRange === 'PAGE') {
-          claimsToExport = filteredClaims;
-        } else {
-          const limit = exportRange === 'FULL' ? totalElements : parseInt(customExportLimit);
-          if (!limit || limit <= 0) {
-            toast.error("Please enter a valid count.");
-            setExporting(false);
-            return;
-          }
-          const res = await readAllClaims(0, limit);
-          claimsToExport = res?.data?.content || res?.content || [];
-        }
-      }
+  // File Claim Modal State
+  const [showFileModal, setShowFileModal] = useState(false);
 
-      if (claimsToExport.length === 0) {
-        toast.error("No claims found inside chosen range.");
-      } else {
-        generateClaimListPDF(claimsToExport);
-      }
-      setShowExportModal(false);
-    } catch (err) {
-      console.error("Export list failed:", err);
-      toast.error("Failed to export claims list. Please try again.");
-    } finally {
-      setExporting(false);
-    }
-  };
+  // Review Claim Modal State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedReviewClaim, setSelectedReviewClaim] = useState(null);
+
+  // Claim History Modal State
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [selectedHistoryClaim, setSelectedHistoryClaim] = useState(null);
 
   // Load claims data using useFetch hook
   const fetchClaimsData = useCallback(async (page = 0) => {
@@ -766,6 +88,11 @@ const Claims = () => {
     }
     if (myAssignedOnly && claim.agentEmail !== userData?.email) {
       return false;
+    }
+    if (matchSpecializationOnly && userData?.specialization && userData?.specialization !== 'SUPER') {
+      if (claim.productType !== userData.specialization) {
+        return false;
+      }
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -816,321 +143,55 @@ const Claims = () => {
     ? policiesData.filter(p => p.policyStatus === 'ACTIVE')
     : [];
 
-  // File Claim Modal States
-  const [showFileModal, setShowFileModal] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [claimForm, setClaimForm] = useState({
-    policyId: '',
-    claimAmount: '',
-    claimReason: '',
-    incidentDate: ''
-  });
-  const [claimDocuments, setClaimDocuments] = useState([]);
-  const [formErrors, setFormErrors] = useState({});
-
-  const handleFileClaim = () => {
-    setClaimForm({
-      policyId: '',
-      claimAmount: '',
-      claimReason: '',
-      incidentDate: ''
-    });
-    setClaimDocuments([]);
-    setFormErrors({});
-    setShowFileModal(true);
-  };
-
-  const handleAddDocumentRow = () => {
-    setClaimDocuments([
-      ...claimDocuments,
-      { documentName: '', documentType: 'PDF', documentReference: '' }
-    ]);
-  };
-
-  const handleRemoveDocumentRow = (index) => {
-    setClaimDocuments(claimDocuments.filter((_, i) => i !== index));
-  };
-
-  const handleUpdateDocumentRow = (index, field, value) => {
-    setClaimDocuments(
-      claimDocuments.map((doc, i) => (i === index ? { ...doc, [field]: value } : doc))
-    );
-  };
-
-  const handleFileSelect = (index, e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-    const ext = file.name.substring(file.name.lastIndexOf('.') + 1).toUpperCase();
-
-    setClaimDocuments(
-      claimDocuments.map((doc, i) =>
-        i === index
-          ? {
-              documentName: nameWithoutExt,
-              documentType: ext === 'JPG' ? 'JPEG' : ext,
-              documentReference: file.name, // Display the actual selected filename
-              fileObject: file // Store the actual File object
-            }
-          : doc
-      )
-    );
-  };
-
-  const handleConfirmClaim = async (e) => {
+  const handleExportSubmit = async (e) => {
     e.preventDefault();
-    const errors = {};
-
-    if (!claimForm.policyId) errors.policyId = "Please select an active policy.";
-
-    const amt = parseFloat(claimForm.claimAmount);
-    if (isNaN(amt) || amt <= 0) {
-      errors.claimAmount = "Please enter a valid positive claim amount.";
-    } else {
-      const selectedPolObj = activePolicies.find(p => p.id.toString() === claimForm.policyId.toString());
-      if (selectedPolObj) {
-        const availableCoverage = selectedPolObj.remainingCoverage !== undefined && selectedPolObj.remainingCoverage !== null 
-          ? selectedPolObj.remainingCoverage 
-          : selectedPolObj.coverageAmount;
-          
-        if (amt > availableCoverage) {
-          errors.claimAmount = `Claim amount cannot exceed available remaining coverage of ₹${availableCoverage.toLocaleString('en-IN')}`;
-        }
-      }
-    }
-
-    if (!claimForm.claimReason.trim()) errors.claimReason = "Please describe the incident reason.";
-
-    if (!claimForm.incidentDate) {
-      errors.incidentDate = "Please choose an incident date.";
-    } else {
-      const selectedDate = new Date(claimForm.incidentDate);
-      if (selectedDate > new Date()) {
-        errors.incidentDate = "Incident date cannot be in the future.";
-      }
-    }
-
-    claimDocuments.forEach((doc, idx) => {
-      if (!doc.documentName.trim()) errors[`docName_${idx}`] = "Document name is required.";
-      if (!doc.fileObject && !doc.documentReference.trim()) {
-        errors[`docRef_${idx}`] = "Please select a file or enter a document reference.";
-      }
-    });
-
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      const firstErr = Object.values(errors)[0];
-      toast.error(`Validation Error: ${firstErr}`);
-      return;
-    }
-
+    setExporting(true);
     try {
-      setSubmitting(true);
-      
-      const formData = new FormData();
-      
-      const claimData = {
-        policyId: parseInt(claimForm.policyId),
-        claimAmount: parseFloat(claimForm.claimAmount),
-        claimReason: claimForm.claimReason.trim(),
-        incidentDate: claimForm.incidentDate,
-        documents: claimDocuments.map(d => ({
-          documentName: d.documentName.trim(),
-          documentType: d.documentType,
-          documentReference: d.documentReference ? d.documentReference.trim() : ''
-        }))
-      };
-      
-      formData.append("claim", JSON.stringify(claimData));
-      
-      // Append all selected file objects
-      claimDocuments.forEach(doc => {
-        if (doc.fileObject) {
-          formData.append("files", doc.fileObject);
-        }
-      });
-
-      await createClaim(formData);
-      toast.success("Claim filed successfully!");
-      setShowFileModal(false);
-      loadClaims(currentPage);
-    } catch (err) {
-      console.error("Failed to file claim:", err);
-      toast.error("Filing claim failed. Please check your inputs or backend logs.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Review Claim Modal States
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [selectedReviewClaim, setSelectedReviewClaim] = useState(null);
-  const [reviewForm, setReviewForm] = useState({
-    status: '',
-    remarks: ''
-  });
-  const [reviewErrors, setReviewErrors] = useState({});
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
-
-  // Claim History states
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [selectedHistoryClaim, setSelectedHistoryClaim] = useState(null);
-  const [claimHistoryList, setClaimHistoryList] = useState([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-
-  const [expandedRows, setExpandedRows] = useState({});
-  const toggleRow = (id) => {
-    setExpandedRows(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
-
-  const [usersMap, setUsersMap] = useState({});
-
-  useEffect(() => {
-    const loadUsersLookup = async () => {
-      if (userData?.role === 'ADMIN') {
-        try {
-          const res = await readAllUsers(0, 500);
-          const list = res?.data?.content || res?.content || [];
-          const map = {};
-          list.forEach(u => {
-            if (u.email && u.fullName) {
-              map[u.email.toLowerCase()] = u.fullName;
-            }
-          });
-          setUsersMap(map);
-        } catch (err) {
-          console.error("Failed to load users for lookup:", err);
+      let claimsToExport = [];
+      if (isCustomer) {
+        claimsToExport = filteredClaims;
+      } else {
+        if (exportRange === 'PAGE') {
+          claimsToExport = filteredClaims;
+        } else {
+          const limit = exportRange === 'FULL' ? totalElements : parseInt(customExportLimit);
+          if (!limit || limit <= 0) {
+            toast.error("Please enter a valid count.");
+            setExporting(false);
+            return;
+          }
+          const res = await readAllClaims(0, limit);
+          claimsToExport = res?.data?.content || res?.content || [];
         }
       }
-    };
-    loadUsersLookup();
-  }, [userData]);
 
-  const getUpdaterDisplayName = (email) => {
-    if (!email) return 'N/A';
-    const lowerEmail = email.toLowerCase();
-    
-    // Check users map
-    if (usersMap && usersMap[lowerEmail]) {
-      return `${usersMap[lowerEmail]} (${email})`;
-    }
-    
-    // Check hardcoded defaults
-    if (lowerEmail === 'admin@insurance.com') {
-      return `System Admin (${email})`;
-    }
-    if (lowerEmail === 'agent@insurance.com') {
-      return `Company Agent (${email})`;
-    }
-    if (lowerEmail === 'customer@insurance.com') {
-      return `John Doe (${email})`;
-    }
-    
-    // Check if it's the current user
-    if (userData && userData.email && userData.email.toLowerCase() === lowerEmail) {
-      return `${userData.fullName} (${email})`;
-    }
-    
-    // Fallback: parse the email prefix and capitalize
-    const namePart = email.split('@')[0];
-    if (namePart) {
-      const formattedName = namePart
-        .split(/[\._\-]/)
-        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
-      return `${formattedName} (${email})`;
-    }
-    
-    return email;
-  };
-
-  const handleGetHistory = async (claim) => {
-    setSelectedHistoryClaim(claim);
-    setShowHistoryModal(true);
-    setLoadingHistory(true);
-    setClaimHistoryList([]);
-    try {
-      const response = await readClaimHistory(claim.id);
-      setClaimHistoryList(response?.data || response || []);
+      if (claimsToExport.length === 0) {
+        toast.error("No claims found inside chosen range.");
+      } else {
+        generateClaimListPDF(claimsToExport);
+      }
+      setShowExportModal(false);
     } catch (err) {
-      console.error("Failed to load claim history:", err);
+      console.error("Export list failed:", err);
+      toast.error("Failed to export claims list. Please try again.");
     } finally {
-      setLoadingHistory(false);
+      setExporting(false);
     }
   };
 
-  const handleReviewClaim = (claim) => {
+  const handleReviewTrigger = (claim) => {
     setSelectedReviewClaim(claim);
-    setReviewForm({
-      status: (userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') ? 'RECOMMENDED' : 'APPROVED',
-      remarks: '',
-      suggestedAmount: ''
-    });
-    setReviewErrors({});
     setShowReviewModal(true);
   };
 
-  const handleConfirmReview = async (e) => {
-    e.preventDefault();
-    if (!selectedReviewClaim) return;
-
-    const errors = {};
-    if (!reviewForm.status) errors.status = "Please select a status.";
-    if (!reviewForm.remarks.trim()) errors.remarks = "Please enter remarks.";
-
-    if (isAgent && reviewForm.suggestedAmount) {
-      const sugAmt = parseFloat(reviewForm.suggestedAmount);
-      if (isNaN(sugAmt) || sugAmt <= 0) {
-        errors.suggestedAmount = "Please enter a valid suggested amount.";
-      } else if (sugAmt > selectedReviewClaim.claimAmount) {
-        errors.suggestedAmount = `Suggested amount cannot exceed the original claim amount of ₹${selectedReviewClaim.claimAmount.toLocaleString('en-IN')}.`;
-      }
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setReviewErrors(errors);
-      toast.error(`Validation Error: ${Object.values(errors)[0]}`);
-      return;
-    }
-
-    try {
-      setReviewSubmitting(true);
-      
-      if (isAgent) {
-        const payload = {
-          recommendedStatus: reviewForm.status,
-          remarks: reviewForm.remarks.trim(),
-          suggestedAmount: reviewForm.suggestedAmount ? parseFloat(reviewForm.suggestedAmount) : null
-        };
-        await agentReviewClaim(selectedReviewClaim.id, payload);
-        toast.success(`Claim review submitted successfully as ${reviewForm.status}.`);
-      } else {
-        const payload = {
-          finalDecisionStatus: reviewForm.status,
-          remarks: reviewForm.remarks.trim()
-        };
-        await adminDecisionClaim(selectedReviewClaim.id, payload);
-        toast.success(`Claim decision submitted successfully as ${reviewForm.status}.`);
-      }
-
-      setShowReviewModal(false);
-      loadClaims(currentPage);
-    } catch (err) {
-      console.error("Error submitting review:", err);
-      toast.error("Failed to submit claim review/decision. Please check inputs or logs.");
-    } finally {
-      setReviewSubmitting(false);
-    }
+  const handleHistoryTrigger = (claim) => {
+    setSelectedHistoryClaim(claim);
+    setShowHistoryModal(true);
   };
 
   return (
     <>
-      <style>{styles}</style>
-      <div className="page-container">
+      <div className="claims-page page-container">
         <Sidebar title={isCustomer ? "Customer Portal" : "Insurance Admin"} />
 
         <div className="main-content">
@@ -1169,7 +230,7 @@ const Claims = () => {
                 <><i className="ph ph-chart-bar"></i> Export List</>
               </button>
               {isCustomer && (
-                <button className="file-claim-btn" onClick={handleFileClaim} style={{ height: '40px' }}>
+                <button className="file-claim-btn" onClick={() => setShowFileModal(true)} style={{ height: '40px' }}>
                   + File New Claim
                 </button>
               )}
@@ -1181,9 +242,9 @@ const Claims = () => {
           <div className="claims-container">
             {loading ? (
               <div className="loading-container" style={{ width: '100%', padding: '20px 40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <Skeleton height={60} />
-              <Skeleton count={5} height={50} style={{ marginBottom: '8px' }} />
-            </div>
+                <Skeleton height={60} />
+                <Skeleton count={5} height={50} style={{ marginBottom: '8px' }} />
+              </div>
             ) : claimsList.length === 0 ? (
               <div className="empty-state">
                 <i className="empty-state-icon ph ph-clipboard"></i>
@@ -1196,87 +257,23 @@ const Claims = () => {
               </div>
             ) : (
               <>
-                {/* Filter Bar */}
-                <div className="filter-bar">
-                  <div className="filter-group">
-                    <label className="filter-label">Search</label>
-                    <input
-                      type="text"
-                      className="filter-input"
-                      placeholder="Search Claim No, Policy, Reason..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="filter-group">
-                    <label className="filter-label">Status</label>
-                    <select
-                      className="filter-input"
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                      <option value="">All Statuses</option>
-                      <option value="SUBMITTED">SUBMITTED</option>
-                      <option value="UNDER_REVIEW">UNDER_REVIEW</option>
-                      <option value="RECOMMENDED">RECOMMENDED</option>
-                      <option value="APPROVED">APPROVED</option>
-                      <option value="REJECTED">REJECTED</option>
-                    </select>
-                  </div>
-
-                  <div className="filter-group">
-                    <label className="filter-label">Min Amount (₹)</label>
-                    <input
-                      type="number"
-                      className="filter-input"
-                      placeholder="Min"
-                      value={minAmount}
-                      onChange={(e) => setMinAmount(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="filter-group" style={{ display: 'flex', flexDirection: 'row', gap: '8px', alignItems: 'flex-end' }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label className="filter-label">Max Amount (₹)</label>
-                      <input
-                        type="number"
-                        className="filter-input"
-                        placeholder="Max"
-                        value={maxAmount}
-                        onChange={(e) => setMaxAmount(e.target.value)}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      className="clear-filter-btn"
-                      onClick={handleClearFilters}
-                      title="Clear All Filters"
-                      style={{
-                        visibility: (searchQuery || statusFilter || minAmount || maxAmount || myAssignedOnly) ? 'visible' : 'hidden',
-                        opacity: (searchQuery || statusFilter || minAmount || maxAmount || myAssignedOnly) ? 1 : 0,
-                        transition: 'opacity 0.2s ease, visibility 0.2s'
-                      }}
-                    >
-                      Clear
-                    </button>
-                  </div>
-
-                  {isAgent && (
-                    <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-                      <input
-                        type="checkbox"
-                        id="myAssignedOnly"
-                        checked={myAssignedOnly}
-                        onChange={(e) => setMyAssignedOnly(e.target.checked)}
-                        style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--primary)' }}
-                      />
-                      <label htmlFor="myAssignedOnly" style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
-                        Show only claims assigned to me
-                      </label>
-                    </div>
-                  )}
-                </div>
+                <ClaimFilterBar
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  statusFilter={statusFilter}
+                  setStatusFilter={setStatusFilter}
+                  minAmount={minAmount}
+                  setMinAmount={setMinAmount}
+                  maxAmount={maxAmount}
+                  setMaxAmount={setMaxAmount}
+                  myAssignedOnly={myAssignedOnly}
+                  setMyAssignedOnly={setMyAssignedOnly}
+                  matchSpecializationOnly={matchSpecializationOnly}
+                  setMatchSpecializationOnly={setMatchSpecializationOnly}
+                  userData={userData}
+                  isAgent={isAgent}
+                  handleClearFilters={handleClearFilters}
+                />
 
                 {filteredClaims.length === 0 ? (
                   <div className="empty-state" style={{ marginTop: '0' }}>
@@ -1288,576 +285,74 @@ const Claims = () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="table-card">
-                    <div className="claims-table-wrapper">
-                      <table className="claims-table">
-                        <colgroup>
-                          <col style={{ width: '50px' }} />
-                          <col style={{ width: '180px' }} />
-                          <col style={{ width: '120px' }} />
-                          <col style={{ width: 'auto' }} />
-                          <col style={{ width: '130px' }} />
-                          <col style={{ width: '130px' }} />
-                          <col style={{ width: '80px' }} />
-                          <col style={{ width: '260px' }} />
-                        </colgroup>
-                        <thead>
-                          <tr>
-                            <th style={{ width: '50px' }}></th>
-                            <th style={{ width: '180px' }}>Claim & Policy ID</th>
-                            <th style={{ width: '120px' }}>Incident Date</th>
-                            <th style={{ width: 'auto' }}>Claim Reason</th>
-                            <th style={{ width: '130px', textAlign: 'right' }}>Amount</th>
-                            <th style={{ width: '130px' }}>Status</th>
-                            <th style={{ width: '80px' }}>Docs</th>
-                            <th style={{ width: '260px', textAlign: 'right', paddingRight: '24px' }}>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredClaims.map((claim, idx) => {
-                            const claimNum = claim.claimNumber || `CLM-${claim.id || idx}`;
-                            const status = (claim.claimStatus || 'SUBMITTED').toLowerCase();
-                            const assocPolicy = claim.policyNumber || 'N/A';
-                            const incidentDate = claim.incidentDate || 'N/A';
-                            const claimReason = claim.claimReason || 'No reason provided';
-                            const claimAmount = claim.claimAmount || 0;
-                            const agentRemarks = claim.agentRemarks === "null" || !claim.agentRemarks ? "Pending" : claim.agentRemarks;
-                            const adminRemarks = claim.adminRemarks === "null" || !claim.adminRemarks ? "Pending" : claim.adminRemarks;
-                            const isAdminDecided = status === 'approved' || status === 'rejected' || adminRemarks !== "Pending";
-                            const isExpanded = !!expandedRows[claim.id];
+                  <>
+                    <ClaimsTable
+                      filteredClaims={filteredClaims}
+                      userData={userData}
+                      onReview={handleReviewTrigger}
+                      onHistory={handleHistoryTrigger}
+                      isCustomer={isCustomer}
+                      isAgent={isAgent}
+                    />
 
-                            return (
-                              <React.Fragment key={claim.id || idx}>
-                                <tr className="main-row" onClick={() => toggleRow(claim.id)}>
-                                  <td>
-                                    <button 
-                                      type="button"
-                                      className={`chevron-btn ${isExpanded ? 'expanded' : ''}`}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleRow(claim.id);
-                                      }}
-                                    >
-                                      <i className="ph ph-caret-down" style={{ fontSize: '15px' }} />
-                                    </button>
-                                  </td>
-                                  <td className="claim-number-cell">
-                                    <div>{claimNum}</div>
-                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 'normal', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
-                                      {assocPolicy}
-                                    </div>
-                                  </td>
-                                  <td>{incidentDate}</td>
-                                  <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={claimReason}>
-                                    {claimReason}
-                                  </td>
-                                  <td className="amount-cell" style={{ textAlign: 'right' }}>
-                                    <div style={{ fontWeight: '700' }}>₹{claimAmount.toLocaleString('en-IN')}</div>
-                                    {claim.agentSuggestedAmount !== null && claim.agentSuggestedAmount !== undefined && (
-                                      <div style={{ fontSize: '11px', color: 'var(--success)', fontWeight: '600', marginTop: '2px' }}>
-                                        Passed: ₹{claim.agentSuggestedAmount.toLocaleString('en-IN')}
-                                      </div>
-                                    )}
-                                  </td>
-                                  <td>
-                                    <span className={`status-badge ${status}`}>
-                                      {status}
-                                    </span>
-                                  </td>
-                                  <td>
-                                    {claim.documents && claim.documents.length > 0 ? (
-                                      <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--primary-light)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                        <i className="ph ph-file-text" style={{ fontSize: '16px' }}></i>
-                                        {claim.documents.length}
-                                      </span>
-                                    ) : (
-                                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>—</span>
-                                    )}
-                                  </td>
-                                  <td style={{ textAlign: 'right', paddingRight: '24px' }} onClick={(e) => e.stopPropagation()}>
-                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                      <button
-                                        className="action-btn"
-                                        onClick={() => handleGetHistory(claim)}
-                                      >
-                                        History
-                                      </button>
-                                      {!isCustomer && (
-                                        userData?.role === 'ADMIN' && status === 'submitted' ? (
-                                          <button 
-                                            className="action-btn" 
-                                            disabled 
-                                            style={{ cursor: 'not-allowed', opacity: 0.7 }}
-                                            title="Waiting for Officer recommendation"
-                                          >
-                                            Review Pending
-                                          </button>
-                                        ) : (
-                                          <button
-                                            className={`action-btn ${isAdminDecided ? '' : 'accent'}`}
-                                            onClick={() => handleReviewClaim(claim)}
-                                            disabled={isAdminDecided}
-                                            style={isAdminDecided ? { cursor: 'not-allowed', opacity: 0.6 } : {}}
-                                            title={isAdminDecided ? "Admin decision has already been finalized" : ""}
-                                          >
-                                            {isAdminDecided ? 'Finalized' : ((userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') ? 'Verify' : 'Decide')}
-                                          </button>
-                                        )
-                                      )}
-                                      <DownloadButton
-                                        type="claim"
-                                        data={claim}
-                                        extraData={{ claimNum }}
-                                        label={<i className="ph ph-download" />}
-                                        title="Download PDF Claim Slip"
-                                        className="action-btn"
-                                        style={{
-                                          padding: '6px 10px',
-                                          fontSize: '14px',
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center'
-                                        }}
-                                      />
-                                    </div>
-                                  </td>
-                                </tr>
-                                {isExpanded && (
-                                  <tr className="detail-row">
-                                    <td colSpan={8}>
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        <div className="detail-row-grid">
-                                          <div className="detail-col">
-                                            <span className="detail-col-title">Claim Reason</span>
-                                            <span className="detail-col-content">{claimReason}</span>
-                                          </div>
-                                          <div className="detail-col">
-                                            <span className="detail-col-title">Officer Remarks</span>
-                                            <span className="detail-col-content">{agentRemarks}</span>
-                                          </div>
-                                          <div className="detail-col">
-                                            <span className="detail-col-title">Admin Remarks</span>
-                                            <span className="detail-col-content">{adminRemarks}</span>
-                                          </div>
-                                        </div>
-                                        <div className="detail-docs-section">
-                                          <span className="detail-col-title" style={{ display: 'block', marginBottom: '8px' }}>Attached Documents</span>
-                                          {claim.documents && claim.documents.length > 0 ? (
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                              {claim.documents.map((doc, docIdx) => {
-                                                const isUrl = doc.documentReference && (doc.documentReference.startsWith('http://') || doc.documentReference.startsWith('https://'));
-                                                return (
-                                                  <button
-                                                    key={doc.id || docIdx}
-                                                    className="action-btn"
-                                                    style={{ 
-                                                      fontSize: '12px', 
-                                                      padding: '6px 12px', 
-                                                      display: 'inline-flex', 
-                                                      alignItems: 'center', 
-                                                      gap: '6px',
-                                                      width: 'fit-content' 
-                                                    }}
-                                                    onClick={() => {
-                                                      if (isUrl) {
-                                                        window.open(doc.documentReference, '_blank', 'noopener,noreferrer');
-                                                      } else {
-                                                        toast.info(`Document Reference ID: ${doc.documentReference || 'N/A'}\n(Direct file download coming soon!)`);
-                                                      }
-                                                    }}
-                                                    title={isUrl ? "Open document in a new tab" : `Ref: ${doc.documentReference}`}
-                                                  >
-                                                    <i className="ph ph-file-text" style={{ fontSize: '14px' }}></i> 
-                                                    {doc.documentName || `Doc ${doc.id}`} ({doc.documentType || 'File'})
-                                                  </button>
-                                                );
-                                              })}
-                                            </div>
-                                          ) : (
-                                            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                                              No documents attached to this claim.
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                )}
-                              </React.Fragment>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-
-                {/* Pagination footer */}
-                {!isCustomer && totalPages > 1 && (
-                  <div className="pagination-footer">
-                    <div className="pagination-info">
-                      Showing Page <strong>{currentPage + 1}</strong> of <strong>{totalPages}</strong> (<strong>{totalElements}</strong> total claims)
-                    </div>
-                    <div className="pagination-controls">
-                      <button
-                        className="page-btn"
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
-                        disabled={currentPage === 0 || loading}
-                      >
-                        <i className="ph ph-arrow-left"></i> Previous
-                      </button>
-                      <button
-                        className="page-btn"
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
-                        disabled={currentPage === totalPages - 1 || loading}
-                      >
-                        Next <i className="ph ph-arrow-right"></i>
-                      </button>
-                    </div>
-                  </div>
+                    {/* Pagination footer */}
+                    {!isCustomer && totalPages > 1 && (
+                      <div className="pagination-footer">
+                        <div className="pagination-info">
+                          Showing Page <strong>{currentPage + 1}</strong> of <strong>{totalPages}</strong> (<strong>{totalElements}</strong> total claims)
+                        </div>
+                        <div className="pagination-controls">
+                          <button
+                            className="page-btn"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
+                            disabled={currentPage === 0 || loading}
+                          >
+                            <i className="ph ph-arrow-left"></i> Previous
+                          </button>
+                          <button
+                            className="page-btn"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
+                            disabled={currentPage === totalPages - 1 || loading}
+                          >
+                            Next <i className="ph ph-arrow-right"></i>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
-              </div>
+              </>
             )}
-          </>
-        )}
-      </div>
+          </div>
         </div>
       </div>
 
       {/* File Claim Modal */}
       {showFileModal && (
-        <Modal
-          isOpen={showFileModal}
-          onClose={() => { if (!submitting) setShowFileModal(false); }}
-          title={<><i className="ph ph-file-text"></i> File New Insurance Claim</>}
-          maxWidth="550px"
-        >
-          <form onSubmit={handleConfirmClaim} style={{ marginTop: '12px' }}>
-            <div className="form-group">
-              <label className="form-label">Select Policy</label>
-              <select
-                className="form-input"
-                value={claimForm.policyId}
-                onChange={(e) => setClaimForm({ ...claimForm, policyId: e.target.value })}
-                required
-                disabled={submitting}
-              >
-                <option value="">-- Select Active Policy --</option>
-                {activePolicies.map(p => {
-                  const availableCoverage = p.remainingCoverage !== undefined && p.remainingCoverage !== null ? p.remainingCoverage : p.coverageAmount;
-                  return (
-                    <option key={p.id} value={p.id}>
-                      {p.planName} ({p.policyNumber}) - Max: ₹{p.coverageAmount.toLocaleString('en-IN')} | Avail: ₹{availableCoverage.toLocaleString('en-IN')}
-                    </option>
-                  );
-                })}
-              </select>
-              {formErrors.policyId && <div className="form-error">⚠️ {formErrors.policyId}</div>}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Claim Amount (₹)</label>
-              <input
-                type="number"
-                step="0.01"
-                className="form-input"
-                placeholder="e.g. 50000.00"
-                value={claimForm.claimAmount}
-                onChange={(e) => setClaimForm({ ...claimForm, claimAmount: e.target.value })}
-                required
-                disabled={submitting}
-              />
-              {formErrors.claimAmount && <div className="form-error">⚠️ {formErrors.claimAmount}</div>}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Incident Date</label>
-              <input
-                type="date"
-                className="form-input"
-                value={claimForm.incidentDate}
-                onChange={(e) => setClaimForm({ ...claimForm, incidentDate: e.target.value })}
-                required
-                disabled={submitting}
-              />
-              {formErrors.incidentDate && <div className="form-error">⚠️ {formErrors.incidentDate}</div>}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Reason for Claim</label>
-              <textarea
-                className="form-input"
-                style={{ minHeight: '80px', fontFamily: 'inherit', resize: 'vertical' }}
-                placeholder="Describe the incident in detail..."
-                value={claimForm.claimReason}
-                onChange={(e) => setClaimForm({ ...claimForm, claimReason: e.target.value })}
-                required
-                disabled={submitting}
-              />
-              {formErrors.claimReason && <div className="form-error">⚠️ {formErrors.claimReason}</div>}
-            </div>
-
-            <div style={{ marginTop: '20px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span className="form-label" style={{ margin: 0, fontSize: '12px' }}>Claim Documents</span>
-                <button
-                  type="button"
-                  className="action-btn"
-                  style={{ fontSize: '11.5px', padding: '4px 10px' }}
-                  onClick={handleAddDocumentRow}
-                  disabled={submitting}
-                >
-                  <i className="ph ph-plus"></i> Add Document
-                </button>
-              </div>
-
-              {claimDocuments.map((doc, index) => (
-                <div key={index} style={{ 
-                  background: 'var(--surface)', 
-                  padding: '12px', 
-                  borderRadius: '8px', 
-                  border: '1px solid var(--border)',
-                  marginBottom: '12px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  position: 'relative'
-                }}>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <div style={{ flex: 2 }}>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="Document Name (e.g. Medical Bill)"
-                        value={doc.documentName}
-                        onChange={(e) => handleUpdateDocumentRow(index, 'documentName', e.target.value)}
-                        style={{ padding: '8px 10px', fontSize: '12.5px' }}
-                        required
-                        disabled={submitting}
-                      />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <select
-                        className="form-input"
-                        value={doc.documentType}
-                        onChange={(e) => handleUpdateDocumentRow(index, 'documentType', e.target.value)}
-                        style={{ padding: '8px 10px', fontSize: '12.5px' }}
-                        disabled={submitting}
-                      >
-                        <option value="PDF">PDF</option>
-                        <option value="JPEG">JPEG</option>
-                        <option value="PNG">PNG</option>
-                        <option value="GIF">GIF</option>
-                        <option value="DOC">DOC</option>
-                      </select>
-                    </div>
-                    <button
-                      type="button"
-                      className="action-btn"
-                      style={{ padding: '8px', color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.2)' }}
-                      onClick={() => handleRemoveDocumentRow(index)}
-                      title="Remove Document"
-                      disabled={submitting}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <div style={{ flex: 1 }}>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="Document Reference URL or Code"
-                        value={doc.documentReference}
-                        onChange={(e) => handleUpdateDocumentRow(index, 'documentReference', e.target.value)}
-                        style={{ padding: '8px 10px', fontSize: '12.5px', fontFamily: 'var(--font-mono)' }}
-                        required
-                        disabled={submitting}
-                      />
-                    </div>
-                    <label style={{
-                      padding: '8px 12px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      background: 'var(--card)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '6px',
-                      cursor: submitting ? 'not-allowed' : 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      <i className="ph ph-folder"></i> Choose File
-                      <input
-                        type="file"
-                        style={{ display: 'none' }}
-                        onChange={(e) => handleFileSelect(index, e)}
-                        disabled={submitting}
-                      />
-                    </label>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="modal-actions" style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-              <button
-                type="button"
-                className="btn-cancel"
-                onClick={() => setShowFileModal(false)}
-                disabled={submitting}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn-confirm"
-                style={{ background: 'var(--primary)' }}
-                disabled={submitting}
-              >
-                {submitting ? 'Submitting...' : 'Submit Claim'}
-              </button>
-            </div>
-          </form>
-        </Modal>
+        <FileClaimModal
+          show={showFileModal}
+          onClose={() => setShowFileModal(false)}
+          activePolicies={activePolicies}
+          onClaimFiled={() => loadClaims(currentPage)}
+        />
       )}
 
       {/* Review/Decision Claim Modal */}
       {showReviewModal && selectedReviewClaim && (
-        <Modal
-          isOpen={showReviewModal}
-          onClose={() => { if (!reviewSubmitting) setShowReviewModal(false); }}
-          title={userData?.role === 'AGENT' ? <><i className="ph ph-magnifying-glass"></i> Officer Claim Verification</> : <><i className="ph ph-scales"></i> Admin Claim Decision</>}
-          maxWidth="500px"
-        >
-          <div className="modal-summary" style={{ background: 'var(--surface)', padding: '16px', borderRadius: '8px', marginBottom: '20px', border: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Claim Reference:</span>
-              <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedReviewClaim.claimNumber || `CLM-${selectedReviewClaim.id}`}</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Policyholder:</span>
-              <strong>{selectedReviewClaim.customerName || 'N/A'}</strong>
-            </div>
-            {selectedReviewClaim.agentName && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Assigned Officer:</span>
-                <strong>
-                  {selectedReviewClaim.agentName} ({selectedReviewClaim.agentEmail})
-                </strong>
-              </div>
-            )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Requested Amount:</span>
-              <strong style={{ color: 'var(--primary-light)', fontFamily: 'var(--font-mono)' }}>
-                ₹{selectedReviewClaim.claimAmount?.toLocaleString('en-IN') || 0}
-              </strong>
-            </div>
-            {selectedReviewClaim.agentSuggestedAmount !== null && selectedReviewClaim.agentSuggestedAmount !== undefined && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Passed Amount:</span>
-                <strong style={{ color: 'var(--primary-light)', fontFamily: 'var(--font-mono)' }}>
-                  ₹{selectedReviewClaim.agentSuggestedAmount.toLocaleString('en-IN')}
-                </strong>
-              </div>
-            )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Current Status:</span>
-              <strong style={{ textTransform: 'uppercase' }}>{selectedReviewClaim.claimStatus}</strong>
-            </div>
-          </div>
-
-          <form onSubmit={handleConfirmReview}>
-            <div className="form-group">
-              <label className="form-label">
-                {(userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') ? "Recommended Status" : "Final Decision"}
-              </label>
-              <select
-                className="form-input"
-                value={reviewForm.status}
-                onChange={(e) => setReviewForm({ ...reviewForm, status: e.target.value })}
-                required
-                disabled={reviewSubmitting}
-              >
-                {(userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') ? (
-                  <>
-                    <option value="RECOMMENDED">RECOMMENDED (Forward to Admin)</option>
-                    <option value="UNDER_REVIEW">UNDER_REVIEW (Keep Processing)</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="APPROVED">APPROVED (Approve Payout)</option>
-                    <option value="REJECTED">REJECTED (Decline Payout)</option>
-                  </>
-                )}
-              </select>
-              {reviewErrors.status && <div className="form-error">⚠️ {reviewErrors.status}</div>}
-            </div>
-
-            {(userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') && (
-              <div className="form-group">
-                <label className="form-label">Suggested Passed Amount (₹)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="form-input"
-                  placeholder={`Max: ₹${selectedReviewClaim.claimAmount?.toLocaleString('en-IN')}`}
-                  value={reviewForm.suggestedAmount || ''}
-                  onChange={(e) => setReviewForm({ ...reviewForm, suggestedAmount: e.target.value })}
-                  disabled={reviewSubmitting}
-                />
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                  Leave empty to approve the full requested amount of ₹{selectedReviewClaim.claimAmount?.toLocaleString('en-IN')}.
-                </span>
-                {reviewErrors.suggestedAmount && <div className="form-error">⚠️ {reviewErrors.suggestedAmount}</div>}
-              </div>
-            )}
-
-            <div className="form-group">
-              <label className="form-label">Review Remarks / Audit Comments</label>
-              <textarea
-                className="form-input"
-                style={{ minHeight: '100px', fontFamily: 'inherit', resize: 'vertical' }}
-                placeholder={
-                  (userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT')
-                    ? "Enter documents verification notes and recommendations..."
-                    : "Enter final payout rationale..."
-                }
-                value={reviewForm.remarks}
-                onChange={(e) => setReviewForm({ ...reviewForm, remarks: e.target.value })}
-                required
-                disabled={reviewSubmitting}
-              />
-              {reviewErrors.remarks && <div className="form-error">⚠️ {reviewErrors.remarks}</div>}
-            </div>
-
-            <div className="modal-actions" style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-              <button
-                type="button"
-                className="btn-cancel"
-                onClick={() => setShowReviewModal(false)}
-                disabled={reviewSubmitting}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn-confirm"
-                style={{ background: 'var(--primary)' }}
-                disabled={reviewSubmitting}
-              >
-                {reviewSubmitting ? 'Submitting...' : 'Submit Decision'}
-              </button>
-            </div>
-          </form>
-        </Modal>
+        <ClaimReviewModal
+          show={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          claim={selectedReviewClaim}
+          userData={userData}
+          onClaimReviewed={() => loadClaims(currentPage)}
+        />
       )}
 
       {/* Claim Audit History Modal */}
       {showHistoryModal && selectedHistoryClaim && (
         <Modal
           isOpen={showHistoryModal}
-          onClose={() => { if (!loadingHistory) setShowHistoryModal(false); }}
+          onClose={() => setShowHistoryModal(false)}
           title={<><i className="ph ph-clipboard"></i> Claim Status Audit History</>}
           maxWidth="600px"
         >
@@ -1886,120 +381,18 @@ const Claims = () => {
                 </strong>
               </div>
             )}
-            {selectedHistoryClaim.agentName && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginTop: '6px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Assigned Officer:</span>
-                <strong>
-                  {selectedHistoryClaim.agentName} ({selectedHistoryClaim.agentEmail})
-                </strong>
-              </div>
-            )}
           </div>
 
-          {loadingHistory ? (
-            <div className="loading-container" style={{ minHeight: '150px' }}>
-              <div className="spinner"></div>
-              <p>Fetching history entries...</p>
-            </div>
-          ) : claimHistoryList.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)', fontSize: '13.5px', fontStyle: 'italic' }}>
-              No status audit transitions logged for this claim.
-            </div>
-          ) : (
-            <div className="history-timeline" style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '400px', overflowY: 'auto', paddingRight: '8px' }}>
-              {claimHistoryList.map((item, idx) => {
-                const formattedDate = item.updatedDate 
-                  ? new Date(item.updatedDate).toLocaleString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })
-                  : 'Date unknown';
-                
-                return (
-                  <div key={item.id || idx} style={{ 
-                    display: 'flex', 
-                    gap: '16px', 
-                    position: 'relative',
-                    paddingBottom: idx === claimHistoryList.length - 1 ? '0' : '20px',
-                  }}>
-                    {/* Connector line */}
-                    {idx !== claimHistoryList.length - 1 && (
-                      <div style={{
-                        position: 'absolute',
-                        left: '19px',
-                        top: '38px',
-                        bottom: 0,
-                        width: '2px',
-                        background: 'var(--border)'
-                      }}></div>
-                    )}
-
-                    {/* Indicator Circle */}
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      background: 'var(--surface)',
-                      border: '2px solid var(--primary-light)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '18px',
-                      zIndex: 2,
-                      flexShrink: 0
-                    }}>
-                      {item.newStatus === 'APPROVED' ? <i className="ph ph-check-circle"></i> : item.newStatus === 'REJECTED' ? <i className="ph ph-x-circle"></i> : <i className="ph ph-hourglass"></i>}
-                    </div>
-
-                    {/* Content details card */}
-                    <div style={{
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '8px',
-                      padding: '16px',
-                      flex: 1
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
-                        <div>
-                          <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', marginRight: '6px' }}>Status:</span>
-                          {item.previousStatus && (
-                            <span className={`status-badge ${item.previousStatus.toLowerCase()}`} style={{ marginRight: '6px', fontSize: '10px', padding: '2px 6px' }}>
-                              {item.previousStatus}
-                            </span>
-                          )}
-                          {item.previousStatus && <span style={{ marginRight: '6px', color: 'var(--text-secondary)' }}>➔</span>}
-                          <span className={`status-badge ${item.newStatus.toLowerCase()}`} style={{ fontSize: '10px', padding: '2px 6px' }}>
-                            {item.newStatus}
-                          </span>
-                        </div>
-                        <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                          {formattedDate}
-                        </span>
-                      </div>
-
-                      <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '8px', fontStyle: 'italic' }}>
-                        " {item.remarks || 'No remarks'} "
-                      </div>
-
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                        Updated by: <strong style={{ color: 'var(--text-primary)' }}>{getUpdaterDisplayName(item.updatedBy)}</strong>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <ClaimHistoryTimeline
+            claimId={selectedHistoryClaim.id}
+            userData={userData}
+          />
 
           <div className="modal-actions" style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
             <button
               type="button"
               className="btn-cancel"
               onClick={() => setShowHistoryModal(false)}
-              disabled={loadingHistory}
             >
               Close
             </button>
