@@ -180,7 +180,10 @@ const AgentDashboard = () => {
               <span>Crown Assurance</span>
             </div>
             <div className="topbar-right">
-              <span className="role-badge">{userData?.role || "Officer"} | Workspace</span>
+              <span className="role-badge">
+                {userData?.role === 'SUPER_AGENT' ? 'Super Officer' : 'Officer'}
+                {userData?.specialization ? ` • ${userData.specialization}` : ''}
+              </span>
               <div className="user-avatar" title={userData?.fullName || "Officer User"}>
                 {(userData?.fullName || "Officer").split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)}
               </div>

@@ -321,10 +321,17 @@ export const generateClaimPDF = (claim, claimNum) => {
     ["Incident Date Reported", claim.incidentDate || "N/A"],
     ["Claim Description / Reason", claim.claimReason || "No reason provided"],
     ["Total Amount Claimed", `INR ${(claim.claimAmount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`],
+  ];
+
+  if (claim.agentSuggestedAmount !== null && claim.agentSuggestedAmount !== undefined) {
+    rows.push(["Passed Amount", `INR ${claim.agentSuggestedAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`]);
+  }
+
+  rows.push(
     ["Claim Settlement Status", status],
     ["Agent Audit Remarks", claim.agentRemarks === "null" || !claim.agentRemarks ? "Awaiting review" : claim.agentRemarks],
     ["Admin Decision Remarks", claim.adminRemarks === "null" || !claim.adminRemarks ? "Awaiting decision" : claim.adminRemarks]
-  ];
+  );
 
   autoTable(doc, {
     startY: 80,
@@ -337,7 +344,7 @@ export const generateClaimPDF = (claim, claimNum) => {
     },
     didDrawCell: (data) => {
       // Draw status badge
-      if (data.column.index === 1 && data.row.index === 5) {
+      if (data.column.index === 1 && data.row.raw && data.row.raw[0] === "Claim Settlement Status") {
         doc.setFillColor(255, 255, 255);
         doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, "F");
         drawStatusBadge(doc, data.cell.x + 2, data.cell.y + 4.5, status, isApproved);
@@ -666,7 +673,9 @@ export const generateClaimListPDF = (claims) => {
     c.policyNumber || "N/A",
     c.incidentDate || "N/A",
     c.claimReason || "N/A",
-    `INR ${(c.claimAmount || 0).toLocaleString("en-IN")}`,
+    c.agentSuggestedAmount !== null && c.agentSuggestedAmount !== undefined
+      ? `INR ${(c.claimAmount || 0).toLocaleString("en-IN")}\n(Passed: INR ${c.agentSuggestedAmount.toLocaleString("en-IN")})`
+      : `INR ${(c.claimAmount || 0).toLocaleString("en-IN")}`,
     c.claimStatus || "SUBMITTED",
     c.agentRemarks === "null" || !c.agentRemarks ? "Pending" : c.agentRemarks,
     c.adminRemarks === "null" || !c.adminRemarks ? "Pending" : c.adminRemarks

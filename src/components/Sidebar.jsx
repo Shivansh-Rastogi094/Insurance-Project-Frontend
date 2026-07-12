@@ -12,12 +12,13 @@ const styles = `
     top: 0;
     bottom: 0;
     background: var(--sidebar-bg);
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--sidebar-border);
     display: flex;
     flex-direction: column;
     padding: 24px 0;
     z-index: 1000;
     color: var(--sidebar-text);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
   }
 
   .sidebar-brand {
@@ -25,15 +26,15 @@ const styles = `
     align-items: center;
     gap: 12px;
     padding: 0 20px 24px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--sidebar-border);
     margin-bottom: 24px;
   }
 
   .sidebar-brand-icon {
     width: 36px;
     height: 36px;
-    background: rgba(73, 79, 223, 0.15);
-    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary-light), var(--primary));
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -41,12 +42,13 @@ const styles = `
     flex-shrink: 0;
     color: #ffffff;
     font-weight: 700;
+    box-shadow: 0 4px 10px rgba(73, 79, 223, 0.2);
   }
 
   .sidebar-brand h2 {
     font-size: 15px;
-    font-weight: 600;
-    color: #ffffff;
+    font-weight: 700;
+    color: var(--sidebar-active);
     letter-spacing: -0.2px;
     line-height: 1.2;
   }
@@ -54,19 +56,19 @@ const styles = `
   .sidebar-brand span {
     font-size: 11px;
     color: var(--sidebar-text);
-    opacity: 0.7;
-    font-weight: 400;
+    opacity: 0.8;
+    font-weight: 500;
     display: block;
     margin-top: 2px;
   }
 
   .sidebar-section-label {
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--sidebar-text);
-    opacity: 0.5;
+    opacity: 0.6;
     padding: 0 20px;
     margin-bottom: 12px;
   }
@@ -85,37 +87,48 @@ const styles = `
     align-items: center;
     gap: 12px;
     padding: 10px 16px;
-    border-radius: var(--radius-button);
+    border-radius: 12px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 550;
     color: var(--sidebar-text);
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
   }
 
   .sidebar ul li a:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--sidebar-active);
   }
 
   .sidebar ul li a.active-link {
-    background: rgba(73, 79, 223, 0.15);
-    color: #ffffff;
-    font-weight: 600;
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--sidebar-active);
+    font-weight: 650;
+  }
+
+  .sidebar ul li a.active-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    bottom: 20%;
+    width: 4px;
+    background: var(--primary-light);
+    border-radius: 0 4px 4px 0;
   }
 
   .sidebar-footer {
     margin-top: auto;
     padding: 16px 20px 0;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--sidebar-border);
   }
 
   .sidebar-footer p {
     font-size: 11px;
     color: var(--sidebar-text);
-    opacity: 0.5;
-    font-weight: 400;
+    opacity: 0.6;
+    font-weight: 500;
     margin-top: 12px;
   }
 
@@ -127,9 +140,9 @@ const styles = `
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    border-radius: var(--radius-button);
+    border-radius: 12px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--sidebar-text);
     text-align: left;
     cursor: pointer;
@@ -139,21 +152,21 @@ const styles = `
   }
 
   .logout-btn:hover {
-    background: rgba(226, 59, 74, 0.15);
+    background: rgba(226, 59, 74, 0.1);
     color: #e23b4a;
   }
   
   .theme-btn {
     width: 100%;
     background: transparent;
-    border: 1px solid var(--border);
+    border: 1px solid var(--sidebar-border);
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    border-radius: var(--radius-button);
+    border-radius: 12px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--sidebar-text);
     text-align: left;
     cursor: pointer;
@@ -163,8 +176,9 @@ const styles = `
   }
 
   .theme-btn:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--sidebar-active);
+    border-color: var(--sidebar-active);
   }
 `;
 
@@ -175,7 +189,7 @@ const Sidebar = ({ title }) => {
 
   const defaultTitle = userData?.role === "ADMIN"
     ? "Admin Panel"
-    : userData?.role === "AGENT"
+    : (userData?.role === "AGENT" || userData?.role === "SUPER_AGENT")
     ? "Agent Workspace"
     : "Customer Portal";
   const displayTitle = title || defaultTitle;
@@ -193,7 +207,7 @@ const Sidebar = ({ title }) => {
         { label: "My Claims", path: "/claims" },
         { label: "Profile", path: "/profile" }
       ];
-    } else if (userData?.role === "AGENT") {
+    } else if (userData?.role === "AGENT" || userData?.role === "SUPER_AGENT") {
       return [
         { label: "Dashboard", path: "/agentdashboard" },
         { label: "Products & Plans", path: "/policy" },
@@ -224,8 +238,10 @@ const Sidebar = ({ title }) => {
           <div>
             <h2>{displayTitle}</h2>
             <span>
-              {userData?.role === 'AGENT'
-                ? 'Officer Panel'
+              {userData?.role === 'SUPER_AGENT'
+                ? `Super Officer Panel${userData?.specialization ? ` • ${userData.specialization}` : ''}`
+                : userData?.role === 'AGENT'
+                ? `Officer Panel${userData?.specialization ? ` • ${userData.specialization}` : ''}`
                 : userData?.role === 'CUSTOMER'
                 ? 'Customer Portal'
                 : 'Admin Panel'}

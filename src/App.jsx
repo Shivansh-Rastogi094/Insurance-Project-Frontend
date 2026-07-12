@@ -58,27 +58,27 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/agentdashboard" element={
-          <ProtectedRoute allowedRoles={['AGENT']}>
+          <ProtectedRoute allowedRoles={['AGENT', 'SUPER_AGENT']}>
             <AgentDashboard />
           </ProtectedRoute>
         } />
         <Route path="/policy" element={
-          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'CUSTOMER']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'SUPER_AGENT', 'CUSTOMER']}>
             <Policy />
           </ProtectedRoute>
         } />
         <Route path="/policy/:type" element={
-          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'CUSTOMER']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'SUPER_AGENT', 'CUSTOMER']}>
             <ProductCatalog />
           </ProtectedRoute>
         } />
         <Route path="/policy/:type/:productId/plans" element={
-          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'CUSTOMER']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'SUPER_AGENT', 'CUSTOMER']}>
             <PlanCatalog />
           </ProtectedRoute>
         } />
         <Route path="/claims" element={
-          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'CUSTOMER']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'SUPER_AGENT', 'CUSTOMER']}>
             <Claims />
           </ProtectedRoute>
         } />
@@ -88,12 +88,12 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/profile" element={
-          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'CUSTOMER']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'SUPER_AGENT', 'CUSTOMER']}>
             <Profile />
           </ProtectedRoute>
         } />
         <Route path="/customers" element={
-          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'SUPER_AGENT']}>
             <Customers />
           </ProtectedRoute>
         } />
@@ -103,7 +103,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/policies" element={
-          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'SUPER_AGENT']}>
             <Policies />
           </ProtectedRoute>
         } />

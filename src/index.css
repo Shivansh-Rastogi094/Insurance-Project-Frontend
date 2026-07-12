@@ -13,9 +13,10 @@
   --border: #e2e2e7; /* Crisp Light Hairline */
   --text-primary: #191c1f; /* Ink */
   --text-secondary: #505a63; /* Mute */
-  --sidebar-bg: #000000; /* True Black Sidebar */
-  --sidebar-text: rgba(255, 255, 255, 0.72);
-  --sidebar-active: #ffffff;
+  --sidebar-bg: #0b192c; /* Premium Deep Blue Sidebar */
+  --sidebar-text: #94a9c9; /* Ice Blue Slate Text */
+  --sidebar-active: #ffffff; /* Crisp White Active */
+  --sidebar-border: rgba(148, 169, 201, 0.12); /* Clean subtle border */
 
   --font-display: 'Inter', sans-serif;
   --font-body: 'Inter', sans-serif;
@@ -48,9 +49,10 @@
   --border: rgba(255, 255, 255, 0.08); /* Crisp Dark Hairline */
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.72);
-  --sidebar-bg: #000000;
+  --sidebar-bg: #000000; /* Dark Mode True Black Sidebar */
   --sidebar-text: rgba(255, 255, 255, 0.72);
   --sidebar-active: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
   --nav-bg: rgba(0, 0, 0, 0.95);
   --nav-border: rgba(255, 255, 255, 0.08);
   --hero-bg: linear-gradient(135deg, #000000 0%, #0d0e12 100%);

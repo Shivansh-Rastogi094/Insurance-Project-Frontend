@@ -135,6 +135,7 @@ const styles = `
     max-width: 1400px;
     width: 100%;
     margin: 0 auto;
+    min-width: 0;
   }
 
   .table-card {
@@ -155,6 +156,7 @@ const styles = `
     border-collapse: collapse;
     text-align: left;
     min-width: 800px;
+    table-layout: fixed;
   }
 
   .claims-table th {
@@ -180,8 +182,79 @@ const styles = `
     border-bottom: none;
   }
 
-  .claims-table tr:hover td {
-    background-color: rgba(248, 250, 252, 0.5);
+  .claims-table tr.main-row {
+    cursor: pointer;
+  }
+
+  .claims-table tr.main-row:hover td {
+    background-color: rgba(73, 79, 223, 0.04);
+  }
+
+  .claims-table tr.detail-row:hover td {
+    background-color: var(--surface) !important;
+  }
+
+  .detail-row td {
+    background-color: var(--surface) !important;
+    border-bottom: 1px solid var(--border);
+    padding: 24px !important;
+  }
+
+  .detail-row-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 16px;
+  }
+
+  .detail-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .detail-col-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+  }
+
+  .detail-col-content {
+    font-size: 13.5px;
+    color: var(--text-primary);
+    line-height: 1.5;
+    white-space: pre-line;
+    word-break: break-word;
+  }
+
+  .detail-docs-section {
+    border-top: 1px dashed var(--border);
+    padding-top: 16px;
+  }
+
+  .chevron-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+  }
+
+  .chevron-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+  }
+
+  .chevron-btn.expanded {
+    transform: rotate(180deg);
   }
 
   .claim-number-cell {
@@ -232,6 +305,18 @@ const styles = `
     background: rgba(239, 68, 68, 0.1);
     color: #EF4444;
     border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+
+  .status-badge.under_review {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+
+  .status-badge.recommended {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+    border: 1px solid rgba(139, 92, 246, 0.2);
   }
 
   .remarks-block {
@@ -589,6 +674,7 @@ const Claims = () => {
   const toast = useToast();
   const { userData } = useAuth();
   const isCustomer = userData?.role === 'CUSTOMER';
+  const isAgent = userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT';
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 10;
 
@@ -597,12 +683,14 @@ const Claims = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
+  const [myAssignedOnly, setMyAssignedOnly] = useState(false);
 
   const handleClearFilters = () => {
     setSearchQuery('');
     setStatusFilter('');
     setMinAmount('');
     setMaxAmount('');
+    setMyAssignedOnly(false);
   };
 
   // Export Modal States
@@ -674,6 +762,9 @@ const Claims = () => {
   // Compute filtered claims
   const filteredClaims = claimsList.filter(claim => {
     if (statusFilter && (claim.claimStatus || '').toUpperCase() !== statusFilter.toUpperCase()) {
+      return false;
+    }
+    if (myAssignedOnly && claim.agentEmail !== userData?.email) {
       return false;
     }
     if (searchQuery) {
@@ -888,6 +979,14 @@ const Claims = () => {
   const [claimHistoryList, setClaimHistoryList] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+  const [expandedRows, setExpandedRows] = useState({});
+  const toggleRow = (id) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
   const [usersMap, setUsersMap] = useState({});
 
   useEffect(() => {
@@ -967,8 +1066,9 @@ const Claims = () => {
   const handleReviewClaim = (claim) => {
     setSelectedReviewClaim(claim);
     setReviewForm({
-      status: userData?.role === 'AGENT' ? 'RECOMMENDED' : 'APPROVED',
-      remarks: ''
+      status: (userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') ? 'RECOMMENDED' : 'APPROVED',
+      remarks: '',
+      suggestedAmount: ''
     });
     setReviewErrors({});
     setShowReviewModal(true);
@@ -982,6 +1082,15 @@ const Claims = () => {
     if (!reviewForm.status) errors.status = "Please select a status.";
     if (!reviewForm.remarks.trim()) errors.remarks = "Please enter remarks.";
 
+    if (isAgent && reviewForm.suggestedAmount) {
+      const sugAmt = parseFloat(reviewForm.suggestedAmount);
+      if (isNaN(sugAmt) || sugAmt <= 0) {
+        errors.suggestedAmount = "Please enter a valid suggested amount.";
+      } else if (sugAmt > selectedReviewClaim.claimAmount) {
+        errors.suggestedAmount = `Suggested amount cannot exceed the original claim amount of ₹${selectedReviewClaim.claimAmount.toLocaleString('en-IN')}.`;
+      }
+    }
+
     if (Object.keys(errors).length > 0) {
       setReviewErrors(errors);
       toast.error(`Validation Error: ${Object.values(errors)[0]}`);
@@ -990,12 +1099,12 @@ const Claims = () => {
 
     try {
       setReviewSubmitting(true);
-      const isAgent = userData?.role === 'AGENT';
       
       if (isAgent) {
         const payload = {
           recommendedStatus: reviewForm.status,
-          remarks: reviewForm.remarks.trim()
+          remarks: reviewForm.remarks.trim(),
+          suggestedAmount: reviewForm.suggestedAmount ? parseFloat(reviewForm.suggestedAmount) : null
         };
         await agentReviewClaim(selectedReviewClaim.id, payload);
         toast.success(`Claim review submitted successfully as ${reviewForm.status}.`);
@@ -1138,17 +1247,35 @@ const Claims = () => {
                         onChange={(e) => setMaxAmount(e.target.value)}
                       />
                     </div>
-                    {(searchQuery || statusFilter || minAmount || maxAmount) && (
-                      <button
-                        type="button"
-                        className="clear-filter-btn"
-                        onClick={handleClearFilters}
-                        title="Clear All Filters"
-                      >
-                        Clear
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="clear-filter-btn"
+                      onClick={handleClearFilters}
+                      title="Clear All Filters"
+                      style={{
+                        visibility: (searchQuery || statusFilter || minAmount || maxAmount || myAssignedOnly) ? 'visible' : 'hidden',
+                        opacity: (searchQuery || statusFilter || minAmount || maxAmount || myAssignedOnly) ? 1 : 0,
+                        transition: 'opacity 0.2s ease, visibility 0.2s'
+                      }}
+                    >
+                      Clear
+                    </button>
                   </div>
+
+                  {isAgent && (
+                    <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                      <input
+                        type="checkbox"
+                        id="myAssignedOnly"
+                        checked={myAssignedOnly}
+                        onChange={(e) => setMyAssignedOnly(e.target.checked)}
+                        style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                      />
+                      <label htmlFor="myAssignedOnly" style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
+                        Show only claims assigned to me
+                      </label>
+                    </div>
+                  )}
                 </div>
 
                 {filteredClaims.length === 0 ? (
@@ -1164,17 +1291,26 @@ const Claims = () => {
                   <div className="table-card">
                     <div className="claims-table-wrapper">
                       <table className="claims-table">
+                        <colgroup>
+                          <col style={{ width: '50px' }} />
+                          <col style={{ width: '180px' }} />
+                          <col style={{ width: '120px' }} />
+                          <col style={{ width: 'auto' }} />
+                          <col style={{ width: '130px' }} />
+                          <col style={{ width: '130px' }} />
+                          <col style={{ width: '80px' }} />
+                          <col style={{ width: '260px' }} />
+                        </colgroup>
                         <thead>
                           <tr>
-                            <th>Claim ID</th>
-                            <th>Policy ID</th>
-                            <th>Incident Date</th>
-                            <th>Claim Reason</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Remarks</th>
-                            <th>Documents</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
+                            <th style={{ width: '50px' }}></th>
+                            <th style={{ width: '180px' }}>Claim & Policy ID</th>
+                            <th style={{ width: '120px' }}>Incident Date</th>
+                            <th style={{ width: 'auto' }}>Claim Reason</th>
+                            <th style={{ width: '130px', textAlign: 'right' }}>Amount</th>
+                            <th style={{ width: '130px' }}>Status</th>
+                            <th style={{ width: '80px' }}>Docs</th>
+                            <th style={{ width: '260px', textAlign: 'right', paddingRight: '24px' }}>Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1187,115 +1323,167 @@ const Claims = () => {
                             const claimAmount = claim.claimAmount || 0;
                             const agentRemarks = claim.agentRemarks === "null" || !claim.agentRemarks ? "Pending" : claim.agentRemarks;
                             const adminRemarks = claim.adminRemarks === "null" || !claim.adminRemarks ? "Pending" : claim.adminRemarks;
-                            const isAdminDecided = adminRemarks !== "Pending";
+                            const isAdminDecided = status === 'approved' || status === 'rejected' || adminRemarks !== "Pending";
+                            const isExpanded = !!expandedRows[claim.id];
 
                             return (
-                              <tr key={claim.id || idx}>
-                                <td className="claim-number-cell">{claimNum}</td>
-                                <td className="policy-number-cell">{assocPolicy}</td>
-                                <td>{incidentDate}</td>
-                                <td>{claimReason}</td>
-                                <td className="amount-cell">₹{claimAmount.toLocaleString('en-IN')}</td>
-                                <td>
-                                  <span className={`status-badge ${status}`}>
-                                    {status}
-                                  </span>
-                                </td>
-                                <td>
-                                  <div className="remarks-block">
-                                    <span className="remark-item">
-                                      <strong>Officer:</strong> {agentRemarks}
-                                    </span>
-                                    <span className="remark-item">
-                                      <strong>Admin:</strong> {adminRemarks}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td>
-                                  {claim.documents && claim.documents.length > 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                      {claim.documents.map((doc, docIdx) => {
-                                        const isUrl = doc.documentReference && (doc.documentReference.startsWith('http://') || doc.documentReference.startsWith('https://'));
-                                        return (
-                                          <button
-                                            key={doc.id || docIdx}
-                                            className="action-btn"
-                                            style={{ 
-                                              fontSize: '11px', 
-                                              padding: '4px 8px', 
-                                              display: 'inline-flex', 
-                                              alignItems: 'center', 
-                                              gap: '4px',
-                                              width: 'fit-content' 
-                                            }}
-                                            onClick={() => {
-                                              if (isUrl) {
-                                                window.open(doc.documentReference, '_blank', 'noopener,noreferrer');
-                                              } else {
-                                                toast.info(`Document Reference ID: ${doc.documentReference || 'N/A'}\n(Direct file download coming soon!)`);
-                                              }
-                                            }}
-                                            title={isUrl ? "Open document in a new tab" : `Ref: ${doc.documentReference}`}
-                                          >
-                                            <i className="ph ph-file-text"></i> {doc.documentName || `Doc ${doc.id}`} ({doc.documentType || 'File'})
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  ) : (
-                                    <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                                      No Documents
-                                    </span>
-                                  )}
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
-                                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                    <button
-                                      className="action-btn"
-                                      onClick={() => handleGetHistory(claim)}
-                                    >
-                                      Claim History
-                                    </button>
-                                    {!isCustomer && (
-                                      userData?.role === 'ADMIN' && status === 'submitted' ? (
-                                        <button 
-                                          className="action-btn" 
-                                          disabled 
-                                          style={{ cursor: 'not-allowed', opacity: 0.7 }}
-                                          title="Waiting for Officer recommendation"
-                                        >
-                                          <i className="ph ph-hourglass"></i> Officer Review Pending
-                                        </button>
-                                      ) : (
-                                        <button
-                                          className={`action-btn ${isAdminDecided ? '' : 'accent'}`}
-                                          onClick={() => handleReviewClaim(claim)}
-                                          disabled={isAdminDecided}
-                                          style={isAdminDecided ? { cursor: 'not-allowed', opacity: 0.6 } : {}}
-                                          title={isAdminDecided ? "Admin decision has already been finalized" : ""}
-                                        >
-                                          {isAdminDecided ? 'Decision Finalized' : (userData?.role === 'AGENT' ? 'Review Claim' : 'Take Decision')}
-                                        </button>
-                                      )
-                                    )}
-                                    <DownloadButton
-                                      type="claim"
-                                      data={claim}
-                                      extraData={{ claimNum }}
-                                      label={<i className="ph ph-download" />}
-                                      title="Download PDF Claim Slip"
-                                      className="action-btn"
-                                      style={{
-                                        padding: '6px 10px',
-                                        fontSize: '14px',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
+                              <React.Fragment key={claim.id || idx}>
+                                <tr className="main-row" onClick={() => toggleRow(claim.id)}>
+                                  <td>
+                                    <button 
+                                      type="button"
+                                      className={`chevron-btn ${isExpanded ? 'expanded' : ''}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleRow(claim.id);
                                       }}
-                                    />
-                                  </div>
-                                </td>
-                              </tr>
+                                    >
+                                      <i className="ph ph-caret-down" style={{ fontSize: '15px' }} />
+                                    </button>
+                                  </td>
+                                  <td className="claim-number-cell">
+                                    <div>{claimNum}</div>
+                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 'normal', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                                      {assocPolicy}
+                                    </div>
+                                  </td>
+                                  <td>{incidentDate}</td>
+                                  <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={claimReason}>
+                                    {claimReason}
+                                  </td>
+                                  <td className="amount-cell" style={{ textAlign: 'right' }}>
+                                    <div style={{ fontWeight: '700' }}>₹{claimAmount.toLocaleString('en-IN')}</div>
+                                    {claim.agentSuggestedAmount !== null && claim.agentSuggestedAmount !== undefined && (
+                                      <div style={{ fontSize: '11px', color: 'var(--success)', fontWeight: '600', marginTop: '2px' }}>
+                                        Passed: ₹{claim.agentSuggestedAmount.toLocaleString('en-IN')}
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td>
+                                    <span className={`status-badge ${status}`}>
+                                      {status}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    {claim.documents && claim.documents.length > 0 ? (
+                                      <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--primary-light)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                        <i className="ph ph-file-text" style={{ fontSize: '16px' }}></i>
+                                        {claim.documents.length}
+                                      </span>
+                                    ) : (
+                                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>—</span>
+                                    )}
+                                  </td>
+                                  <td style={{ textAlign: 'right', paddingRight: '24px' }} onClick={(e) => e.stopPropagation()}>
+                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                      <button
+                                        className="action-btn"
+                                        onClick={() => handleGetHistory(claim)}
+                                      >
+                                        History
+                                      </button>
+                                      {!isCustomer && (
+                                        userData?.role === 'ADMIN' && status === 'submitted' ? (
+                                          <button 
+                                            className="action-btn" 
+                                            disabled 
+                                            style={{ cursor: 'not-allowed', opacity: 0.7 }}
+                                            title="Waiting for Officer recommendation"
+                                          >
+                                            Review Pending
+                                          </button>
+                                        ) : (
+                                          <button
+                                            className={`action-btn ${isAdminDecided ? '' : 'accent'}`}
+                                            onClick={() => handleReviewClaim(claim)}
+                                            disabled={isAdminDecided}
+                                            style={isAdminDecided ? { cursor: 'not-allowed', opacity: 0.6 } : {}}
+                                            title={isAdminDecided ? "Admin decision has already been finalized" : ""}
+                                          >
+                                            {isAdminDecided ? 'Finalized' : ((userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') ? 'Verify' : 'Decide')}
+                                          </button>
+                                        )
+                                      )}
+                                      <DownloadButton
+                                        type="claim"
+                                        data={claim}
+                                        extraData={{ claimNum }}
+                                        label={<i className="ph ph-download" />}
+                                        title="Download PDF Claim Slip"
+                                        className="action-btn"
+                                        style={{
+                                          padding: '6px 10px',
+                                          fontSize: '14px',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center'
+                                        }}
+                                      />
+                                    </div>
+                                  </td>
+                                </tr>
+                                {isExpanded && (
+                                  <tr className="detail-row">
+                                    <td colSpan={8}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <div className="detail-row-grid">
+                                          <div className="detail-col">
+                                            <span className="detail-col-title">Claim Reason</span>
+                                            <span className="detail-col-content">{claimReason}</span>
+                                          </div>
+                                          <div className="detail-col">
+                                            <span className="detail-col-title">Officer Remarks</span>
+                                            <span className="detail-col-content">{agentRemarks}</span>
+                                          </div>
+                                          <div className="detail-col">
+                                            <span className="detail-col-title">Admin Remarks</span>
+                                            <span className="detail-col-content">{adminRemarks}</span>
+                                          </div>
+                                        </div>
+                                        <div className="detail-docs-section">
+                                          <span className="detail-col-title" style={{ display: 'block', marginBottom: '8px' }}>Attached Documents</span>
+                                          {claim.documents && claim.documents.length > 0 ? (
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                              {claim.documents.map((doc, docIdx) => {
+                                                const isUrl = doc.documentReference && (doc.documentReference.startsWith('http://') || doc.documentReference.startsWith('https://'));
+                                                return (
+                                                  <button
+                                                    key={doc.id || docIdx}
+                                                    className="action-btn"
+                                                    style={{ 
+                                                      fontSize: '12px', 
+                                                      padding: '6px 12px', 
+                                                      display: 'inline-flex', 
+                                                      alignItems: 'center', 
+                                                      gap: '6px',
+                                                      width: 'fit-content' 
+                                                    }}
+                                                    onClick={() => {
+                                                      if (isUrl) {
+                                                        window.open(doc.documentReference, '_blank', 'noopener,noreferrer');
+                                                      } else {
+                                                        toast.info(`Document Reference ID: ${doc.documentReference || 'N/A'}\n(Direct file download coming soon!)`);
+                                                      }
+                                                    }}
+                                                    title={isUrl ? "Open document in a new tab" : `Ref: ${doc.documentReference}`}
+                                                  >
+                                                    <i className="ph ph-file-text" style={{ fontSize: '14px' }}></i> 
+                                                    {doc.documentName || `Doc ${doc.id}`} ({doc.documentType || 'File'})
+                                                  </button>
+                                                );
+                                              })}
+                                            </div>
+                                          ) : (
+                                            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                              No documents attached to this claim.
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </React.Fragment>
                             );
                           })}
                         </tbody>
@@ -1551,12 +1739,28 @@ const Claims = () => {
               <span style={{ color: 'var(--text-secondary)' }}>Policyholder:</span>
               <strong>{selectedReviewClaim.customerName || 'N/A'}</strong>
             </div>
+            {selectedReviewClaim.agentName && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Assigned Officer:</span>
+                <strong>
+                  {selectedReviewClaim.agentName} ({selectedReviewClaim.agentEmail})
+                </strong>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Requested Amount:</span>
               <strong style={{ color: 'var(--primary-light)', fontFamily: 'var(--font-mono)' }}>
                 ₹{selectedReviewClaim.claimAmount?.toLocaleString('en-IN') || 0}
               </strong>
             </div>
+            {selectedReviewClaim.agentSuggestedAmount !== null && selectedReviewClaim.agentSuggestedAmount !== undefined && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Passed Amount:</span>
+                <strong style={{ color: 'var(--primary-light)', fontFamily: 'var(--font-mono)' }}>
+                  ₹{selectedReviewClaim.agentSuggestedAmount.toLocaleString('en-IN')}
+                </strong>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Current Status:</span>
               <strong style={{ textTransform: 'uppercase' }}>{selectedReviewClaim.claimStatus}</strong>
@@ -1566,7 +1770,7 @@ const Claims = () => {
           <form onSubmit={handleConfirmReview}>
             <div className="form-group">
               <label className="form-label">
-                {userData?.role === 'AGENT' ? "Recommended Status" : "Final Decision"}
+                {(userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') ? "Recommended Status" : "Final Decision"}
               </label>
               <select
                 className="form-input"
@@ -1575,7 +1779,7 @@ const Claims = () => {
                 required
                 disabled={reviewSubmitting}
               >
-                {userData?.role === 'AGENT' ? (
+                {(userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') ? (
                   <>
                     <option value="RECOMMENDED">RECOMMENDED (Forward to Admin)</option>
                     <option value="UNDER_REVIEW">UNDER_REVIEW (Keep Processing)</option>
@@ -1590,13 +1794,32 @@ const Claims = () => {
               {reviewErrors.status && <div className="form-error">⚠️ {reviewErrors.status}</div>}
             </div>
 
+            {(userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') && (
+              <div className="form-group">
+                <label className="form-label">Suggested Passed Amount (₹)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="form-input"
+                  placeholder={`Max: ₹${selectedReviewClaim.claimAmount?.toLocaleString('en-IN')}`}
+                  value={reviewForm.suggestedAmount || ''}
+                  onChange={(e) => setReviewForm({ ...reviewForm, suggestedAmount: e.target.value })}
+                  disabled={reviewSubmitting}
+                />
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  Leave empty to approve the full requested amount of ₹{selectedReviewClaim.claimAmount?.toLocaleString('en-IN')}.
+                </span>
+                {reviewErrors.suggestedAmount && <div className="form-error">⚠️ {reviewErrors.suggestedAmount}</div>}
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label">Review Remarks / Audit Comments</label>
               <textarea
                 className="form-input"
                 style={{ minHeight: '100px', fontFamily: 'inherit', resize: 'vertical' }}
                 placeholder={
-                  userData?.role === 'AGENT'
+                  (userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT')
                     ? "Enter documents verification notes and recommendations..."
                     : "Enter final payout rationale..."
                 }
@@ -1643,9 +1866,11 @@ const Claims = () => {
               <span style={{ color: 'var(--text-secondary)' }}>Claim Reference:</span>
               <strong style={{ fontFamily: 'var(--font-mono)' }}>{selectedHistoryClaim.claimNumber || `CLM-${selectedHistoryClaim.id}`}</strong>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px', marginBottom: '8px', borderBottom: '1px dashed var(--border)', paddingBottom: '8px' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Incident Reason:</span>
-              <strong>{selectedHistoryClaim.claimReason || 'N/A'}</strong>
+              <strong style={{ color: 'var(--text-primary)', lineHeight: '1.4', wordBreak: 'break-word' }}>
+                {selectedHistoryClaim.claimReason || 'N/A'}
+              </strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Requested Amount:</span>
@@ -1653,6 +1878,22 @@ const Claims = () => {
                 ₹{selectedHistoryClaim.claimAmount?.toLocaleString('en-IN') || 0}
               </strong>
             </div>
+            {selectedHistoryClaim.agentSuggestedAmount !== null && selectedHistoryClaim.agentSuggestedAmount !== undefined && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginTop: '6px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Passed Amount:</span>
+                <strong style={{ color: 'var(--primary-light)', fontFamily: 'var(--font-mono)' }}>
+                  ₹{selectedHistoryClaim.agentSuggestedAmount.toLocaleString('en-IN')}
+                </strong>
+              </div>
+            )}
+            {selectedHistoryClaim.agentName && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginTop: '6px' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Assigned Officer:</span>
+                <strong>
+                  {selectedHistoryClaim.agentName} ({selectedHistoryClaim.agentEmail})
+                </strong>
+              </div>
+            )}
           </div>
 
           {loadingHistory ? (

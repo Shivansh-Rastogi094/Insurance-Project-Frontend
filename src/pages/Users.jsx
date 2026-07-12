@@ -620,7 +620,8 @@ const Users = () => {
     email: '',
     password: '',
     phoneNumber: '',
-    role: 'AGENT'
+    role: 'AGENT',
+    specialization: 'HEALTH'
   });
   const [agentSubmitting, setAgentSubmitting] = useState(false);
 
@@ -630,10 +631,24 @@ const Users = () => {
       toast.error("All fields are required.");
       return;
     }
+    if (agentData.role === 'AGENT' && !agentData.specialization) {
+      toast.error("Specialization is required for Agent role.");
+      return;
+    }
+
+    // Build payload: SUPER_AGENT doesn't need specialization (auto-set to SUPER by backend)
+    const payload = {
+      fullName: agentData.fullName,
+      email: agentData.email,
+      password: agentData.password,
+      phoneNumber: agentData.phoneNumber,
+      role: agentData.role,
+      ...(agentData.role === 'AGENT' ? { specialization: agentData.specialization } : {})
+    };
 
     try {
       setAgentSubmitting(true);
-      await createAgentAccount(agentData);
+      await createAgentAccount(payload);
       toast.success("Agent account created successfully!");
       setShowAddAgentModal(false);
       // Reset form
@@ -642,7 +657,8 @@ const Users = () => {
         email: '',
         password: '',
         phoneNumber: '',
-        role: 'AGENT'
+        role: 'AGENT',
+        specialization: 'HEALTH'
       });
       // Refresh list
       loadUsers(currentPage);
@@ -868,7 +884,8 @@ const Users = () => {
                 >
                   <option value="ALL">All Roles</option>
                   <option value="CUSTOMER">Customer</option>
-                  <option value="AGENT">Officer</option>
+                  <option value="AGENT">Officer (Agent)</option>
+                  <option value="SUPER_AGENT">Super Officer</option>
                   <option value="ADMIN">Admin</option>
                 </select>
               </div>
@@ -942,7 +959,7 @@ const Users = () => {
                           <th>Full Name</th>
                           <th>Email Address</th>
                           <th>Phone Number</th>
-                          <th>System Role</th>
+                          <th>Role & Specialization</th>
                           <th>Login Status</th>
                           <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
                         </tr>
@@ -960,9 +977,40 @@ const Users = () => {
                               <td>{user.email}</td>
                               <td style={{ fontFamily: 'var(--font-mono)' }}>{user.phoneNumber || 'N/A'}</td>
                               <td>
-                                <span className={`user-badge ${roleClass}`}>
-                                  {user.role =="AGENT"? "Officer" : user.role}
-                                </span>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                  <span className={`user-badge ${roleClass}`}>
+                                    {user.role === 'AGENT' ? 'Officer' : user.role === 'SUPER_AGENT' ? 'Super Officer' : user.role}
+                                  </span>
+                                  {(user.role === 'AGENT' || user.role === 'SUPER_AGENT') && user.specialization && (
+                                    <span style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      padding: '3px 8px',
+                                      borderRadius: '10px',
+                                      fontSize: '11px',
+                                      fontWeight: '600',
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.03em',
+                                      background: user.specialization === 'SUPER' ? 'rgba(147,51,234,0.1)' :
+                                                  user.specialization === 'HEALTH' ? 'rgba(16,185,129,0.1)' :
+                                                  user.specialization === 'MOTOR' ? 'rgba(245,158,11,0.1)' :
+                                                  user.specialization === 'LIFE' ? 'rgba(37,99,168,0.1)' :
+                                                  'rgba(239,68,68,0.1)',
+                                      color: user.specialization === 'SUPER' ? '#a855f7' :
+                                             user.specialization === 'HEALTH' ? '#10b981' :
+                                             user.specialization === 'MOTOR' ? '#f59e0b' :
+                                             user.specialization === 'LIFE' ? 'var(--primary-light)' :
+                                             '#ef4444',
+                                      border: `1px solid ${user.specialization === 'SUPER' ? 'rgba(147,51,234,0.2)' :
+                                               user.specialization === 'HEALTH' ? 'rgba(16,185,129,0.2)' :
+                                               user.specialization === 'MOTOR' ? 'rgba(245,158,11,0.2)' :
+                                               user.specialization === 'LIFE' ? 'rgba(37,99,168,0.2)' :
+                                               'rgba(239,68,68,0.2)'}`
+                                    }}>
+                                      {user.specialization}
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td>
                                 <span className={`status-dot ${user.active ? 'active' : 'inactive'}`}>
@@ -1125,7 +1173,7 @@ const Users = () => {
                 type="text"
                 required
                 className="form-input"
-                placeholder="e.g. alex"
+                placeholder="e.g. Alex Kumar"
                 value={agentData.fullName}
                 onChange={(e) => setAgentData({ ...agentData, fullName: e.target.value })}
                 disabled={agentSubmitting}
@@ -1146,7 +1194,7 @@ const Users = () => {
                 type="email"
                 required
                 className="form-input"
-                placeholder="e.g. alexKh@gmail.com"
+                placeholder="e.g. alexkumar@gmail.com"
                 value={agentData.email}
                 onChange={(e) => setAgentData({ ...agentData, email: e.target.value })}
                 disabled={agentSubmitting}
@@ -1167,7 +1215,7 @@ const Users = () => {
                 type="password"
                 required
                 className="form-input"
-                placeholder="e.g. Alex123"
+                placeholder="Min. 8 characters"
                 value={agentData.password}
                 onChange={(e) => setAgentData({ ...agentData, password: e.target.value })}
                 disabled={agentSubmitting}
@@ -1202,6 +1250,63 @@ const Users = () => {
                 }}
               />
             </div>
+
+            {/* Role Selector */}
+            <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Agent Role</label>
+              <select
+                required
+                className="form-input"
+                value={agentData.role}
+                onChange={(e) => setAgentData({ ...agentData, role: e.target.value, specialization: e.target.value === 'AGENT' ? 'HEALTH' : '' })}
+                disabled={agentSubmitting}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  background: 'var(--surface)',
+                  color: 'var(--text-primary)',
+                  fontFamily: 'inherit'
+                }}
+              >
+                <option value="AGENT">Agent — Specialization-restricted</option>
+                <option value="SUPER_AGENT">Super Agent — All policy types</option>
+              </select>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                {agentData.role === 'SUPER_AGENT'
+                  ? '⚡ Super Agent can review claims across ALL policy types (SUPER specialization auto-assigned).'
+                  : '🎯 Agent is restricted to claims matching their selected policy specialization.'}
+              </span>
+            </div>
+
+            {/* Specialization — only for regular AGENT */}
+            {agentData.role === 'AGENT' && (
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+                <label className="form-label" style={{ fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Policy Specialization</label>
+                <select
+                  required
+                  className="form-input"
+                  value={agentData.specialization}
+                  onChange={(e) => setAgentData({ ...agentData, specialization: e.target.value })}
+                  disabled={agentSubmitting}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid var(--border)',
+                    borderRadius: '6px',
+                    background: 'var(--surface)',
+                    color: 'var(--text-primary)',
+                    fontFamily: 'inherit'
+                  }}
+                >
+                  <option value="HEALTH">HEALTH — Health insurance claims</option>
+                  <option value="MOTOR">MOTOR — Motor / vehicle claims</option>
+                  <option value="LIFE">LIFE — Life insurance claims</option>
+                  <option value="TRAVEL">TRAVEL — Travel insurance claims</option>
+                </select>
+              </div>
+            )}
 
             <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
               <button

@@ -77,6 +77,7 @@ const Login = () => {
           navigate("/admindashboard");
           break;
         case "AGENT":
+        case "SUPER_AGENT":
           navigate("/agentdashboard");
           break;
         case "CUSTOMER":

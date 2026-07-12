@@ -9,7 +9,7 @@ const AccessDenied = () => {
 
   const getDashboardPath = () => {
     if (userData?.role === 'ADMIN') return '/admindashboard';
-    if (userData?.role === 'AGENT') return '/agentdashboard';
+    if (userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') return '/agentdashboard';
     if (userData?.role === 'CUSTOMER') return '/userdashboard';
     return '/login';
   };
@@ -17,6 +17,7 @@ const AccessDenied = () => {
   const getDashboardLabel = () => {
     if (userData?.role === 'ADMIN') return 'Admin Dashboard';
     if (userData?.role === 'AGENT') return 'Agent Dashboard';
+    if (userData?.role === 'SUPER_AGENT') return 'Super Agent Dashboard';
     if (userData?.role === 'CUSTOMER') return 'Customer Dashboard';
     return 'Login Page';
   };
