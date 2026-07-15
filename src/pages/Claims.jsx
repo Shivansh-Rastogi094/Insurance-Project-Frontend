@@ -208,7 +208,7 @@ const Claims = () => {
             </div>
           </div>
 
-          <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div className="header">
             <div className="header-text">
               <h2>{isCustomer ? "My Claims" : "Claims Management"}</h2>
               <p>
@@ -236,8 +236,6 @@ const Claims = () => {
               )}
             </div>
           </div>
-
-          <div className="divider" />
 
           <div className="claims-container">
             {loading ? (

@@ -169,7 +169,7 @@ const Policies = () => {
             </div>
           </div>
 
-          <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="header">
             <div className="header-text">
               <h2>Policies Directory</h2>
               <p>Monitor customer policy registrations, coverage parameters, and issue cancellations</p>
@@ -187,21 +187,19 @@ const Policies = () => {
             </button>
           </div>
 
-          <div className="divider" />
-
           {/* Metrics row */}
           <div className="metrics-row">
             <div className="summary-card">
               <div className="card-header">
                 <span className="card-title">Total Policies</span>
-                <span className="card-icon">🗂️</span>
+                <i className="card-icon ph ph-folders"></i>
               </div>
               <div className="card-value">{totalElements}</div>
             </div>
             <div className="summary-card active-policies">
               <div className="card-header">
                 <span className="card-title">Active Insurances</span>
-                <i className="card-icon ph ph-check-circle" style={{color: "var(--success-color)"}}></i>
+                <i className="card-icon ph ph-check-circle"></i>
               </div>
               <div className="card-value">
                 {policiesList.length > 0

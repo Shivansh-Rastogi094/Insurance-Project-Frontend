@@ -87,7 +87,7 @@ const styles = `
     align-items: center;
     gap: 12px;
     padding: 10px 16px;
-    border-radius: 12px;
+    border-radius: 8px;
     font-size: 14px;
     font-weight: 550;
     color: var(--sidebar-text);
@@ -96,15 +96,27 @@ const styles = `
     position: relative;
   }
 
+  .sidebar ul li a i {
+    font-size: 18px;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .sidebar ul li a:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
     color: var(--sidebar-active);
   }
 
   .sidebar ul li a.active-link {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(79, 70, 229, 0.2);
     color: var(--sidebar-active);
     font-weight: 650;
+  }
+
+  .sidebar ul li a.active-link i {
+    color: #818cf8;
   }
 
   .sidebar ul li a.active-link::before {
@@ -114,7 +126,7 @@ const styles = `
     top: 20%;
     bottom: 20%;
     width: 4px;
-    background: var(--primary-light);
+    background: #6366f1;
     border-radius: 0 4px 4px 0;
   }
 
@@ -201,28 +213,28 @@ const Sidebar = ({ title }) => {
   const getLinks = () => {
     if (userData?.role === "CUSTOMER") {
       return [
-        { label: "Dashboard", path: "/userdashboard" },
-        { label: "Products & Plans", path: "/policy" },
-        { label: "My Policies & Payments", path: "/payments" },
-        { label: "My Claims", path: "/claims" },
-        { label: "Profile", path: "/profile" }
+        { label: "Dashboard", path: "/userdashboard", icon: <i className="ph ph-squares-four"></i> },
+        { label: "Products & Plans", path: "/policy", icon: <i className="ph ph-package"></i> },
+        { label: "My Policies & Payments", path: "/payments", icon: <i className="ph ph-credit-card"></i> },
+        { label: "My Claims", path: "/claims", icon: <i className="ph ph-shield-check"></i> },
+        { label: "Profile", path: "/profile", icon: <i className="ph ph-user"></i> }
       ];
     } else if (userData?.role === "AGENT" || userData?.role === "SUPER_AGENT") {
       return [
-        { label: "Dashboard", path: "/agentdashboard" },
-        { label: "Products & Plans", path: "/policy" },
-        { label: "Policies", path: "/policies" },
-        { label: "Claims", path: "/claims" },
-        { label: "Customers", path: "/customers" }
+        { label: "Dashboard", path: "/agentdashboard", icon: <i className="ph ph-squares-four"></i> },
+        { label: "Products & Plans", path: "/policy", icon: <i className="ph ph-package"></i> },
+        { label: "Policies", path: "/policies", icon: <i className="ph ph-file-text"></i> },
+        { label: "Claims", path: "/claims", icon: <i className="ph ph-shield-check"></i> },
+        { label: "Customers", path: "/customers", icon: <i className="ph ph-users-three"></i> }
       ];
     } else {
       return [
-        { label: "Dashboard", path: "/admindashboard" },
-        { label: "Products & Plans", path: "/policy" },
-        { label: "Users", path: "/users" },
-        { label: "Policies", path: "/policies" },
-        { label: "Claims", path: "/claims" },
-        { label: "Customers", path: "/customers" }
+        { label: "Dashboard", path: "/admindashboard", icon: <i className="ph ph-squares-four"></i> },
+        { label: "Products & Plans", path: "/policy", icon: <i className="ph ph-package"></i> },
+        { label: "Users", path: "/users", icon: <i className="ph ph-users"></i> },
+        { label: "Policies", path: "/policies", icon: <i className="ph ph-file-text"></i> },
+        { label: "Claims", path: "/claims", icon: <i className="ph ph-shield-check"></i> },
+        { label: "Customers", path: "/customers", icon: <i className="ph ph-users-three"></i> }
       ];
     }
   };

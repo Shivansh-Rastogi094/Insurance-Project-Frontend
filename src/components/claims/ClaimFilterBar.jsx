@@ -23,13 +23,16 @@ const ClaimFilterBar = ({
     <div className="filter-bar">
       <div className="filter-group">
         <label className="filter-label">Search</label>
-        <input
-          type="text"
-          className="filter-input"
-          placeholder="Search Claim No, Policy, Reason..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+        <div className="search-input-wrapper">
+          <i className="ph ph-magnifying-glass search-icon"></i>
+          <input
+            type="text"
+            className="filter-input with-icon"
+            placeholder="Search Claim No, Policy, Reason..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="filter-group">

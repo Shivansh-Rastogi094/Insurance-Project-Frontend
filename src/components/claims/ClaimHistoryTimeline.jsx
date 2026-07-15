@@ -112,7 +112,7 @@ const ClaimHistoryTimeline = ({ claimId, userData }) => {
           : 'Date unknown';
         
         return (
-          <div key={item.id || idx} style={{ 
+          <div key={item.id || idx} className="timeline-item" style={{ 
             display: 'flex', 
             gap: '16px', 
             position: 'relative',
@@ -120,7 +120,7 @@ const ClaimHistoryTimeline = ({ claimId, userData }) => {
           }}>
             {/* Connector line */}
             {idx !== claimHistoryList.length - 1 && (
-              <div style={{
+              <div className="timeline-connector" style={{
                 position: 'absolute',
                 left: '19px',
                 top: '38px',
@@ -131,7 +131,7 @@ const ClaimHistoryTimeline = ({ claimId, userData }) => {
             )}
 
             {/* Indicator Circle */}
-            <div style={{
+            <div className={`timeline-circle ${item.newStatus.toLowerCase()}`} style={{
               width: '40px',
               height: '40px',
               borderRadius: '50%',
@@ -148,7 +148,7 @@ const ClaimHistoryTimeline = ({ claimId, userData }) => {
             </div>
 
             {/* Content details card */}
-            <div style={{
+            <div className="timeline-card" style={{
               background: 'var(--surface)',
               border: '1px solid var(--border)',
               borderRadius: '8px',
