@@ -10,6 +10,14 @@ const Login = () => {
   const { login } = useAuth();
   const toast = useToast();
 
+  React.useEffect(() => {
+    const sessionExpired = localStorage.getItem("session_expired_toast");
+    if (sessionExpired === "true") {
+      toast.error("Your session has expired. Please login again to continue.");
+      localStorage.removeItem("session_expired_toast");
+    }
+  }, [toast]);
+
   const [user, setUser] = useState({
     email: "",
     password: "",

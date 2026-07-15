@@ -161,6 +161,88 @@
     transform: translateY(-1px);
   }
 
+<<<<<<< HEAD
+=======
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 40px 24px;
+  }
+
+  .metrics-row {
+    display: flex;
+    gap: 24px;
+    padding: 0 40px 24px;
+    flex-wrap: wrap;
+  }
+
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100px;
+    width: 260px;
+  }
+
+  .summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary-light);
+  }
+
+  .summary-card.active-policies::before {
+    background: var(--success);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+
+  .card-icon {
+    font-size: 18px;
+    background: rgba(37, 99, 168, 0.08);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .summary-card.active-policies .card-icon {
+    background: rgba(16, 185, 129, 0.08);
+  }
+
+  .card-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    margin-top: 8px;
+  }
+
+>>>>>>> e246c5912d7f0de8fcd8a407823f302b1861dbf2
   .grid-container {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -495,6 +577,7 @@
     background: var(--primary-light);
   }
 
+<<<<<<< HEAD
   /* --- Policies Dashboard Elements --- */
   .metrics-row {
     display: grid;
@@ -577,6 +660,116 @@
     gap: 16px;
     align-items: end;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+=======
+  /* Table Styles */
+  .table-container {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    margin: 0 40px 40px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .policies-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .policies-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13.5px;
+  }
+
+  .policies-table th {
+    background: rgba(255, 255, 255, 0.01);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .policies-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  .policies-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .policies-table tr:hover td {
+    background: rgba(37, 99, 168, 0.015);
+  }
+
+  .policy-number {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .amount-val {
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+
+  .action-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .action-btn:hover {
+    background: var(--surface);
+    border-color: var(--primary-light);
+    color: var(--primary-light);
+  }
+
+  .action-btn.cancel-policy {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.02);
+  }
+
+  .action-btn.cancel-policy:hover {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #ef4444;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
+  }
+
+  /* Filter Bar Styles */
+  .filter-bar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 20px 24px;
+    margin: 0 40px 24px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 16px;
+    align-items: end;
+    box-shadow: var(--shadow-card);
+>>>>>>> e246c5912d7f0de8fcd8a407823f302b1861dbf2
   }
 
   .filter-group {
@@ -586,6 +779,7 @@
   }
 
   .filter-label {
+<<<<<<< HEAD
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
@@ -600,10 +794,27 @@
     border-radius: 8px;
     color: var(--text-primary);
     background-color: var(--card);
+=======
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+
+  .filter-input {
+    padding: 10px 12px;
+    font-size: 13.5px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-input);
+    color: var(--text-primary);
+    background-color: var(--surface);
+>>>>>>> e246c5912d7f0de8fcd8a407823f302b1861dbf2
     font-family: inherit;
     width: 100%;
     height: 40px;
     transition: all 0.2s ease;
+<<<<<<< HEAD
     outline: none;
   }
 
@@ -622,10 +833,22 @@
     padding-right: 36px;
   }
 
+=======
+    box-sizing: border-box;
+  }
+
+  .filter-input:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    background-color: var(--card);
+  }
+
+>>>>>>> e246c5912d7f0de8fcd8a407823f302b1861dbf2
   .clear-filter-btn {
     background: transparent;
     border: 1px solid var(--border);
     color: var(--text-secondary);
+<<<<<<< HEAD
     padding: 0 16px;
     font-size: 13px;
     font-weight: 600;
@@ -815,6 +1038,26 @@
 
 [data-theme="dark"] select.filter-input {
   background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+=======
+    padding: 10px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    height: 40px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .clear-filter-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+    background: var(--surface);
+  }
+>>>>>>> e246c5912d7f0de8fcd8a407823f302b1861dbf2
 }
 
 @media (max-width: 1200px) {

@@ -192,14 +192,22 @@ const Policies = () => {
             <div className="summary-card">
               <div className="card-header">
                 <span className="card-title">Total Policies</span>
+<<<<<<< HEAD
                 <i className="card-icon ph ph-folders"></i>
+=======
+                <i className="card-icon ph ph-files" style={{ color: 'var(--primary-light)' }}></i>
+>>>>>>> e246c5912d7f0de8fcd8a407823f302b1861dbf2
               </div>
               <div className="card-value">{totalElements}</div>
             </div>
             <div className="summary-card active-policies">
               <div className="card-header">
                 <span className="card-title">Active Insurances</span>
+<<<<<<< HEAD
                 <i className="card-icon ph ph-check-circle"></i>
+=======
+                <i className="card-icon ph ph-check-circle" style={{ color: 'var(--success)' }}></i>
+>>>>>>> e246c5912d7f0de8fcd8a407823f302b1861dbf2
               </div>
               <div className="card-value">
                 {policiesList.length > 0
