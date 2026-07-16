@@ -36,16 +36,20 @@ const ClaimReviewModal = ({ show, onClose, claim, userData, onClaimReviewed }) =
 
     try {
       setReviewSubmitting(true);
-      const payload = {
-        status: reviewForm.status,
-        remarks: reviewForm.remarks.trim(),
-        suggestedAmount: reviewForm.suggestedAmount ? parseFloat(reviewForm.suggestedAmount) : null
-      };
 
       if (userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') {
+        const payload = {
+          recommendedStatus: reviewForm.status,
+          remarks: reviewForm.remarks.trim(),
+          suggestedAmount: reviewForm.suggestedAmount ? parseFloat(reviewForm.suggestedAmount) : null
+        };
         await agentReviewClaim(claim.id, payload);
         toast.success(`Claim recommendation submitted successfully as ${reviewForm.status}.`);
       } else {
+        const payload = {
+          finalDecisionStatus: reviewForm.status,
+          remarks: reviewForm.remarks.trim()
+        };
         await adminDecisionClaim(claim.id, payload);
         toast.success(`Claim decision submitted successfully as ${reviewForm.status}.`);
       }
