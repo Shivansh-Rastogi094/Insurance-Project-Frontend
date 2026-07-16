@@ -43,68 +43,80 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <form onSubmit={handleSubmit}>
-          <div className="login-header">
-            <img src="/logo1.png" alt="Crown Assurance Logo" className="login-logo-premium" />
-            <h2>Reset Password</h2>
-            <p>Setup your new password using the recovery OTP code sent to your email.</p>
+    <div className="auth-page">
+      <div className="auth-bg-glow"></div>
+      <div className="auth-content-container">
+        <div className="login-card">
+          <form onSubmit={handleSubmit}>
+            <div className="login-header">
+              <img src="/logo1.png" alt="Crown Assurance Logo" className="login-logo-premium" />
+              <h2>Reset Password</h2>
+              <p>Setup your new password using the recovery OTP code sent to your email.</p>
+            </div>
+
+            {error && <p className="error-text" style={{ color: "#EF4444", marginBottom: "16px", textAlign: "center", fontWeight: "600" }}>⚠️ {error}</p>}
+
+            <div className="form-group">
+              <label className="form-label">Email Address</label>
+              <div className="input-wrapper">
+                <span className="input-icon-left"><i className="ph ph-envelope"></i></span>
+                <input
+                  type="email"
+                  className="form-input-premium"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                  placeholder="name@example.com"
+                />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginTop: "16px" }}>
+              <label className="form-label">Recovery OTP Code</label>
+              <div className="input-wrapper">
+                <span className="input-icon-left"><i className="ph ph-key"></i></span>
+                <input
+                  type="text"
+                  className="form-input-premium"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  maxLength={6}
+                  required
+                  disabled={loading}
+                  placeholder="6-digit code"
+                  style={{ letterSpacing: "2px", fontWeight: "bold" }}
+                />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginTop: "16px" }}>
+              <label className="form-label">New Password</label>
+              <div className="input-wrapper">
+                <span className="input-icon-left"><i className="ph ph-lock"></i></span>
+                <input
+                  type="password"
+                  className="form-input-premium"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  placeholder="At least 8 characters"
+                />
+              </div>
+            </div>
+
+            <button type="submit" className="login-btn-premium" style={{ marginTop: "24px" }} disabled={loading}>
+              {loading ? "Resetting..." : "Save Password & Sign In"}
+            </button>
+          </form>
+
+          <div className="login-footer-premium">
+            <p style={{ margin: 0 }}>
+              Did not receive OTP?{" "}
+              <a onClick={() => navigate("/forgot-password")} style={{ cursor: "pointer" }}>Resend Request</a>
+            </p>
           </div>
-
-          {error && <p className="error-text" style={{ color: "#EF4444", marginBottom: "16px", textAlign: "center", fontWeight: "600" }}>⚠️ {error}</p>}
-
-          <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <input
-              type="email"
-              className="auth-form-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
-              placeholder="name@example.com"
-            />
-          </div>
-
-          <div className="form-group" style={{ marginTop: "16px" }}>
-            <label className="form-label">Recovery OTP Code</label>
-            <input
-              type="text"
-              className="auth-form-input"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              maxLength={6}
-              required
-              disabled={loading}
-              placeholder="6-digit code"
-              style={{ letterSpacing: "2px", fontWeight: "bold" }}
-            />
-          </div>
-
-          <div className="form-group" style={{ marginTop: "16px" }}>
-            <label className="form-label">New Password</label>
-            <input
-              type="password"
-              className="auth-form-input"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-              disabled={loading}
-              placeholder="At least 8 characters"
-            />
-          </div>
-
-          <button type="submit" className="login-btn-premium" style={{ marginTop: "24px" }} disabled={loading}>
-            {loading ? "Resetting..." : "Save Password & Sign In"}
-          </button>
-        </form>
-
-        <div className="login-footer-premium">
-          <p style={{ margin: 0 }}>
-            Did not receive OTP?{" "}
-            <a onClick={() => navigate("/forgot-password")} style={{ cursor: "pointer" }}>Resend Request</a>
-          </p>
         </div>
       </div>
     </div>

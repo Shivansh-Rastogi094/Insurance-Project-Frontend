@@ -30,40 +30,46 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <form onSubmit={handleSubmit}>
-          <div className="login-header">
-            <img src="/logo1.png" alt="Crown Assurance Logo" className="login-logo-premium" />
-            <h2>Password Recovery</h2>
-            <p>Enter your registered email address to receive a secure recovery code.</p>
+    <div className="auth-page">
+      <div className="auth-bg-glow"></div>
+      <div className="auth-content-container">
+        <div className="login-card">
+          <form onSubmit={handleSubmit}>
+            <div className="login-header">
+              <img src="/logo1.png" alt="Crown Assurance Logo" className="login-logo-premium" />
+              <h2>Password Recovery</h2>
+              <p>Enter your registered email address to receive a secure recovery code.</p>
+            </div>
+
+            {error && <p className="error-text" style={{ color: "#EF4444", marginBottom: "16px", textAlign: "center", fontWeight: "600" }}>⚠️ {error}</p>}
+
+            <div className="form-group">
+              <label className="form-label">Email Address</label>
+              <div className="input-wrapper">
+                <span className="input-icon-left"><i className="ph ph-envelope"></i></span>
+                <input
+                  type="email"
+                  className="form-input-premium"
+                  placeholder="e.g. user@insurance.com"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                  required
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            <button type="submit" className="login-btn-premium" style={{ marginTop: "24px" }} disabled={loading}>
+              {loading ? "Sending OTP..." : "Request Recovery Code"}
+            </button>
+          </form>
+
+          <div className="login-footer-premium">
+            <p style={{ margin: 0 }}>
+              Remembered your password?{" "}
+              <a onClick={() => navigate("/login")} style={{ cursor: "pointer" }}>Back to Sign In</a>
+            </p>
           </div>
-
-          {error && <p className="error-text" style={{ color: "#EF4444", marginBottom: "16px", textAlign: "center", fontWeight: "600" }}>⚠️ {error}</p>}
-
-          <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <input
-              type="email"
-              className="auth-form-input"
-              placeholder="e.g. user@insurance.com"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setError(""); }}
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <button type="submit" className="login-btn-premium" style={{ marginTop: "24px" }} disabled={loading}>
-            {loading ? "Sending OTP..." : "Request Recovery Code"}
-          </button>
-        </form>
-
-        <div className="login-footer-premium">
-          <p style={{ margin: 0 }}>
-            Remembered your password?{" "}
-            <a onClick={() => navigate("/login")} style={{ cursor: "pointer" }}>Back to Sign In</a>
-          </p>
         </div>
       </div>
     </div>

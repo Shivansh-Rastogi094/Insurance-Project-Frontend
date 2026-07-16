@@ -751,8 +751,8 @@
 [data-theme="dark"] .claims-page {
   --primary: #6366F1;
   --primary-light: #818CF8;
-  --surface: #0B0F19;
-  --card: #151B2C;
+  --surface: #000000;
+  --card: #16181a;
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --text-muted: #64748B;

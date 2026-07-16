@@ -257,68 +257,82 @@ const Payments = () => {
                   No payment transactions have been logged yet.
                 </div>
               ) : (
-                <div className="txn-list">
-                  {sortedTransactionsList.map((txn) => {
-                    const dateObj = new Date(txn.paymentDate);
-                    const formattedDate = dateObj.toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric'
-                    });
-                    const formattedTime = dateObj.toLocaleTimeString('en-IN', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    });
+                <div className="table-container" style={{ margin: '20px 0 0 0', boxShadow: 'none', border: '1px solid var(--border)' }}>
+                  <div className="payments-table-wrapper">
+                    <table className="payments-table">
+                      <thead>
+                        <tr>
+                          <th>Transaction ID</th>
+                          <th>Policy No.</th>
+                          <th>Date & Time</th>
+                          <th>Method</th>
+                          <th>Amount</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedTransactionsList.map((txn) => {
+                          const dateObj = new Date(txn.paymentDate);
+                          const formattedDate = dateObj.toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          });
+                          const formattedTime = dateObj.toLocaleTimeString('en-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          });
 
-                    return (
-                      <div className="txn-item" key={txn.id}>
-                        <div className="txn-info">
-                          <span className="txn-ref">
-                            {txn.transactionReference}
-                          </span>
-                          <span className="txn-meta">
-                            Policy: {txn.policyNumber}
-                          </span>
-                          {!isCustomer && txn.customerName && (
-                            <span className="txn-meta" style={{ fontWeight: '600', color: 'var(--primary-light)' }}>
-                              Paid by: {txn.customerName}
-                            </span>
-                          )}
-                          <span className="txn-meta">
-                            {formattedDate} at {formattedTime}
-                            <span className="txn-mode-badge">{txn.paymentMode}</span>
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div className="txn-right">
-                            <span className="txn-amount">
-                              ₹{txn.amount.toLocaleString('en-IN')}
-                            </span>
-                            <span className="txn-status">
-                              🛡️ Success
-                            </span>
-                          </div>
-                          <DownloadButton
-                            type="payment"
-                            data={txn}
-                            extraData={{ formattedDate, formattedTime }}
-                            label={<i className="ph ph-download" />}
-                            title="Download PDF Receipt"
-                            className="action-btn"
-                            style={{
-                              background: 'rgba(37, 99, 168, 0.05)',
-                              border: '1px solid rgba(37, 99, 168, 0.1)',
-                              color: 'var(--primary-light)',
-                              padding: '8px 10px',
-                              borderRadius: '6px',
-                              fontSize: '14px',
-                              marginLeft: '8px'
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                          return (
+                            <tr key={txn.id}>
+                              <td className="policy-number">{txn.transactionReference}</td>
+                              <td className="policy-number">{txn.policyNumber || txn.policyId}</td>
+                              <td>{formattedDate} <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>at {formattedTime}</span></td>
+                              <td>
+                                <span className="txn-mode-badge" style={{ margin: 0 }}>{txn.paymentMode}</span>
+                              </td>
+                              <td className="amount-val">₹{(txn.amount || 0).toLocaleString('en-IN')}</td>
+                              <td>
+                                {txn.paymentStatus === 'SUCCESS' ? (
+                                  <span className="txn-status">
+                                    <i className="ph-fill ph-check-circle" style={{ color: 'var(--success-color)' }}></i> Success
+                                  </span>
+                                ) : (
+                                  <span className="txn-status" style={{ color: 'var(--text-secondary)' }}>
+                                    <i className="ph-fill ph-clock" style={{ color: 'var(--text-secondary)' }}></i> {txn.paymentStatus}
+                                  </span>
+                                )}
+                              </td>
+                              <td>
+                                <DownloadButton
+                                  type="payment"
+                                  data={txn}
+                                  extraData={{ formattedDate, formattedTime }}
+                                  label={<><i className="ph ph-download"></i> Receipt</>}
+                                  title="Download PDF Receipt"
+                                  className="action-btn"
+                                  style={{
+                                    background: 'rgba(37, 99, 168, 0.05)',
+                                    border: '1px solid rgba(37, 99, 168, 0.1)',
+                                    color: 'var(--primary-light)',
+                                    padding: '6px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                  }}
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
