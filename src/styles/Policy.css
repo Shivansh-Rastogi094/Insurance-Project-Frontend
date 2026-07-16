@@ -825,37 +825,353 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 968px) {
   .policy-page {
     .main-content {
       margin-left: 0;
     }
-    .grid-container {
-      grid-template-columns: 1fr;
-      padding: 0 20px 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .policy-page {
+    .topbar {
+      padding: 0 16px;
+      height: 56px;
     }
+
+    .topbar-logo span {
+      font-size: 14px;
+    }
+
+    .role-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      font-size: 12px;
+    }
+
     .header {
-      padding: 24px 20px 8px;
-    }
-    .metrics-row {
-      grid-template-columns: 1fr;
-      padding: 16px 20px 16px;
-      gap: 16px;
-    }
-    .filter-bar {
-      grid-template-columns: 1fr;
-      margin: 0 20px 16px;
+      padding: 20px 16px 8px;
+      flex-direction: column;
+      align-items: flex-start;
       gap: 12px;
     }
+
+    .header-text h2 {
+      font-size: 22px;
+    }
+
+    .header-text p {
+      font-size: 13px;
+    }
+
+    .header-actions {
+      width: 100%;
+      flex-direction: column;
+    }
+
+    .header-actions .btn-admin,
+    .header-actions .btn-admin-secondary,
+    .btn-export {
+      width: 100%;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .grid-container {
+      grid-template-columns: 1fr;
+      padding: 0 16px 24px;
+      gap: 16px;
+    }
+
+    .tall-card {
+      height: auto;
+      min-height: unset;
+      padding: 24px 20px;
+    }
+
+    .card-header-section {
+      margin-bottom: 16px;
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      font-size: 22px;
+      border-radius: 12px;
+    }
+
+    .product-list-container {
+      max-height: 300px;
+    }
+
+    .metrics-row {
+      grid-template-columns: 1fr;
+      padding: 16px;
+      gap: 12px;
+    }
+
+    .filter-bar {
+      grid-template-columns: 1fr;
+      margin: 0 16px 16px;
+      gap: 12px;
+      padding: 14px;
+    }
+
     .table-container {
-      margin: 0 20px 16px;
+      margin: 0 16px 16px;
       padding: 12px;
     }
+
+    .policies-table th {
+      padding: 10px 12px;
+      font-size: 10px;
+    }
+
+    .policies-table td {
+      padding: 12px;
+      font-size: 12.5px;
+    }
+
     .pagination-footer {
-      margin: 16px 20px 24px;
+      margin: 16px;
       flex-direction: column;
       gap: 12px;
       align-items: center;
     }
+
+    .pagination-info {
+      font-size: 11.5px;
+      text-align: center;
+    }
+
+    /* Modal responsive */
+    .modal-content {
+      margin: 16px;
+      padding: 24px 20px;
+      max-width: calc(100vw - 32px) !important;
+    }
+
+    .modal-title {
+      font-size: 16px;
+    }
+
+    .modal-actions {
+      flex-direction: column-reverse;
+      gap: 8px;
+    }
+
+    .modal-actions .btn-cancel,
+    .modal-actions .btn-confirm {
+      width: 100%;
+      text-align: center;
+      justify-content: center;
+    }
+
+    .form-input {
+      padding: 10px;
+      font-size: 13px;
+    }
   }
 }
+
+@media (max-width: 576px) {
+  .policy-page {
+    .topbar {
+      padding: 0 12px;
+      height: 50px;
+    }
+
+    .topbar-logo span {
+      font-size: 13px;
+    }
+
+    .topbar-right {
+      gap: 10px;
+    }
+
+    .role-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      max-width: 110px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .header {
+      padding: 16px 12px 6px;
+    }
+
+    .header-text h2 {
+      font-size: 18px;
+    }
+
+    .header-text p {
+      font-size: 12px;
+    }
+
+    .grid-container {
+      padding: 0 12px 20px;
+      gap: 14px;
+    }
+
+    .tall-card {
+      padding: 20px 16px;
+    }
+
+    .card-title {
+      font-size: 16px;
+    }
+
+    .card-subtitle {
+      font-size: 11px;
+    }
+
+    .product-item {
+      padding: 10px 12px;
+    }
+
+    .product-item-name {
+      font-size: 12.5px;
+    }
+
+    .product-item-desc {
+      font-size: 11px;
+    }
+
+    .view-more-btn {
+      padding: 10px;
+      font-size: 12px;
+    }
+
+    .metrics-row {
+      padding: 12px;
+    }
+
+    .summary-card {
+      padding: 14px;
+    }
+
+    .summary-card .card-value {
+      font-size: 26px;
+    }
+
+    .filter-bar {
+      margin: 0 12px 12px;
+      padding: 12px;
+      gap: 10px;
+    }
+
+    .filter-label {
+      font-size: 10px;
+    }
+
+    .filter-input {
+      height: 36px;
+      font-size: 13px;
+      padding: 8px 12px;
+    }
+
+    .table-container {
+      margin: 0 12px 12px;
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .action-btn {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    .action-btn.cancel-policy {
+      font-size: 10px;
+      padding: 4px 8px;
+    }
+
+    .status-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+    }
+
+    .page-btn {
+      padding: 0 10px;
+      font-size: 12px;
+      height: 32px;
+    }
+
+    .pagination-footer {
+      margin: 12px;
+    }
+
+    .modal-content {
+      margin: 10px;
+      padding: 20px 14px;
+      border-radius: 12px;
+    }
+
+    .form-label {
+      font-size: 10px;
+    }
+
+    .empty-state {
+      padding: 20px 12px;
+      font-size: 11px;
+    }
+
+    .loading-container {
+      min-height: 250px;
+      padding: 30px;
+    }
+  }
+}
+
+@media (max-width: 400px) {
+  .policy-page {
+    .topbar-logo span {
+      display: none;
+    }
+
+    .header-text h2 {
+      font-size: 16px;
+    }
+
+    .grid-container {
+      padding: 0 8px 16px;
+    }
+
+    .tall-card {
+      padding: 16px 12px;
+    }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+    }
+
+    .filter-bar {
+      margin: 0 8px 10px;
+    }
+
+    .table-container {
+      margin: 0 8px 10px;
+      padding: 8px;
+    }
+
+    .pagination-footer {
+      margin: 10px 8px;
+    }
+
+    .modal-content {
+      margin: 8px;
+      padding: 16px 12px;
+    }
+  }
+}
+

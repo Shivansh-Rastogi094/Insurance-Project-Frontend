@@ -1,7 +1,9 @@
 import React from 'react';
 import DownloadButton from '../DownloadButton';
 
-const PoliciesTable = ({ policies, onCancelClick }) => {
+const PoliciesTable = ({ policies, onCancelClick, userRole }) => {
+  const canCancelPolicy = userRole === 'ADMIN' || userRole === 'SUPER_AGENT';
+
   return (
     <div className="table-container">
       <div className="policies-table-wrapper">
@@ -64,17 +66,19 @@ const PoliciesTable = ({ policies, onCancelClick }) => {
                           borderColor: 'var(--border)'
                         }}
                       />
-                      <button
-                        className="action-btn cancel-policy"
-                        onClick={() => onCancelClick(policy)}
-                        disabled={policy.policyStatus === 'CANCELLED'}
-                        style={{
-                          opacity: policy.policyStatus === 'CANCELLED' ? 0.5 : 1,
-                          cursor: policy.policyStatus === 'CANCELLED' ? 'not-allowed' : 'pointer'
-                        }}
-                      >
-                        {policy.policyStatus === 'CANCELLED' ? 'Cancelled' : 'Cancel Policy'}
-                      </button>
+                      {canCancelPolicy && (
+                        <button
+                          className="action-btn cancel-policy"
+                          onClick={() => onCancelClick(policy)}
+                          disabled={policy.policyStatus === 'CANCELLED'}
+                          style={{
+                            opacity: policy.policyStatus === 'CANCELLED' ? 0.5 : 1,
+                            cursor: policy.policyStatus === 'CANCELLED' ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          {policy.policyStatus === 'CANCELLED' ? 'Cancelled' : 'Cancel Policy'}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

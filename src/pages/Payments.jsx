@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { readMyPolicies } from '../services/PolicyService';
-import { readMyPayements, createPayment } from '../services/PaymentService';
+import { readMyPayements, createPayment, readAllPayments } from '../services/PaymentService';
 import { useFetch } from '../hooks/useFetch';
 import Modal from '../components/Modal';
 import DownloadButton from '../components/DownloadButton';
@@ -15,10 +15,20 @@ const Payments = () => {
   const toast = useToast();
   const { userData } = useAuth();
   const navigate = useNavigate();
+  const isCustomer = userData?.role === 'CUSTOMER';
+
+  const fetchPaymentsData = React.useCallback(async () => {
+    if (isCustomer) {
+      return await readMyPayements();
+    } else {
+      const response = await readAllPayments(0, 100);
+      return response?.data?.content || response?.content || [];
+    }
+  }, [isCustomer]);
 
   // Load My Policies and Transaction History via useFetch
   const { data: policiesList = [], loading: policiesLoading, execute: loadPolicies } = useFetch(readMyPolicies);
-  const { data: transactionsList = [], loading: transactionsLoading, execute: loadPayments } = useFetch(readMyPayements);
+  const { data: transactionsList = [], loading: transactionsLoading, execute: loadPayments } = useFetch(fetchPaymentsData);
 
   // Sort policies so that INACTIVE (or non-ACTIVE) ones are on top, then ACTIVE ones.
   const sortedPoliciesList = [...policiesList].sort((a, b) => {
@@ -37,15 +47,15 @@ const Payments = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    loadPolicies();
+    if (isCustomer) {
+      loadPolicies();
+    }
     loadPayments();
-  }, []);
+  }, [isCustomer]);
 
   const initials = userData?.fullName
     ? userData.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
     : "U";
-
-
 
   // Trigger modal and generate transaction reference
   const handleOpenPayModal = (policy) => {
@@ -108,12 +118,16 @@ const Payments = () => {
             </div>
           </div>
 
-          <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div className="header">
             <div className="header-text">
-              <h2>Billing & Payments</h2>
-              <p>Manage your policies, settle premium installments, and track recent transactions</p>
+              <h2>{isCustomer ? "Billing & Payments" : "Customer Payments Log"}</h2>
+              <p>
+                {isCustomer
+                  ? "Manage your policies, settle premium installments, and track recent transactions"
+                  : "Monitor and audit all customer premium payment transactions registered in the system"}
+              </p>
             </div>
-            {userData?.role === 'CUSTOMER' && (
+            {isCustomer && (
               <button 
                 className="btn-pay" 
                 style={{ background: 'var(--primary)', color: '#ffffff', boxShadow: 'none' }}
@@ -124,107 +138,120 @@ const Payments = () => {
             )}
           </div>
 
-          <div className="divider" />
-
-          <div className="billing-grid">
+          <div className={`billing-grid ${!isCustomer ? 'full-width' : ''}`}>
             {/* Left Column: All Policies Billing list */}
-            <div className="section-card">
-              <h3 className="section-title">🛡️ My Policies</h3>
-              {policiesLoading ? (
-                <div className="loading-container" style={{ width: '100%', padding: '20px 40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <Skeleton height={60} />
-              <Skeleton count={5} height={50} style={{ marginBottom: '8px' }} />
-            </div>
-              ) : policiesList.length === 0 ? (
-                <div className="empty-state">
-                  No policies found in your account directory.
-                </div>
-              ) : (
-                <div className="policies-stack">
-                  {sortedPoliciesList.map((policy) => {
-                    const isActive = policy.policyStatus === 'ACTIVE';
-                    return (
-                      <div className="policy-payment-card" key={policy.id}>
-                        <div className="card-top">
-                          <div className="plan-info">
-                            <h4>{policy.planName}</h4>
-                            <p>{policy.policyNumber} • {policy.productType}</p>
+            {isCustomer && (
+              <div className="section-card">
+                <h3 className="section-title">🛡️ My Policies</h3>
+                {policiesLoading ? (
+                  <div className="loading-container" style={{ width: '100%', padding: '20px 40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <Skeleton height={60} />
+                    <Skeleton count={5} height={50} style={{ marginBottom: '8px' }} />
+                  </div>
+                ) : policiesList.length === 0 ? (
+                  <div className="empty-state">
+                    No policies found in your account directory.
+                  </div>
+                ) : (
+                  <div className="policies-stack">
+                    {sortedPoliciesList.map((policy) => {
+                      const isActive = policy.policyStatus === 'ACTIVE';
+                      const isCancelled = policy.policyStatus === 'CANCELLED';
+                      const canPay = !isActive && !isCancelled;
+                      const statusClass = isActive ? 'active' : isCancelled ? 'cancelled' : 'inactive';
+                      const statusLabel = isActive ? 'Active' : isCancelled ? 'Cancelled' : 'Inactive';
+                      return (
+                        <div className={`policy-payment-card ${isCancelled ? 'cancelled-card' : ''}`} key={policy.id}>
+                          <div className="card-top">
+                            <div className="plan-info">
+                              <h4>{policy.planName}</h4>
+                              <p>{policy.policyNumber} • {policy.productType}</p>
+                            </div>
+                            <span className={`status-badge ${statusClass}`}>
+                              <span className="pulse-dot"></span>
+                              {statusLabel}
+                            </span>
                           </div>
-                          <span className={`status-badge ${isActive ? 'active' : 'inactive'}`}>
-                            <span className="pulse-dot"></span>
-                            {isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
 
-                        <div className="card-details">
-                          <div className="detail-field">
-                            <span className="field-label">Premium Installment</span>
-                            <span className="field-val highlight mono">
-                              ₹{policy.premiumAmount.toLocaleString('en-IN')}
-                            </span>
+                          <div className="card-details">
+                            <div className="detail-field">
+                              <span className="field-label">Premium Installment</span>
+                              <span className="field-val highlight mono">
+                                ₹{policy.premiumAmount.toLocaleString('en-IN')}
+                              </span>
+                            </div>
+                            <div className="detail-field">
+                              <span className="field-label">Billing Frequency</span>
+                              <span className="field-val" style={{ textTransform: 'uppercase', fontSize: '11.5px' }}>
+                                {policy.premiumType}
+                              </span>
+                            </div>
+                            <div className="detail-field">
+                              <span className="field-label">Coverage Insured</span>
+                              <span className="field-val mono">
+                                ₹{policy.coverageAmount.toLocaleString('en-IN')}
+                              </span>
+                            </div>
+                            <div className="detail-field">
+                              <span className="field-label">Available Balance</span>
+                              <span className="field-val mono" style={{ color: 'var(--primary)' }}>
+                                ₹{(policy.remainingCoverage !== undefined && policy.remainingCoverage !== null ? policy.remainingCoverage : policy.coverageAmount).toLocaleString('en-IN')}
+                              </span>
+                            </div>
                           </div>
-                          <div className="detail-field">
-                            <span className="field-label">Billing Frequency</span>
-                            <span className="field-val" style={{ textTransform: 'uppercase', fontSize: '11.5px' }}>
-                              {policy.premiumType}
-                            </span>
-                          </div>
-                          <div className="detail-field">
-                            <span className="field-label">Coverage Insured</span>
-                            <span className="field-val mono">
-                              ₹{policy.coverageAmount.toLocaleString('en-IN')}
-                            </span>
-                          </div>
-                          <div className="detail-field">
-                            <span className="field-label">Available Balance</span>
-                            <span className="field-val mono" style={{ color: 'var(--primary)' }}>
-                              ₹{(policy.remainingCoverage !== undefined && policy.remainingCoverage !== null ? policy.remainingCoverage : policy.coverageAmount).toLocaleString('en-IN')}
-                            </span>
-                          </div>
-                        </div>
 
-                        <div className="card-action" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', width: '100%', marginTop: '8px' }}>
-                          <DownloadButton
-                            type="policy"
-                            data={policy}
-                            extraData={{ customerName: userData?.fullName }}
-                            label={<><i className="ph ph-download" /> Download Schedule</>}
-                            title="Download Policy PDF Schedule"
-                            className="btn-pay"
-                            style={{
-                              background: 'transparent',
-                              border: '1.5px solid var(--primary-light)',
-                              color: 'var(--primary-light)',
-                              boxShadow: 'none',
-                              padding: '6px 12px',
-                              fontSize: '12px'
-                            }}
-                          />
-                          {!isActive && (
-                            <button 
-                              className="btn-pay"
-                              onClick={() => handleOpenPayModal(policy)}
-                              style={{ padding: '6px 12px', fontSize: '12px' }}
-                            >
-                              Pay ₹{policy.premiumAmount.toLocaleString('en-IN')}
-                            </button>
+                          {isCancelled && (
+                            <div className="cancelled-notice">
+                              <i className="ph ph-warning-circle"></i>
+                              This policy has been cancelled and cannot be renewed. Please purchase a new policy.
+                            </div>
                           )}
+
+                          <div className="card-action" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', width: '100%', marginTop: '8px' }}>
+                            <DownloadButton
+                              type="policy"
+                              data={policy}
+                              extraData={{ customerName: userData?.fullName }}
+                              label={<><i className="ph ph-download" /> Download Schedule</>}
+                              title="Download Policy PDF Schedule"
+                              className="btn-pay"
+                              style={{
+                                background: 'transparent',
+                                border: '1.5px solid var(--primary-light)',
+                                color: 'var(--primary-light)',
+                                boxShadow: 'none',
+                                padding: '6px 12px',
+                                fontSize: '12px'
+                              }}
+                            />
+                            {canPay && (
+                              <button 
+                                className="btn-pay"
+                                onClick={() => handleOpenPayModal(policy)}
+                                style={{ padding: '6px 12px', fontSize: '12px' }}
+                              >
+                                Pay ₹{policy.premiumAmount.toLocaleString('en-IN')}
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Right Column: Transaction Logs */}
-            <div className="section-card">
-              <h3 className="section-title"><i className="ph ph-clipboard"></i> Recent Payment Transactions</h3>
+            <div className={`section-card ${!isCustomer ? 'full-width' : ''}`}>
+              <h3 className="section-title">
+                <i className="ph ph-clipboard"></i> {isCustomer ? "Recent Payment Transactions" : "System Payment Transactions"}
+              </h3>
               {transactionsLoading ? (
                 <div className="loading-container" style={{ width: '100%', padding: '20px 40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <Skeleton height={60} />
-              <Skeleton count={5} height={50} style={{ marginBottom: '8px' }} />
-            </div>
+                  <Skeleton height={60} />
+                  <Skeleton count={5} height={50} style={{ marginBottom: '8px' }} />
+                </div>
               ) : transactionsList.length === 0 ? (
                 <div className="empty-state">
                   No payment transactions have been logged yet.
@@ -252,6 +279,11 @@ const Payments = () => {
                           <span className="txn-meta">
                             Policy: {txn.policyNumber}
                           </span>
+                          {!isCustomer && txn.customerName && (
+                            <span className="txn-meta" style={{ fontWeight: '600', color: 'var(--primary-light)' }}>
+                              Paid by: {txn.customerName}
+                            </span>
+                          )}
                           <span className="txn-meta">
                             {formattedDate} at {formattedTime}
                             <span className="txn-mode-badge">{txn.paymentMode}</span>

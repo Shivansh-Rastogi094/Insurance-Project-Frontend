@@ -280,3 +280,73 @@
 @keyframes otpSpin {
   to { transform: rotate(360deg); }
 }
+
+@media (max-width: 576px) {
+  .otp-page {
+    padding: 16px;
+  }
+
+  .otp-card {
+    padding: 28px 20px;
+    border-radius: 16px;
+    max-width: 100%;
+  }
+
+  .otp-header {
+    margin-bottom: 22px;
+  }
+
+  .otp-header h2 {
+    font-size: 19px;
+  }
+
+  .otp-header p {
+    font-size: 12px;
+  }
+
+  .otp-icon {
+    font-size: 40px;
+  }
+
+  .otp-form-label {
+    font-size: 11px;
+  }
+
+  .otp-form-input {
+    height: 48px;
+    font-size: 15px;
+  }
+
+  .otp-submit-btn {
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .otp-resend-btn {
+    font-size: 12px;
+  }
+
+  .otp-footer {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .otp-page {
+    padding: 12px;
+  }
+
+  .otp-card {
+    padding: 24px 16px;
+    border-radius: 14px;
+  }
+
+  .otp-header h2 {
+    font-size: 17px;
+  }
+
+  .otp-form-input {
+    height: 44px;
+    font-size: 14px;
+  }
+}

@@ -97,6 +97,11 @@ const Policies = () => {
     : "U";
 
   const handleCancelClick = (policy) => {
+    const role = userData?.role;
+    if (role !== 'ADMIN' && role !== 'SUPER_AGENT') {
+      toast.error('Only Admin and Super Agent can cancel policies.');
+      return;
+    }
     setTargetPolicy(policy);
     setShowCancelModal(true);
   };
@@ -262,6 +267,7 @@ const Policies = () => {
                   <PoliciesTable
                     policies={filteredPolicies}
                     onCancelClick={handleCancelClick}
+                    userRole={userData?.role}
                   />
 
                   {/* Pagination footer */}

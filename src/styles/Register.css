@@ -1,252 +1,84 @@
-/* ==========================================
-   Revolut-Style Register Stylesheet
-   ========================================== */
+/* Unified auth styles imported from Login.css */
 
-.register-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #000000;
-  color: #ffffff;
-  font-family: 'Inter', -apple-system, sans-serif;
-  position: relative;
-  overflow: hidden;
-  padding: 40px 24px;
-  box-sizing: border-box;
+@media (max-width: 576px) {
+  .register-page {
+    padding: 20px 16px;
+  }
+
+  .register-card {
+    padding: 28px 20px;
+    border-radius: 16px;
+    max-width: 100%;
+  }
+
+  .register-header {
+    margin-bottom: 24px;
+  }
+
+  .register-header h2 {
+    font-size: 22px;
+  }
+
+  .register-header p {
+    font-size: 13px;
+  }
+
+  .register-logo {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .register-logo-premium {
+    height: 40px;
+  }
+
+  .reg-form-input {
+    height: 48px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  .reg-form-label {
+    font-size: 12px;
+  }
+
+  .register-btn {
+    height: 44px;
+    font-size: 15px;
+  }
+
+  .register-footer p {
+    font-size: 13px;
+  }
+
+  .reg-api-error,
+  .reg-success-msg {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
 }
 
-/* Background Atmospheric Glow */
-.register-page::before {
-  content: '';
-  position: absolute;
-  top: -10%;
-  left: -10%;
-  width: 50vw;
-  height: 50vw;
-  background: radial-gradient(circle, rgba(73, 79, 223, 0.12) 0%, transparent 70%);
-  z-index: 1;
-  pointer-events: none;
-}
+@media (max-width: 400px) {
+  .register-page {
+    padding: 12px;
+  }
 
-.register-page::after {
-  content: '';
-  position: absolute;
-  bottom: -10%;
-  right: -10%;
-  width: 40vw;
-  height: 40vw;
-  background: radial-gradient(circle, rgba(0, 168, 126, 0.05) 0%, transparent 70%);
-  z-index: 1;
-  pointer-events: none;
-}
+  .register-card {
+    padding: 24px 16px;
+    border-radius: 14px;
+  }
 
-.register-card {
-  width: 100%;
-  max-width: 460px;
-  background-color: #16181a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 40px;
-  box-sizing: border-box;
-  z-index: 2;
-  position: relative;
-}
+  .register-header h2 {
+    font-size: 20px;
+  }
 
-.register-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
+  .reg-form-group {
+    margin-bottom: 16px;
+  }
 
-.register-logo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  background-color: #494fdf;
-  color: #ffffff;
-  font-weight: 800;
-  font-size: 24px;
-  border-radius: 10px;
-  margin-bottom: 16px;
-  box-shadow: 0 4px 20px rgba(73, 79, 223, 0.3);
-}
-
-.register-logo-premium {
-  height: 48px;
-  width: auto;
-  object-fit: contain;
-  margin-bottom: 16px;
-  display: inline-block;
-  filter: drop-shadow(0 4px 10px rgba(73, 79, 223, 0.3));
-}
-
-.register-header h2 {
-  font-size: 28px;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  color: #ffffff;
-  margin-bottom: 8px;
-}
-
-.register-header p {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.4;
-  margin: 0;
-}
-
-.reg-api-error {
-  background-color: rgba(226, 59, 74, 0.1);
-  border: 1px solid rgba(226, 59, 74, 0.2);
-  color: #e23b4a;
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 14px;
-  margin-bottom: 24px;
-  line-height: 1.4;
-}
-
-.reg-success-msg {
-  background-color: rgba(0, 168, 126, 0.1);
-  border: 1px solid rgba(0, 168, 126, 0.2);
-  color: #00a87e;
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 14px;
-  margin-bottom: 24px;
-  line-height: 1.4;
-}
-
-.reg-form-group {
-  margin-bottom: 20px;
-  position: relative;
-}
-
-.reg-form-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 8px;
-  letter-spacing: 0.02em;
-}
-
-.reg-form-input {
-  width: 100%;
-  height: 56px;
-  background-color: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 0 16px;
-  color: #ffffff;
-  font-family: 'Inter', sans-serif;
-  font-size: 16px;
-  box-sizing: border-box;
-  transition: border-color 0.2s, background-color 0.2s;
-}
-
-.reg-form-input:focus {
-  outline: none;
-  border-color: #494fdf;
-  background-color: rgba(255, 255, 255, 0.07);
-}
-
-.reg-form-input.input-error {
-  border-color: #e23b4a;
-  background-color: rgba(226, 59, 74, 0.04);
-}
-
-.reg-form-input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.reg-error-text {
-  display: block;
-  font-size: 12px;
-  color: #e23b4a;
-  margin-top: 6px;
-}
-
-.register-btn {
-  width: 100%;
-  height: 48px;
-  background-color: #ffffff;
-  color: #000000;
-  border: none;
-  border-radius: 9999px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s, opacity 0.2s;
-  margin-top: 24px;
-  margin-bottom: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.register-btn:hover:not(:disabled) {
-  background-color: #e2e2e7;
-}
-
-.register-btn:active:not(:disabled) {
-  transform: scale(0.97);
-}
-
-.register-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Spinner */
-.spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-top-color: #000000;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.register-footer {
-  text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 24px;
-}
-
-.register-footer p {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
-  margin: 0;
-}
-
-.register-footer a {
-  color: #4f55f1;
-  text-decoration: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.register-footer a:hover {
-  color: #8c90f9;
-}
-
-.register-footer-back {
-  display: inline-block;
-  margin-top: 16px;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.4) !important;
-  font-weight: 500 !important;
-}
-
-.register-footer-back:hover {
-  color: #ffffff !important;
+  .reg-form-input {
+    height: 44px;
+    font-size: 14px;
+  }
 }

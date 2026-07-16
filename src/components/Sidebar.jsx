@@ -224,6 +224,7 @@ const Sidebar = ({ title }) => {
         { label: "Dashboard", path: "/agentdashboard", icon: <i className="ph ph-squares-four"></i> },
         { label: "Products & Plans", path: "/policy", icon: <i className="ph ph-package"></i> },
         { label: "Policies", path: "/policies", icon: <i className="ph ph-file-text"></i> },
+        { label: "Payments", path: "/payments", icon: <i className="ph ph-credit-card"></i> },
         { label: "Claims", path: "/claims", icon: <i className="ph ph-shield-check"></i> },
         { label: "Customers", path: "/customers", icon: <i className="ph ph-users-three"></i> }
       ];
@@ -233,6 +234,7 @@ const Sidebar = ({ title }) => {
         { label: "Products & Plans", path: "/policy", icon: <i className="ph ph-package"></i> },
         { label: "Users", path: "/users", icon: <i className="ph ph-users"></i> },
         { label: "Policies", path: "/policies", icon: <i className="ph ph-file-text"></i> },
+        { label: "Payments", path: "/payments", icon: <i className="ph ph-credit-card"></i> },
         { label: "Claims", path: "/claims", icon: <i className="ph ph-shield-check"></i> },
         { label: "Customers", path: "/customers", icon: <i className="ph ph-users-three"></i> }
       ];

@@ -779,9 +779,262 @@
 
 @media (max-width: 768px) {
   .claims-page {
+    .topbar {
+      padding: 0 16px;
+      height: 56px;
+    }
+
+    .topbar-logo span {
+      font-size: 14px;
+    }
+
+    .role-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      font-size: 12px;
+    }
+
+    .header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .header-text h2 {
+      font-size: 22px;
+    }
+
+    .header-text p {
+      font-size: 13px;
+    }
+
+    .file-claim-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .claims-container {
+      padding: 0 16px 24px;
+    }
+
     .filter-bar {
       grid-template-columns: 1fr;
       gap: 12px;
+      padding: 14px;
+    }
+
+    .claims-table {
+      min-width: 700px;
+    }
+
+    .claims-table th {
+      padding: 12px 14px;
+      font-size: 10px;
+    }
+
+    .claims-table td {
+      padding: 14px;
+      font-size: 12.5px;
+    }
+
+    .detail-row-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .detail-row td {
+      padding: 16px !important;
+    }
+
+    .pagination-footer {
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+    }
+
+    .pagination-info {
+      font-size: 11.5px;
+      text-align: center;
+    }
+
+    /* Modal responsive */
+    .modal-content {
+      margin: 16px;
+      padding: 24px 20px;
+      max-width: calc(100vw - 32px) !important;
+    }
+
+    .modal-title {
+      font-size: 16px;
+    }
+
+    .modal-actions {
+      flex-direction: column-reverse;
+      gap: 8px;
+    }
+
+    .modal-actions .btn-cancel,
+    .modal-actions .btn-confirm {
+      width: 100%;
+      text-align: center;
+      justify-content: center;
+    }
+
+    .form-input {
+      padding: 10px;
+      font-size: 13px;
+    }
+
+    .empty-state {
+      padding: 40px 20px;
+      font-size: 13px;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .claims-page {
+    .topbar {
+      padding: 0 12px;
+      height: 50px;
+    }
+
+    .topbar-logo span {
+      font-size: 13px;
+    }
+
+    .topbar-right {
+      gap: 10px;
+    }
+
+    .role-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      max-width: 110px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .header {
+      padding: 16px 12px 8px;
+    }
+
+    .header-text h2 {
+      font-size: 18px;
+    }
+
+    .header-text p {
+      font-size: 12px;
+    }
+
+    .claims-container {
+      padding: 0 12px 20px;
+    }
+
+    .filter-bar {
+      padding: 12px;
+      gap: 10px;
+    }
+
+    .filter-label {
+      font-size: 10px;
+    }
+
+    .filter-input {
+      height: 36px;
+      font-size: 13px;
+      padding: 8px 12px;
+    }
+
+    .table-card {
+      border-radius: 10px;
+    }
+
+    .claims-table {
+      min-width: 600px;
+    }
+
+    .detail-row-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .detail-col-title {
+      font-size: 10px;
+    }
+
+    .detail-col-content {
+      font-size: 12.5px;
+    }
+
+    .action-btn {
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+
+    .status-badge {
+      font-size: 9.5px;
+      padding: 3px 8px;
+    }
+
+    .remarks-block {
+      max-width: 180px;
+    }
+
+    .page-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .modal-content {
+      margin: 10px;
+      padding: 20px 14px;
+      border-radius: 12px;
+    }
+
+    .modal-title {
+      font-size: 15px;
+    }
+
+    .form-label {
+      font-size: 10px;
+    }
+  }
+}
+
+@media (max-width: 400px) {
+  .claims-page {
+    .topbar-logo span {
+      display: none;
+    }
+
+    .header-text h2 {
+      font-size: 16px;
+    }
+
+    .claims-container {
+      padding: 0 8px 16px;
+    }
+
+    .filter-bar {
+      padding: 10px;
+    }
+
+    .modal-content {
+      margin: 8px;
+      padding: 16px 12px;
+    }
+
+    .empty-state {
+      padding: 24px 12px;
+      font-size: 12px;
     }
   }
 }

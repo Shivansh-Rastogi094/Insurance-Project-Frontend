@@ -203,6 +203,12 @@ const styles = `
     background: var(--card);
   }
 
+  .policy-info {
+    min-width: 0;
+    flex: 1;
+    margin-right: 12px;
+  }
+
   .policy-info h5 {
     font-size: 13.5px;
     font-weight: 600;
@@ -213,12 +219,14 @@ const styles = `
     font-size: 12px;
     color: var(--text-secondary);
     margin-top: 2px;
+    word-break: break-all;
   }
 
   .policy-meta {
     display: flex;
     align-items: center;
     gap: 16px;
+    flex-shrink: 0;
   }
 
   /* Badges */
@@ -256,6 +264,12 @@ const styles = `
     border-bottom: none;
   }
 
+  .claim-info {
+    min-width: 0;
+    flex: 1;
+    margin-right: 16px;
+  }
+
   .claim-info h5 {
     font-family: var(--font-mono);
     font-size: 13px;
@@ -267,6 +281,8 @@ const styles = `
     font-size: 11px;
     color: var(--text-secondary);
     margin-top: 2px;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .claim-meta {
@@ -274,6 +290,7 @@ const styles = `
     flex-direction: column;
     align-items: flex-end;
     gap: 6px;
+    flex-shrink: 0;
   }
 
   .claim-amount {
@@ -399,9 +416,210 @@ const styles = `
     text-decoration: underline;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 968px) {
+    .main-content {
+      margin-left: 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .topbar {
+      padding: 0 16px;
+      height: 56px;
+    }
+
+    .topbar-logo span {
+      font-size: 14px;
+    }
+
+    .role-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      font-size: 12px;
+    }
+
+    .header {
+      padding: 20px 16px 12px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .header-text h2 {
+      font-size: 20px;
+    }
+
+    .header-text p {
+      font-size: 13px;
+    }
+
+    .btn-primary {
+      width: 100%;
+      text-align: center;
+      justify-content: center;
+    }
+
+    .divider {
+      margin: 8px 16px 20px;
+    }
+
+    .section-label {
+      padding: 0 16px;
+      margin-bottom: 12px;
+    }
+
+    .cards {
+      padding: 0 16px 20px;
+      gap: 16px;
+    }
+
     .dashboard-grid {
       grid-template-columns: 1fr;
+      padding: 0 16px 20px;
+      gap: 16px;
+    }
+
+    .dashboard-section {
+      padding: 16px;
+    }
+
+    .compact-policy-card {
+      padding: 12px;
+    }
+
+    .claim-row {
+      padding: 10px 0;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .topbar {
+      padding: 0 12px;
+      height: 50px;
+    }
+
+    .topbar-logo span {
+      font-size: 13px;
+    }
+
+    .topbar-right {
+      gap: 10px;
+    }
+
+    .role-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .header {
+      padding: 16px 12px 8px;
+    }
+
+    .header-text h2 {
+      font-size: 18px;
+    }
+
+    .header-text p {
+      font-size: 12px;
+    }
+
+    .divider {
+      margin: 6px 12px 16px;
+    }
+
+    .section-label {
+      padding: 0 12px;
+    }
+
+    .cards {
+      padding: 0 12px 16px;
+      gap: 12px;
+      grid-template-columns: 1fr;
+    }
+
+    .dashboard-grid {
+      padding: 0 12px 16px;
+      gap: 12px;
+    }
+
+    .dashboard-section {
+      padding: 14px;
+    }
+
+    .section-header {
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 13.5px;
+    }
+
+    .policy-info h5,
+    .claim-info h5 {
+      font-size: 12.5px;
+    }
+
+    .policy-info p,
+    .claim-info p {
+      font-size: 11px;
+    }
+
+    .claim-amount {
+      font-size: 12.5px;
+    }
+
+    .status-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+    }
+
+    .agent-remarks,
+    .admin-remarks {
+      max-width: 100%;
+      text-align: left;
+      font-size: 10px;
+      padding: 2px 6px;
+    }
+
+    .claim-meta {
+      align-items: flex-start;
+      margin-top: 8px;
+      width: 100%;
+      border-top: 1px dashed var(--border);
+      padding-top: 8px;
+    }
+
+    .claim-row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .topbar-logo span {
+      display: none;
+    }
+
+    .header-text h2 {
+      font-size: 16px;
+    }
+
+    .cards {
+      padding: 0 8px 12px;
+    }
+
+    .dashboard-grid {
+      padding: 0 8px 12px;
     }
   }
 `;

@@ -7,12 +7,51 @@ import "../../styles/LandingPage.css";
    ───────────────────────────────────────── */
 const NAV_LINKS = [
   { id: "home",     label: "Home" },
-  { id: "about",    label: "About" },
   { id: "plans",    label: "Plans" },
-  { id: "pricing",  label: "Pricing" },
-  { id: "features", label: "Features" },
   { id: "claims",   label: "Claims" },
+  { id: "about",    label: "About" },
+  { id: "contact",  label: "Contact" },
 ];
+
+/* ─────────────────────────────────────────
+   CountUp Component for Stats Section
+   ───────────────────────────────────────── */
+const CountUp = ({ end, duration = 1500, suffix = "" }) => {
+  const [count, setCount] = useState(0);
+  const elementRef = useRef(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !started.current) {
+          started.current = true;
+          let startTimestamp = null;
+          const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            setCount(Math.floor(progress * end));
+            if (progress < 1) {
+              window.requestAnimationFrame(step);
+            }
+          };
+          window.requestAnimationFrame(step);
+        }
+      },
+      { threshold: 0.2 }
+    );
+
+    if (elementRef.current) {
+      observer.observe(elementRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [end, duration]);
+
+  return <span ref={elementRef}>{count.toLocaleString('en-IN')}{suffix}</span>;
+};
 
 /* ─────────────────────────────────────────
    PLANS data (Revolut styled)
@@ -161,6 +200,27 @@ const LandingPage = () => {
     };
   }, []);
 
+  // Scroll-reveal animations setup
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("reveal-visible");
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+
+    const revealElements = document.querySelectorAll(".reveal-hidden");
+    revealElements.forEach((el) => observer.observe(el));
+
+    return () => {
+      revealElements.forEach((el) => observer.unobserve(el));
+    };
+  }, []);
+
   // Scroll to section when URL path changes (e.g. on direct entry or route change)
   useEffect(() => {
     let sectionId = "home";
@@ -169,6 +229,7 @@ const LandingPage = () => {
     else if (location.pathname === "/pricing") sectionId = "pricing";
     else if (location.pathname === "/features") sectionId = "features";
     else if (location.pathname === "/claims-info") sectionId = "claims";
+    else if (location.pathname === "/contact") sectionId = "contact";
 
     const el = document.getElementById(sectionId);
     if (el) {
@@ -237,7 +298,7 @@ const LandingPage = () => {
             <a className="rev-nav-login" onClick={() => navigate("/login")}>
               Log in
             </a>
-            <button className="rev-btn rev-btn-sm rev-btn-primary" onClick={() => navigate("/register")}>
+            <button className="rev-btn rev-btn-sm rev-btn-brand rev-btn-gradient-border" onClick={() => navigate("/register")}>
               Get started
             </button>
             <button className="rev-menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
@@ -275,6 +336,11 @@ const LandingPage = () => {
 
       {/* ══════════ HERO SECTION (Dark Canvas) ══════════ */}
       <section id="home" className="rev-hero">
+        {/* Animated Background Blobs */}
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
+
         <div className="rev-container">
           <div className="rev-hero-grid">
             <div className="rev-hero-text">
@@ -287,7 +353,7 @@ const LandingPage = () => {
                 Ditch the paperwork. Crown Assurance delivers instant digital policies, automated claims, and expert dedicated agents in one seamless platform.
               </p>
               <div className="rev-hero-ctas">
-                <button className="rev-btn rev-btn-lg rev-btn-primary" onClick={() => navigate("/register")}>
+                <button className="rev-btn rev-btn-lg rev-btn-brand rev-btn-gradient-border" onClick={() => navigate("/register")}>
                   Get started free
                 </button>
                 <button className="rev-btn rev-btn-lg rev-btn-outline-dark" onClick={() => handleNavClick("plans")}>
@@ -357,8 +423,44 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* ══════════ ACHIEVEMENTS / STATS SECTION ══════════ */}
+      <section className="rev-band-dark rev-stats-section reveal-hidden">
+        <div className="rev-container">
+          <div className="rev-stats-grid">
+            <div className="rev-stat-card glass-card">
+              <div className="rev-stat-icon"><i className="ph ph-shield-check"></i></div>
+              <h3>
+                <CountUp end={10} suffix="M+" />
+              </h3>
+              <p>Policies issued and active</p>
+            </div>
+            <div className="rev-stat-card glass-card">
+              <div className="rev-stat-icon"><i className="ph ph-chart-line-up"></i></div>
+              <h3>
+                <CountUp end={98} suffix="%" />
+              </h3>
+              <p>Claim approval rate</p>
+            </div>
+            <div className="rev-stat-card glass-card">
+              <div className="rev-stat-icon"><i className="ph ph-clock"></i></div>
+              <h3>
+                <CountUp end={24} suffix="/7" />
+              </h3>
+              <p>Customer support & guidance</p>
+            </div>
+            <div className="rev-stat-card glass-card">
+              <div className="rev-stat-icon"><i className="ph ph-calendar"></i></div>
+              <h3>
+                <CountUp end={15} suffix="+" />
+              </h3>
+              <p>Years of industry excellence</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ══════════ ABOUT SECTION (Light Canvas) ══════════ */}
-      <section id="about" className="rev-band-light">
+      <section id="about" className="rev-band-light reveal-hidden">
         <div className="rev-container">
           <div className="rev-about-layout">
             <div className="rev-about-graphic">
@@ -406,7 +508,7 @@ const LandingPage = () => {
       </section>
 
       {/* ══════════ PLANS SECTION (Dark Canvas) ══════════ */}
-      <section id="plans" className="rev-band-dark">
+      <section id="plans" className="rev-band-dark reveal-hidden">
         <div className="rev-container">
           <div className="rev-section-header">
             <span className="rev-section-tag">Our Plans</span>
@@ -449,7 +551,7 @@ const LandingPage = () => {
       </section>
 
       {/* ══════════ PRICING SECTION (Light Canvas) ══════════ */}
-      <section id="pricing" className="rev-band-light">
+      <section id="pricing" className="rev-band-light reveal-hidden">
         <div className="rev-container">
           <div className="rev-section-header rev-header-light">
             <span className="rev-section-tag">Pricing</span>
@@ -488,7 +590,7 @@ const LandingPage = () => {
       </section>
 
       {/* ══════════ FEATURES SECTION (Dark Canvas) ══════════ */}
-      <section id="features" className="rev-band-dark">
+      <section id="features" className="rev-band-dark reveal-hidden">
         <div className="rev-container">
           <div className="rev-section-header">
             <span className="rev-section-tag">Features</span>
@@ -509,7 +611,7 @@ const LandingPage = () => {
       </section>
 
       {/* ══════════ CLAIMS SECTION (Light Canvas) ══════════ */}
-      <section id="claims" className="rev-band-light">
+      <section id="claims" className="rev-band-light reveal-hidden">
         <div className="rev-container">
           <div className="rev-section-header rev-header-light">
             <span className="rev-section-tag">Claims</span>
@@ -536,6 +638,67 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* ══════════ CONTACT SECTION ══════════ */}
+      <section id="contact" className="rev-band-light reveal-hidden">
+        <div className="rev-container">
+          <div className="rev-section-header rev-header-light">
+            <span className="rev-section-tag">Contact Us</span>
+            <h2 className="rev-display-lg">We are here to help you.</h2>
+            <p className="rev-body-lg">Have a question about our policies, claims, or coverage? Get in touch with our team.</p>
+          </div>
+          
+          <div className="rev-contact-layout">
+            <div className="rev-contact-info-panel">
+              <div className="rev-contact-item">
+                <i className="ph ph-envelope-simple"></i>
+                <div>
+                  <h4>Email Support</h4>
+                  <p>support@crownassurance.com</p>
+                </div>
+              </div>
+              <div className="rev-contact-item">
+                <i className="ph ph-phone"></i>
+                <div>
+                  <h4>Phone Support</h4>
+                  <p>+91 1800 234 5678 (Toll Free)</p>
+                </div>
+              </div>
+              <div className="rev-contact-item">
+                <i className="ph ph-map-pin"></i>
+                <div>
+                  <h4>Corporate Office</h4>
+                  <p>Crown Towers, Level 12, Financial District, Gachibowli, Hyderabad - 500032</p>
+                </div>
+              </div>
+            </div>
+
+            <form className="rev-contact-form glass-card" onSubmit={(e) => { e.preventDefault(); alert("Thank you! Our agent will contact you shortly."); }}>
+              <div className="form-group-row">
+                <div className="form-group">
+                  <label className="form-label">Full Name</label>
+                  <input type="text" className="form-input" placeholder="John Doe" required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Email Address</label>
+                  <input type="email" className="form-input" placeholder="john@example.com" required />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Subject</label>
+                <input type="text" className="form-input" placeholder="Inquiry about Life Gold Plan" required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Message</label>
+                <textarea className="form-input" rows="4" placeholder="Type your message here..." required></textarea>
+              </div>
+              <button type="submit" className="rev-btn rev-btn-lg rev-btn-brand rev-btn-gradient-border">
+                Send Message
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
       {/* ══════════ FOOTER (Dark Canvas) ══════════ */}
       <footer className="rev-footer">
         <div className="rev-container">
@@ -550,19 +713,13 @@ const LandingPage = () => {
               </p>
             </div>
             <div className="rev-footer-col">
-              <h4>Products</h4>
+              <h4>Quick Links</h4>
               <ul className="rev-footer-links">
-                <li><a onClick={() => handleNavClick("plans")}>Life Protection</a></li>
-                <li><a onClick={() => handleNavClick("plans")}>Health Shield</a></li>
-                <li><a onClick={() => handleNavClick("plans")}>Motor Protect</a></li>
-              </ul>
-            </div>
-            <div className="rev-footer-col">
-              <h4>Company</h4>
-              <ul className="rev-footer-links">
+                <li><a onClick={() => handleNavClick("home")}>Home</a></li>
+                <li><a onClick={() => handleNavClick("plans")}>Plans</a></li>
+                <li><a onClick={() => handleNavClick("claims")}>Claims</a></li>
                 <li><a onClick={() => handleNavClick("about")}>About Us</a></li>
-                <li><a onClick={() => handleNavClick("features")}>Features</a></li>
-                <li><a onClick={() => handleNavClick("pricing")}>Pricing</a></li>
+                <li><a onClick={() => handleNavClick("contact")}>Contact</a></li>
               </ul>
             </div>
             <div className="rev-footer-col">
@@ -570,7 +727,16 @@ const LandingPage = () => {
               <ul className="rev-footer-links">
                 <li><a onClick={() => navigate("/login")}>Privacy Policy</a></li>
                 <li><a onClick={() => navigate("/login")}>Terms of Service</a></li>
+                <li><a onClick={() => navigate("/login")}>Cookies Policy</a></li>
                 <li><a onClick={() => navigate("/login")}>IRDAI Disclosures</a></li>
+              </ul>
+            </div>
+            <div className="rev-footer-col">
+              <h4>Contact</h4>
+              <ul className="rev-footer-links contact-info-links">
+                <li><i className="ph ph-envelope-simple"></i> support@crownassurance.com</li>
+                <li><i className="ph ph-phone"></i> +91 1800 234 5678</li>
+                <li><i className="ph ph-map-pin"></i> Hyderabad, India</li>
               </ul>
             </div>
           </div>
@@ -579,9 +745,16 @@ const LandingPage = () => {
             <p className="rev-footer-legal">
               Disclaimer: Insurance is the subject matter of solicitation. Crown Assurance Pvt. &amp; Ltd. is a registered corporate agent under IRDAI License No. CA-2020-001. All insurance products are underwritten by respective partner insurance companies. For more details on risk factors, terms and conditions, please read the sales brochure carefully before concluding a sale.
             </p>
-            <p className="rev-footer-copy">
-              © {new Date().getFullYear()} Crown Assurance Pvt. &amp; Ltd. All rights reserved.
-            </p>
+            <div className="rev-footer-bottom-row">
+              <p className="rev-footer-copy">
+                © {new Date().getFullYear()} Crown Assurance Pvt. &amp; Ltd. All rights reserved.
+              </p>
+              <div className="rev-footer-socials">
+                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" title="LinkedIn"><i className="ph ph-linkedin-logo"></i></a>
+                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" title="Twitter/X"><i className="ph ph-twitter-logo"></i></a>
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" title="Instagram"><i className="ph ph-instagram-logo"></i></a>
+              </div>
+            </div>
           </div>
         </div>
       </footer>

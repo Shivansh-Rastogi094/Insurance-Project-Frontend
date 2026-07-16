@@ -38,6 +38,7 @@ function App() {
         <Route path="/pricing"     element={<LandingPage />} />
         <Route path="/features"    element={<LandingPage />} />
         <Route path="/claims-info" element={<LandingPage />} />
+        <Route path="/contact"     element={<LandingPage />} />
 
         {/* ── Auth ── */}
         <Route path="/login"       element={<Login />} />
@@ -83,7 +84,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/payments" element={
-          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'SUPER_AGENT', 'CUSTOMER']}>
             <Payments />
           </ProtectedRoute>
         } />
