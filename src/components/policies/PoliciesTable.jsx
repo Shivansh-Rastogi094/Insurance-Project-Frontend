@@ -66,19 +66,30 @@ const PoliciesTable = ({ policies, onCancelClick, userRole }) => {
                           borderColor: 'var(--border)'
                         }}
                       />
-                      {canCancelPolicy && (
-                        <button
-                          className="action-btn cancel-policy"
-                          onClick={() => onCancelClick(policy)}
-                          disabled={policy.policyStatus === 'CANCELLED'}
-                          style={{
-                            opacity: policy.policyStatus === 'CANCELLED' ? 0.5 : 1,
-                            cursor: policy.policyStatus === 'CANCELLED' ? 'not-allowed' : 'pointer'
-                          }}
-                        >
-                          {policy.policyStatus === 'CANCELLED' ? 'Cancelled' : 'Cancel Policy'}
-                        </button>
-                      )}
+                      {canCancelPolicy && (() => {
+                        const isCancelled = policy.policyStatus === 'CANCELLED';
+                        const isNotCancellable = isCancelled || policy.policyStatus === 'EXPIRED';
+                        return (
+                          <button
+                            className="action-btn cancel-policy"
+                            onClick={() => !isNotCancellable && onCancelClick(policy)}
+                            disabled={isNotCancellable}
+                            title={
+                              isCancelled
+                                ? 'This policy is already cancelled'
+                                : policy.policyStatus === 'EXPIRED'
+                                ? 'Expired policies cannot be cancelled'
+                                : 'Cancel this policy (blocked if pending claims exist)'
+                            }
+                            style={{
+                              opacity: isNotCancellable ? 0.45 : 1,
+                              cursor: isNotCancellable ? 'not-allowed' : 'pointer'
+                            }}
+                          >
+                            {isCancelled ? 'Cancelled' : 'Cancel Policy'}
+                          </button>
+                        );
+                      })()}
                     </div>
                   </td>
                 </tr>

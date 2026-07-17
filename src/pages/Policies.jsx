@@ -314,6 +314,24 @@ const Policies = () => {
             <br />
             <br />
             This will terminate coverage for plan <strong>{targetPolicy.planName}</strong> associated with policyholder <strong>{targetPolicy.customerName || targetPolicy.customer?.fullName || 'N/A'}</strong>. This action is permanent and cannot be undone.
+            <br />
+            <br />
+            <span style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '8px',
+              background: 'rgba(239, 68, 68, 0.06)',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: '6px',
+              padding: '10px 12px',
+              fontSize: '13px',
+              color: 'var(--text-secondary)'
+            }}>
+              <i className="ph ph-warning" style={{ fontSize: '16px', color: '#ef4444', flexShrink: 0, marginTop: '1px' }} />
+              <span>
+                <strong style={{ color: '#ef4444' }}>Note:</strong> Cancellation will be <strong>blocked</strong> if this policy has any unresolved claims (SUBMITTED, UNDER REVIEW, or RECOMMENDED). All claims must be finalized (APPROVED or REJECTED) first.
+              </span>
+            </span>
           </div>
 
           <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
