@@ -148,11 +148,12 @@ const styles = `
     border: 1px solid var(--border);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
-    padding: 32px 28px;
+    padding: 28px 28px 24px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 360px;
+    min-height: 410px;
+    height: auto;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
