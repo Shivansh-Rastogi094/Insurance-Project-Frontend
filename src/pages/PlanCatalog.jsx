@@ -17,6 +17,32 @@ const fetchPlansList = async () => {
   return res?.data?.content || [];
 };
 
+const calculateCustomerAge = (dobString) => {
+  if (!dobString) return null;
+  const dob = new Date(dobString);
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age >= 0 ? age : null;
+};
+
+const getAgeLoadingDetails = (age) => {
+  if (!age || age <= 30) return { percent: 0, label: 'Base Rate (Age ≤ 30)' };
+  if (age < 45) return { percent: 15, label: '+15% Risk Loading (Age 30–44)' };
+  if (age < 60) return { percent: 35, label: '+35% Risk Loading (Age 45–59)' };
+  return { percent: 60, label: '+60% Senior Risk Loading (Age 60+)' };
+};
+
+const getAgeAdjustedPremium = (basePremium, age) => {
+  if (!basePremium) return 0;
+  const { percent } = getAgeLoadingDetails(age);
+  if (percent === 0) return basePremium;
+  return Number((basePremium * (1 + percent / 100)).toFixed(2));
+};
+
 const PlanCatalog = () => {
   const toast = useToast();
   const { type, productId } = useParams();
@@ -151,9 +177,12 @@ const PlanCatalog = () => {
       errors.coverageAmount = "Coverage amount must be greater than zero.";
     }
     
-    const premiumVal = parseFloat(formData.premiumAmount);
-    if (isNaN(premiumVal) || premiumVal <= 0) {
-      errors.premiumAmount = "Premium amount must be greater than zero.";
+    // Premium amount is optional (auto-calculated at runtime using actuarial formula if left empty)
+    if (formData.premiumAmount && formData.premiumAmount !== '') {
+      const premiumVal = parseFloat(formData.premiumAmount);
+      if (isNaN(premiumVal) || premiumVal <= 0) {
+        errors.premiumAmount = "Premium amount must be greater than zero if provided.";
+      }
     }
     
     const durationVal = parseInt(formData.duration, 10);
@@ -337,94 +366,107 @@ const PlanCatalog = () => {
             </div>
           ) : (
             <div className="grid-container">
-              {productPlans.map((plan) => (
-                <div className={`plan-card ${categoryMeta.className}`} key={plan.id}>
-                  <div>
-                    {isAdminOrAgent && (
-                      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
-                        <span className={`status-badge ${plan.active ? 'active' : 'inactive'}`}>
-                          <span style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            background: plan.active ? '#10B981' : '#EF4444',
-                            display: 'inline-block'
-                          }}></span>
-                          {plan.active ? 'Active' : 'Inactive'}
-                        </span>
+              {productPlans.map((plan) => {
+                const currentCustomerAge = calculateCustomerAge(customerProfile?.dateOfBirth);
+                const ageLoading = getAgeLoadingDetails(currentCustomerAge);
+                const effectivePremium = getAgeAdjustedPremium(plan.premiumAmount, currentCustomerAge);
+
+                return (
+                  <div className={`plan-card ${categoryMeta.className}`} key={plan.id}>
+                    <div>
+                      {isAdminOrAgent && (
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                          <span className={`status-badge ${plan.active ? 'active' : 'inactive'}`}>
+                            <span style={{
+                              width: '6px',
+                              height: '6px',
+                              borderRadius: '50%',
+                              background: plan.active ? '#10B981' : '#EF4444',
+                              display: 'inline-block'
+                            }}></span>
+                            {plan.active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      )}
+                      <h3 className="plan-name">{plan.planName}</h3>
+                      
+                      <div className="plan-details-list">
+                        <div className="plan-detail-row">
+                          <span className="plan-detail-label">Sum Insured Coverage</span>
+                          <span className="plan-detail-value highlight mono">
+                            ₹{plan.coverageAmount.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                        
+                        <div className="plan-detail-row">
+                          <span className="plan-detail-label">Premium Installment</span>
+                          <span className="plan-detail-value mono" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <span style={{ fontWeight: '700' }}>
+                              ₹{effectivePremium.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </span>
+                            {currentCustomerAge && ageLoading.percent > 0 && (
+                              <span style={{ fontSize: '10.5px', color: '#6B7280', fontWeight: 'normal' }}>
+                                Base ₹{plan.premiumAmount.toLocaleString('en-IN')} ({ageLoading.label})
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        
+                        <div className="plan-detail-row">
+                          <span className="plan-detail-label">Billing Frequency</span>
+                          <span className="plan-detail-value" style={{ textTransform: 'uppercase', fontSize: '12px' }}>
+                            {plan.premiumType}
+                          </span>
+                        </div>
+                        
+                        <div className="plan-detail-row">
+                          <span className="plan-detail-label">Coverage Term</span>
+                          <span className="plan-detail-value">
+                            {plan.durationYears} Years
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="plan-detail-label" style={{ fontSize: '12px', fontWeight: '600' }}>
+                        Terms & Conditions:
+                      </div>
+                      <div className="terms-section">
+                        {plan.termsAndConditions || "No special terms specified."}
+                      </div>
+                    </div>
+
+                    {userData?.role === 'CUSTOMER' && (
+                      <div style={{ marginTop: '24px' }}>
+                        <button 
+                          className="buy-btn"
+                          onClick={() => handleBuyPlanClick(plan)}
+                          disabled={checkingProfile}
+                        >
+                          {checkingProfile ? 'Checking Profile...' : 'Buy Plan'}
+                        </button>
                       </div>
                     )}
-                    <h3 className="plan-name">{plan.planName}</h3>
-                    
-                    <div className="plan-details-list">
-                      <div className="plan-detail-row">
-                        <span className="plan-detail-label">Sum Insured Coverage</span>
-                        <span className="plan-detail-value highlight mono">
-                          ₹{plan.coverageAmount.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      
-                      <div className="plan-detail-row">
-                        <span className="plan-detail-label">Premium Installment</span>
-                        <span className="plan-detail-value mono">
-                          ₹{plan.premiumAmount.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      
-                      <div className="plan-detail-row">
-                        <span className="plan-detail-label">Billing Frequency</span>
-                        <span className="plan-detail-value" style={{ textTransform: 'uppercase', fontSize: '12px' }}>
-                          {plan.premiumType}
-                        </span>
-                      </div>
-                      
-                      <div className="plan-detail-row">
-                        <span className="plan-detail-label">Coverage Term</span>
-                        <span className="plan-detail-value">
-                          {plan.durationYears} Years
-                        </span>
-                      </div>
-                    </div>
 
-                    <div className="plan-detail-label" style={{ fontSize: '12px', fontWeight: '600' }}>
-                      Terms & Conditions:
-                    </div>
-                    <div className="terms-section">
-                      {plan.termsAndConditions || "No special terms specified."}
-                    </div>
+                    {userData?.role === 'ADMIN' && (
+                      <div className="admin-actions-container">
+                        <button 
+                          className="btn-update"
+                          onClick={() => handleOpenEditModal(plan)}
+                        >
+                          Update
+                        </button>
+                        <button 
+                          className="btn-deactivate"
+                          onClick={() => handleDeactivatePlan(plan.id)}
+                          disabled={!plan.active}
+                        >
+                           {plan.active ? 'Deactivate' : 'Deactivated'}
+                        </button>
+                      </div>
+                    )}
                   </div>
-
-                  {userData?.role === 'CUSTOMER' && (
-                    <div style={{ marginTop: '24px' }}>
-                      <button 
-                        className="buy-btn"
-                        onClick={() => handleBuyPlanClick(plan)}
-                        disabled={checkingProfile}
-                      >
-                        {checkingProfile ? 'Checking Profile...' : 'Buy Plan'}
-                      </button>
-                    </div>
-                  )}
-
-                  {userData?.role === 'ADMIN' && (
-                    <div className="admin-actions-container">
-                      <button 
-                        className="btn-update"
-                        onClick={() => handleOpenEditModal(plan)}
-                      >
-                        Update
-                      </button>
-                      <button 
-                        className="btn-deactivate"
-                        onClick={() => handleDeactivatePlan(plan.id)}
-                        disabled={!plan.active}
-                      >
-                         {plan.active ? 'Deactivate' : 'Deactivated'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -436,17 +478,45 @@ const PlanCatalog = () => {
               <div className="modal-body">
                 <p>You are initiating a request to buy the following insurance plan:</p>
                 
-                <div className="modal-plan-summary">
-                  <div style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-primary)', marginBottom: '8px' }}>
-                    {selectedPlan.planName}
-                  </div>
-                  <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div><strong>Product Name:</strong> {selectedPlan.productName}</div>
-                    <div><strong>Sum Insured:</strong> ₹{selectedPlan.coverageAmount.toLocaleString('en-IN')}</div>
-                    <div><strong>Premium:</strong> ₹{selectedPlan.premiumAmount.toLocaleString('en-IN')} ({selectedPlan.premiumType})</div>
-                    <div><strong>Term:</strong> {selectedPlan.durationYears} Years</div>
-                  </div>
-                </div>
+                {(() => {
+                  const currentCustomerAge = calculateCustomerAge(customerProfile?.dateOfBirth);
+                  const ageLoading = getAgeLoadingDetails(currentCustomerAge);
+                  const effectivePremium = getAgeAdjustedPremium(selectedPlan.premiumAmount, currentCustomerAge);
+
+                  return (
+                    <div className="modal-plan-summary">
+                      <div style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                        {selectedPlan.planName}
+                      </div>
+                      <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div><strong>Product Name:</strong> {selectedPlan.productName}</div>
+                        <div><strong>Sum Insured:</strong> ₹{selectedPlan.coverageAmount.toLocaleString('en-IN')}</div>
+                        <div><strong>Term:</strong> {selectedPlan.durationYears} Years ({selectedPlan.premiumType})</div>
+                        
+                        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 14px', marginTop: '6px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12.5px' }}>
+                            <span>Base Plan Premium:</span>
+                            <span className="mono">₹{selectedPlan.premiumAmount.toLocaleString('en-IN')}</span>
+                          </div>
+                          {currentCustomerAge !== null && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', color: '#64748B' }}>
+                              <span>Applicant Age ({currentCustomerAge} yrs):</span>
+                              <span style={{ color: ageLoading.percent > 0 ? '#D97706' : '#10B981', fontWeight: '600' }}>
+                                {ageLoading.label}
+                              </span>
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', borderTop: '1px dashed #CBD5E1', paddingTop: '6px', marginTop: '4px', fontSize: '13.5px' }}>
+                            <span>Effective Premium Installment:</span>
+                            <span className="mono" style={{ color: '#10B981' }}>
+                              ₹{effectivePremium.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="form-group">
                   <label className="form-label">Policy Start Date</label>
@@ -509,14 +579,16 @@ const PlanCatalog = () => {
                 </div>
 
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Premium Installment (₹)</label>
+                  <label className="form-label">
+                    Premium (₹) <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>(Auto-Calculated via Formula)</span>
+                  </label>
                   <input 
                     type="number" 
                     step="0.01"
                     className="form-input" 
                     value={newPlan.premiumAmount}
                     onChange={(e) => setNewPlan({ ...newPlan, premiumAmount: e.target.value })}
-                    placeholder="e.g. 12000"
+                    placeholder="Leave blank to auto-calculate via formula"
                   />
                   {formErrors.premiumAmount && <div className="form-error">⚠️ {formErrors.premiumAmount}</div>}
                 </div>

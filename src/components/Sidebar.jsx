@@ -217,6 +217,8 @@ const Sidebar = ({ title }) => {
         { label: "Products & Plans", path: "/policy", icon: <i className="ph ph-package"></i> },
         { label: "My Policies & Payments", path: "/payments", icon: <i className="ph ph-credit-card"></i> },
         { label: "My Claims", path: "/claims", icon: <i className="ph ph-shield-check"></i> },
+        { label: "Contact Us", path: "/contact", icon: <i className="ph ph-envelope-simple"></i> },
+        { label: "My Queries", path: "/queries", icon: <i className="ph ph-chat-text"></i> },
         { label: "Profile", path: "/profile", icon: <i className="ph ph-user"></i> }
       ];
     } else if (userData?.role === "AGENT" || userData?.role === "SUPER_AGENT") {
@@ -226,7 +228,8 @@ const Sidebar = ({ title }) => {
         { label: "Policies", path: "/policies", icon: <i className="ph ph-file-text"></i> },
         { label: "Payments", path: "/payments", icon: <i className="ph ph-credit-card"></i> },
         { label: "Claims", path: "/claims", icon: <i className="ph ph-shield-check"></i> },
-        { label: "Customers", path: "/customers", icon: <i className="ph ph-users-three"></i> }
+        { label: "Customers", path: "/customers", icon: <i className="ph ph-users-three"></i> },
+        { label: "Customer Queries", path: "/queries", icon: <i className="ph ph-chat-text"></i> }
       ];
     } else {
       return [
@@ -236,7 +239,8 @@ const Sidebar = ({ title }) => {
         { label: "Policies", path: "/policies", icon: <i className="ph ph-file-text"></i> },
         { label: "Payments", path: "/payments", icon: <i className="ph ph-credit-card"></i> },
         { label: "Claims", path: "/claims", icon: <i className="ph ph-shield-check"></i> },
-        { label: "Customers", path: "/customers", icon: <i className="ph ph-users-three"></i> }
+        { label: "Customers", path: "/customers", icon: <i className="ph ph-users-three"></i> },
+        { label: "Customer Queries", path: "/queries", icon: <i className="ph ph-chat-text"></i> }
       ];
     }
   };

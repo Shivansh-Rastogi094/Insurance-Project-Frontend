@@ -21,7 +21,7 @@ const Claims = () => {
   const isCustomer = userData?.role === 'CUSTOMER';
   const isAgent = userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT';
   const [currentPage, setCurrentPage] = useState(0);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,7 +38,13 @@ const Claims = () => {
     setMaxAmount('');
     setMyAssignedOnly(false);
     setMatchSpecializationOnly(false);
+    setCurrentPage(0);
   };
+
+  // Reset to page 0 when filters or page size change
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchQuery, statusFilter, minAmount, maxAmount, myAssignedOnly, matchSpecializationOnly, pageSize]);
 
   // Export Modal States
   const [showExportModal, setShowExportModal] = useState(false);
@@ -66,7 +72,7 @@ const Claims = () => {
       const response = await readAllClaims(page, pageSize);
       return response?.data || response || {};
     }
-  }, [isCustomer]);
+  }, [isCustomer, pageSize]);
 
   const { data = isCustomer ? [] : {}, loading, execute: loadClaims } = useFetch(fetchClaimsData);
 
@@ -74,12 +80,10 @@ const Claims = () => {
     loadClaims(currentPage);
   }, [currentPage, loadClaims]);
 
-  // Safely extract claims array and pagination info
+  // Safely extract claims array
   const claimsList = [...(isCustomer
     ? (Array.isArray(data) ? data : [])
     : (data?.content || []))].sort((a, b) => (b.id || 0) - (a.id || 0));
-  const totalPages = isCustomer ? 1 : (data?.totalPages || 1);
-  const totalElements = isCustomer ? claimsList.length : (data?.totalElements || 0);
 
   // Compute filtered claims
   const filteredClaims = claimsList.filter(claim => {
@@ -124,6 +128,21 @@ const Claims = () => {
     }
     return true;
   });
+
+  // Effective Pagination Math
+  const totalFilteredCount = filteredClaims.length;
+  const isClientPaginated = isCustomer || Boolean(statusFilter || searchQuery || minAmount || maxAmount || myAssignedOnly || matchSpecializationOnly);
+
+  const totalEffectivePages = isClientPaginated
+    ? Math.max(1, Math.ceil(totalFilteredCount / pageSize))
+    : (data?.totalPages || 1);
+
+  const paginatedClaims = isClientPaginated
+    ? filteredClaims.slice(currentPage * pageSize, (currentPage + 1) * pageSize)
+    : filteredClaims;
+
+  const startItem = totalFilteredCount === 0 ? 0 : currentPage * pageSize + 1;
+  const endItem = Math.min((currentPage + 1) * pageSize, totalFilteredCount);
 
   const initials = userData?.fullName
     ? userData.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
@@ -285,7 +304,7 @@ const Claims = () => {
                 ) : (
                   <>
                     <ClaimsTable
-                      filteredClaims={filteredClaims}
+                      filteredClaims={paginatedClaims}
                       userData={userData}
                       onReview={handleReviewTrigger}
                       onHistory={handleHistoryTrigger}
@@ -293,27 +312,78 @@ const Claims = () => {
                       isAgent={isAgent}
                     />
 
-                    {/* Pagination footer */}
-                    {!isCustomer && totalPages > 1 && (
-                      <div className="pagination-footer">
-                        <div className="pagination-info">
-                          Showing Page <strong>{currentPage + 1}</strong> of <strong>{totalPages}</strong> (<strong>{totalElements}</strong> total claims)
+                    {/* Universal Pagination Footer */}
+                    {totalFilteredCount > 0 && (
+                      <div className="pagination-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', padding: '16px 24px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', flexWrap: 'wrap', gap: '14px' }}>
+                        <div className="pagination-info" style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>
+                          Showing <strong>{startItem}–{endItem}</strong> of <strong>{totalFilteredCount}</strong> claim{totalFilteredCount !== 1 ? 's' : ''} (Page <strong>{currentPage + 1}</strong> of <strong>{totalEffectivePages}</strong>)
                         </div>
-                        <div className="pagination-controls">
-                          <button
-                            className="page-btn"
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
-                            disabled={currentPage === 0 || loading}
-                          >
-                            <i className="ph ph-arrow-left"></i> Previous
-                          </button>
-                          <button
-                            className="page-btn"
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
-                            disabled={currentPage === totalPages - 1 || loading}
-                          >
-                            Next <i className="ph ph-arrow-right"></i>
-                          </button>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                            <span>Per page:</span>
+                            <select
+                              value={pageSize}
+                              onChange={(e) => {
+                                setPageSize(Number(e.target.value));
+                                setCurrentPage(0);
+                              }}
+                              style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
+                            >
+                              <option value={5}>5</option>
+                              <option value={10}>10</option>
+                              <option value={20}>20</option>
+                              <option value={50}>50</option>
+                            </select>
+                          </div>
+
+                          <div className="pagination-controls" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <button
+                              className="page-btn"
+                              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
+                              disabled={currentPage === 0 || loading}
+                              style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', cursor: currentPage === 0 ? 'not-allowed' : 'pointer', fontSize: '12.5px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', opacity: currentPage === 0 ? 0.5 : 1 }}
+                            >
+                              <i className="ph ph-arrow-left"></i> Previous
+                            </button>
+
+                            {/* Page Numbers */}
+                            {Array.from({ length: totalEffectivePages }, (_, i) => i).filter(page => {
+                              return page === 0 || page === totalEffectivePages - 1 || Math.abs(page - currentPage) <= 1;
+                            }).map((page, idx, array) => {
+                              const prevPage = array[idx - 1];
+                              const showEllipsis = prevPage !== undefined && page - prevPage > 1;
+                              return (
+                                <React.Fragment key={page}>
+                                  {showEllipsis && <span style={{ padding: '0 4px', color: 'var(--text-muted)' }}>...</span>}
+                                  <button
+                                    onClick={() => setCurrentPage(page)}
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: '6px',
+                                      border: currentPage === page ? 'none' : '1px solid var(--border)',
+                                      background: currentPage === page ? 'var(--primary)' : 'var(--surface)',
+                                      color: currentPage === page ? '#ffffff' : 'var(--text-primary)',
+                                      fontWeight: currentPage === page ? 700 : 500,
+                                      fontSize: '12.5px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    {page + 1}
+                                  </button>
+                                </React.Fragment>
+                              );
+                            })}
+
+                            <button
+                              className="page-btn"
+                              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalEffectivePages - 1))}
+                              disabled={currentPage >= totalEffectivePages - 1 || loading}
+                              style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', cursor: currentPage >= totalEffectivePages - 1 ? 'not-allowed' : 'pointer', fontSize: '12.5px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', opacity: currentPage >= totalEffectivePages - 1 ? 0.5 : 1 }}
+                            >
+                              Next <i className="ph ph-arrow-right"></i>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}

@@ -26,6 +26,9 @@ import { ThemeProvider } from './context/ThemeContext'
 // Landing Page (Redesigned Single Page)
 import LandingPage from './pages/landing/LandingPage'
 
+import ContactUs from './pages/ContactUs'
+import CustomerQueries from './pages/CustomerQueries'
+
 function App() {
   return (
     <ThemeProvider>
@@ -38,7 +41,7 @@ function App() {
         <Route path="/pricing"     element={<LandingPage />} />
         <Route path="/features"    element={<LandingPage />} />
         <Route path="/claims-info" element={<LandingPage />} />
-        <Route path="/contact"     element={<LandingPage />} />
+        <Route path="/calculator"  element={<LandingPage />} />
 
         {/* ── Auth ── */}
         <Route path="/login"       element={<Login />} />
@@ -48,6 +51,16 @@ function App() {
         <Route path="/reset-password"  element={<ResetPassword />} />
 
         {/* ── App (protected) ── */}
+        <Route path="/contact" element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'SUPER_AGENT', 'CUSTOMER']}>
+            <ContactUs />
+          </ProtectedRoute>
+        } />
+        <Route path="/queries" element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'SUPER_AGENT', 'CUSTOMER']}>
+            <CustomerQueries />
+          </ProtectedRoute>
+        } />
         <Route path="/admindashboard" element={
           <ProtectedRoute allowedRoles={['ADMIN']}>
             <AdminDashboard />

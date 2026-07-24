@@ -55,3 +55,26 @@ export const createPayment = async (payload) => {
         throw error;
     }
 };
+
+// POST /api/payments/create-razorpay-order/:policyId
+export const createRazorpayOrder = async (policyId) => {
+    try {
+        const response = await api.post(`payments/create-razorpay-order/${policyId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error in createRazorpayOrder:", error);
+        throw error;
+    }
+};
+
+// POST /api/payments/verify-razorpay-payment
+export const verifyRazorpayPayment = async (payload) => {
+    // payload: { policyId, razorpayOrderId, razorpayPaymentId, razorpaySignature, paymentMode }
+    try {
+        const response = await api.post(`payments/verify-razorpay-payment`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("Error in verifyRazorpayPayment:", error);
+        throw error;
+    }
+};

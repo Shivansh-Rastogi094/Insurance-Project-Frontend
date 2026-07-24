@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { readAllProducts, createProduct } from '../services/ProductService';
 import { useToast } from '../components/ToastProvider';
-import '../styles/Policy.css';
+import PremiumCalculatorWidget from '../components/PremiumCalculatorWidget';
 
 const Policy = () => {
   const toast = useToast();

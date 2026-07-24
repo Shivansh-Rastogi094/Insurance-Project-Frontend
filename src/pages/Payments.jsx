@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { readMyPolicies } from '../services/PolicyService';
-import { readMyPayements, createPayment, readAllPayments } from '../services/PaymentService';
+import { readMyPayements, createPayment, readAllPayments, createRazorpayOrder, verifyRazorpayPayment } from '../services/PaymentService';
 import { useFetch } from '../hooks/useFetch';
 import Modal from '../components/Modal';
 import DownloadButton from '../components/DownloadButton';
@@ -19,10 +19,11 @@ const Payments = () => {
 
   const fetchPaymentsData = React.useCallback(async () => {
     if (isCustomer) {
-      return await readMyPayements();
+      const res = await readMyPayements(0, 1000);
+      return Array.isArray(res) ? res : (res?.content || []);
     } else {
-      const response = await readAllPayments(0, 100);
-      return response?.data?.content || response?.content || [];
+      const response = await readAllPayments(0, 1000);
+      return response?.data?.content || response?.content || (Array.isArray(response?.data) ? response.data : []);
     }
   }, [isCustomer]);
 
@@ -30,21 +31,60 @@ const Payments = () => {
   const { data: policiesList = [], loading: policiesLoading, execute: loadPolicies } = useFetch(readMyPolicies);
   const { data: transactionsList = [], loading: transactionsLoading, execute: loadPayments } = useFetch(fetchPaymentsData);
 
-  // Sort policies so that INACTIVE (or non-ACTIVE) ones are on top, then ACTIVE ones.
+  // Sort policies in descending order (newest / recent first)
   const sortedPoliciesList = [...policiesList].sort((a, b) => {
-    const aActive = a.policyStatus === 'ACTIVE' ? 1 : 0;
-    const bActive = b.policyStatus === 'ACTIVE' ? 1 : 0;
-    if (aActive !== bActive) return aActive - bActive;
     return (b.id || 0) - (a.id || 0);
   });
 
-  const sortedTransactionsList = [...transactionsList].sort((a, b) => (b.id || 0) - (a.id || 0));
+  // Sort recent transactions in descending order (newest payment date / ID first)
+  const sortedTransactionsList = [...transactionsList].sort((a, b) => {
+    const bTime = new Date(b.paymentDate || 0).getTime();
+    const aTime = new Date(a.paymentDate || 0).getTime();
+    if (bTime !== aTime) return bTime - aTime;
+    return (b.id || 0) - (a.id || 0);
+  });
 
   // States
   const [selectedPolicy, setSelectedPolicy] = useState(null);
-  const [paymentMode, setPaymentMode] = useState('UPI');
-  const [txnRef, setTxnRef] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(5);
+  const [policyPage, setPolicyPage] = useState(0);
+  const [policyPageSize, setPolicyPageSize] = useState(2);
+
+  // Policy Pagination calculation
+  const totalPolicyElements = sortedPoliciesList.length;
+  const totalPolicyPages = Math.ceil(totalPolicyElements / policyPageSize) || 1;
+  const policyStartIndex = policyPage * policyPageSize;
+  const policyEndIndex = Math.min(policyStartIndex + policyPageSize, totalPolicyElements);
+  const paginatedPolicies = sortedPoliciesList.slice(policyStartIndex, policyEndIndex);
+
+  // Reset pagination when search query or page size changes
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchQuery, pageSize]);
+
+  // Filter transactions based on search query
+  const filteredTransactionsList = sortedTransactionsList.filter((txn) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    const ref = String(txn.transactionReference || '').toLowerCase();
+    const policyNo = String(txn.policyNumber || txn.policyId || '').toLowerCase();
+    const mode = String(txn.paymentMode || '').toLowerCase();
+    const status = String(txn.paymentStatus || '').toLowerCase();
+    const amount = String(txn.amount || '');
+    const date = txn.paymentDate ? new Date(txn.paymentDate).toLocaleDateString('en-IN') : '';
+
+    return ref.includes(q) || policyNo.includes(q) || mode.includes(q) || status.includes(q) || amount.includes(q) || date.toLowerCase().includes(q);
+  });
+
+  // Pagination calculation
+  const totalElements = filteredTransactionsList.length;
+  const totalPages = Math.ceil(totalElements / pageSize) || 1;
+  const startIndex = currentPage * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalElements);
+  const paginatedTransactions = filteredTransactionsList.slice(startIndex, endIndex);
 
   useEffect(() => {
     if (isCustomer) {
@@ -57,42 +97,86 @@ const Payments = () => {
     ? userData.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
     : "U";
 
-  // Trigger modal and generate transaction reference
+  // Trigger modal
   const handleOpenPayModal = (policy) => {
-    const randomHex = Math.floor(10000000 + Math.random() * 90000000).toString(16).toUpperCase();
-    const dateStr = new Date().toISOString().substring(0, 10).replace(/-/g, '');
-    const generatedRef = `TXN-${dateStr}-${randomHex}`;
-    
     setSelectedPolicy(policy);
-    setPaymentMode('UPI');
-    setTxnRef(generatedRef);
   };
 
-  const handleConfirmPayment = async (e) => {
-    e.preventDefault();
-    if (!selectedPolicy) return;
+  // Launch Razorpay Payment Modal & Verification
+  const handleConfirmRazorpayPayment = async (policyTarget) => {
+    const target = policyTarget || selectedPolicy;
+    if (!target) return;
 
     try {
       setSubmitting(true);
-      const payload = {
-        policyId: selectedPolicy.id,
-        amount: selectedPolicy.premiumAmount,
-        paymentMode: paymentMode,
-        transactionReference: txnRef,
-        paymentStatus: 'SUCCESS'
+      // 1. Create Razorpay Order from backend
+      const orderData = await createRazorpayOrder(target.id);
+
+      // 2. Configure Razorpay Options
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amountInPaise,
+        currency: orderData.currency || 'INR',
+        name: 'Crown Assurance',
+        description: `Premium Payment for Policy #${orderData.policyNumber}`,
+        image: '/logo1.png',
+        order_id: orderData.razorpayOrderId,
+        handler: async (response) => {
+          try {
+            setSubmitting(true);
+            const verificationPayload = {
+              policyId: target.id,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              paymentMode: 'RAZORPAY',
+            };
+
+            await verifyRazorpayPayment(verificationPayload);
+            toast.success(`Payment Successful via Razorpay! Policy #${orderData.policyNumber} is now Active.`);
+
+            setSelectedPolicy(null);
+            loadPolicies();
+            loadPayments();
+          } catch (verifyErr) {
+            console.error('Verification error:', verifyErr);
+            toast.error(verifyErr?.response?.data?.message || 'Razorpay payment verification failed.');
+          } finally {
+            setSubmitting(false);
+          }
+        },
+        prefill: {
+          name: userData?.fullName || '',
+          email: userData?.email || '',
+          contact: userData?.phoneNumber || '',
+        },
+        theme: {
+          color: '#2563eb',
+        },
+        modal: {
+          ondismiss: () => {
+            setSubmitting(false);
+          },
+        },
       };
 
-      await createPayment(payload);
-      toast.success(`Payment of ₹${selectedPolicy.premiumAmount.toLocaleString('en-IN')} successful! Policy is now active.`);
-      
-      // Close modal & reload lists
-      setSelectedPolicy(null);
-      loadPolicies();
-      loadPayments();
+      if (!window.Razorpay) {
+        toast.error('Razorpay SDK script not loaded. Please refresh the page and try again.');
+        setSubmitting(false);
+        return;
+      }
+
+      const razorpayInstance = new window.Razorpay(options);
+      razorpayInstance.on('payment.failed', (response) => {
+        toast.error(`Payment Failed: ${response.error?.description || 'Transaction unsuccessful'}`);
+        setSubmitting(false);
+      });
+
+      razorpayInstance.open();
+
     } catch (err) {
-      console.error('Error submitting payment:', err);
-      toast.error(err?.response?.data?.message || 'Payment processing failed. Please try again.');
-    } finally {
+      console.error('Error initiating Razorpay checkout:', err);
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to initiate Razorpay payment.');
       setSubmitting(false);
     }
   };
@@ -153,111 +237,197 @@ const Payments = () => {
                     No policies found in your account directory.
                   </div>
                 ) : (
-                  <div className="policies-stack">
-                    {sortedPoliciesList.map((policy) => {
-                      const isActive = policy.policyStatus === 'ACTIVE';
-                      const isCancelled = policy.policyStatus === 'CANCELLED';
-                      const canPay = !isActive && !isCancelled;
-                      const statusClass = isActive ? 'active' : isCancelled ? 'cancelled' : 'inactive';
-                      const statusLabel = isActive ? 'Active' : isCancelled ? 'Cancelled' : 'Inactive';
-                      return (
-                        <div className={`policy-payment-card ${isCancelled ? 'cancelled-card' : ''}`} key={policy.id}>
-                          <div className="card-top">
-                            <div className="plan-info">
-                              <h4>{policy.planName}</h4>
-                              <p>{policy.policyNumber} • {policy.productType}</p>
+                  <>
+                    <div className="policies-stack">
+                      {paginatedPolicies.map((policy) => {
+                        const isActive = policy.policyStatus === 'ACTIVE';
+                        const isCancelled = policy.policyStatus === 'CANCELLED';
+                        const canPay = !isActive && !isCancelled;
+                        const statusClass = isActive ? 'active' : isCancelled ? 'cancelled' : 'inactive';
+                        const statusLabel = isActive ? 'Active' : isCancelled ? 'Cancelled' : 'Inactive';
+                        return (
+                          <div className={`policy-payment-card ${isCancelled ? 'cancelled-card' : ''}`} key={policy.id}>
+                            <div className="card-top">
+                              <div className="plan-info">
+                                <h4>{policy.planName}</h4>
+                                <p>{policy.policyNumber} • {policy.productType}</p>
+                              </div>
+                              <span className={`status-badge ${statusClass}`}>
+                                <span className="pulse-dot"></span>
+                                {statusLabel}
+                              </span>
                             </div>
-                            <span className={`status-badge ${statusClass}`}>
-                              <span className="pulse-dot"></span>
-                              {statusLabel}
-                            </span>
-                          </div>
 
-                          <div className="card-details">
-                            <div className="detail-field">
-                              <span className="field-label">Premium Installment</span>
-                              <span className="field-val highlight mono">
-                                ₹{policy.premiumAmount.toLocaleString('en-IN')}
-                              </span>
+                            <div className="card-details">
+                              <div className="detail-field">
+                                <span className="field-label">Premium Installment</span>
+                                <span className="field-val highlight mono">
+                                  ₹{policy.premiumAmount.toLocaleString('en-IN')}
+                                </span>
+                              </div>
+                              <div className="detail-field">
+                                <span className="field-label">Billing Frequency</span>
+                                <span className="field-val" style={{ textTransform: 'uppercase', fontSize: '11.5px' }}>
+                                  {policy.premiumType}
+                                </span>
+                              </div>
+                              <div className="detail-field">
+                                <span className="field-label">Coverage Insured</span>
+                                <span className="field-val mono">
+                                  ₹{policy.coverageAmount.toLocaleString('en-IN')}
+                                </span>
+                              </div>
+                              <div className="detail-field">
+                                <span className="field-label">Available Balance</span>
+                                <span className="field-val mono" style={{ color: 'var(--primary)' }}>
+                                  ₹{(policy.remainingCoverage !== undefined && policy.remainingCoverage !== null ? policy.remainingCoverage : policy.coverageAmount).toLocaleString('en-IN')}
+                                </span>
+                              </div>
                             </div>
-                            <div className="detail-field">
-                              <span className="field-label">Billing Frequency</span>
-                              <span className="field-val" style={{ textTransform: 'uppercase', fontSize: '11.5px' }}>
-                                {policy.premiumType}
-                              </span>
-                            </div>
-                            <div className="detail-field">
-                              <span className="field-label">Coverage Insured</span>
-                              <span className="field-val mono">
-                                ₹{policy.coverageAmount.toLocaleString('en-IN')}
-                              </span>
-                            </div>
-                            <div className="detail-field">
-                              <span className="field-label">Available Balance</span>
-                              <span className="field-val mono" style={{ color: 'var(--primary)' }}>
-                                ₹{(policy.remainingCoverage !== undefined && policy.remainingCoverage !== null ? policy.remainingCoverage : policy.coverageAmount).toLocaleString('en-IN')}
-                              </span>
-                            </div>
-                          </div>
 
-                          {isCancelled && (
-                            <div className="cancelled-notice">
-                              <i className="ph ph-warning-circle"></i>
-                              This policy has been cancelled and cannot be renewed. Please purchase a new policy.
-                            </div>
-                          )}
-
-                          <div className="card-action" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', width: '100%', marginTop: '8px' }}>
-                            <DownloadButton
-                              type="policy"
-                              data={policy}
-                              extraData={{ customerName: userData?.fullName }}
-                              label={<><i className="ph ph-download" /> Download Schedule</>}
-                              title="Download Policy PDF Schedule"
-                              className="btn-pay"
-                              style={{
-                                background: 'transparent',
-                                border: '1.5px solid var(--primary-light)',
-                                color: 'var(--primary-light)',
-                                boxShadow: 'none',
-                                padding: '6px 12px',
-                                fontSize: '12px'
-                              }}
-                            />
-                            {canPay && (
-                              <button 
-                                className="btn-pay"
-                                onClick={() => handleOpenPayModal(policy)}
-                                style={{ padding: '6px 12px', fontSize: '12px' }}
-                              >
-                                Pay ₹{policy.premiumAmount.toLocaleString('en-IN')}
-                              </button>
+                            {isCancelled && (
+                              <div className="cancelled-notice">
+                                <i className="ph ph-warning-circle"></i>
+                                This policy has been cancelled and cannot be renewed. Please purchase a new policy.
+                              </div>
                             )}
+
+                            <div className="card-action" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', width: '100%', marginTop: '8px' }}>
+                              <DownloadButton
+                                type="policy"
+                                data={policy}
+                                extraData={{ customerName: userData?.fullName }}
+                                label={<><i className="ph ph-download" /> Download Schedule</>}
+                                title="Download Policy PDF Schedule"
+                                className="btn-pay"
+                                style={{
+                                  background: 'transparent',
+                                  border: '1.5px solid var(--primary-light)',
+                                  color: 'var(--primary-light)',
+                                  boxShadow: 'none',
+                                  padding: '6px 12px',
+                                  fontSize: '12px'
+                                }}
+                              />
+                              {canPay && (
+                                <button 
+                                  className="btn-pay"
+                                  onClick={() => handleOpenPayModal(policy)}
+                                  style={{ padding: '6px 12px', fontSize: '12px' }}
+                                >
+                                  Pay ₹{policy.premiumAmount.toLocaleString('en-IN')}
+                                </button>
+                              )}
+                            </div>
                           </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Policy Pagination Controls */}
+                    {totalPolicyPages > 1 && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', marginTop: '16px', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          Showing <strong>{policyStartIndex + 1}</strong>-<strong>{policyEndIndex}</strong> of <strong>{totalPolicyElements}</strong> policies
                         </div>
-                      );
-                    })}
-                  </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <button
+                            className="btn-cancel"
+                            onClick={() => setPolicyPage(prev => Math.max(prev - 1, 0))}
+                            disabled={policyPage === 0}
+                            style={{
+                              padding: '5px 10px',
+                              fontSize: '12px',
+                              borderRadius: '6px',
+                              cursor: policyPage === 0 ? 'not-allowed' : 'pointer',
+                              opacity: policyPage === 0 ? 0.5 : 1,
+                              background: 'var(--card)',
+                              border: '1px solid var(--border)',
+                              color: 'var(--text-primary)'
+                            }}
+                          >
+                            <i className="ph ph-caret-left"></i> Prev
+                          </button>
+                          <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                            Page {policyPage + 1} of {totalPolicyPages}
+                          </span>
+                          <button
+                            className="btn-cancel"
+                            onClick={() => setPolicyPage(prev => Math.min(prev + 1, totalPolicyPages - 1))}
+                            disabled={policyPage >= totalPolicyPages - 1}
+                            style={{
+                              padding: '5px 10px',
+                              fontSize: '12px',
+                              borderRadius: '6px',
+                              cursor: policyPage >= totalPolicyPages - 1 ? 'not-allowed' : 'pointer',
+                              opacity: policyPage >= totalPolicyPages - 1 ? 0.5 : 1,
+                              background: 'var(--card)',
+                              border: '1px solid var(--border)',
+                              color: 'var(--text-primary)'
+                            }}
+                          >
+                            Next <i className="ph ph-caret-right"></i>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
 
             {/* Right Column: Transaction Logs */}
             <div className={`section-card ${!isCustomer ? 'full-width' : ''}`}>
-              <h3 className="section-title">
-                <i className="ph ph-clipboard"></i> {isCustomer ? "Recent Payment Transactions" : "System Payment Transactions"}
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                <h3 className="section-title" style={{ margin: 0 }}>
+                  <i className="ph ph-clipboard"></i> {isCustomer ? "Recent Payment Transactions" : "System Payment Transactions"}
+                </h3>
+
+                {/* Search Filter Input */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '6px 12px', minWidth: '240px' }}>
+                  <i className="ph ph-magnifying-glass" style={{ color: 'var(--text-muted)', fontSize: '15px' }}></i>
+                  <input
+                    type="text"
+                    placeholder="Search ref, policy no, mode..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '13px', color: 'var(--text-primary)', width: '100%' }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '14px', display: 'flex', alignItems: 'center' }}
+                      title="Clear search"
+                    >
+                      <i className="ph ph-x-circle"></i>
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {transactionsLoading ? (
                 <div className="loading-container" style={{ width: '100%', padding: '20px 40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <Skeleton height={60} />
                   <Skeleton count={5} height={50} style={{ marginBottom: '8px' }} />
                 </div>
-              ) : transactionsList.length === 0 ? (
-                <div className="empty-state">
-                  No payment transactions have been logged yet.
+              ) : filteredTransactionsList.length === 0 ? (
+                <div className="empty-state" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
+                  <i className="ph ph-magnifying-glass" style={{ fontSize: '32px', marginBottom: '8px', display: 'block', color: 'var(--text-muted)' }}></i>
+                  {searchQuery ? `No transactions match "${searchQuery}"` : "No payment transactions have been logged yet."}
+                  {searchQuery && (
+                    <div style={{ marginTop: '12px' }}>
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        style={{ background: 'transparent', border: '1px solid var(--border)', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', color: 'var(--primary-light)' }}
+                      >
+                        Clear Search Filter
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="table-container" style={{ margin: '20px 0 0 0', boxShadow: 'none', border: '1px solid var(--border)' }}>
+                <div className="table-container" style={{ margin: '8px 0 0 0', boxShadow: 'none', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
                   <div className="payments-table-wrapper">
                     <table className="payments-table">
                       <thead>
@@ -272,7 +442,7 @@ const Payments = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {sortedTransactionsList.map((txn) => {
+                        {paginatedTransactions.map((txn) => {
                           const dateObj = new Date(txn.paymentDate);
                           const formattedDate = dateObj.toLocaleDateString('en-IN', {
                             day: 'numeric',
@@ -333,6 +503,69 @@ const Payments = () => {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Pagination Footer Controls */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--surface)', borderTop: '1px solid var(--border)', flexWrap: 'wrap', gap: '12px' }}>
+                    <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                      Showing <strong>{startIndex + 1}</strong> to <strong>{endIndex}</strong> of <strong>{totalElements}</strong> transactions
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        <span>Per page:</span>
+                        <select
+                          value={pageSize}
+                          onChange={(e) => setPageSize(Number(e.target.value))}
+                          style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text-primary)', fontSize: '12px', cursor: 'pointer' }}
+                        >
+                          <option value={5}>5</option>
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                        </select>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button
+                          className="btn-cancel"
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
+                          disabled={currentPage === 0}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            borderRadius: '6px',
+                            cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
+                            opacity: currentPage === 0 ? 0.5 : 1,
+                            background: 'var(--card)',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-primary)'
+                          }}
+                        >
+                          <i className="ph ph-caret-left"></i> Prev
+                        </button>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                          Page {currentPage + 1} of {totalPages}
+                        </span>
+                        <button
+                          className="btn-cancel"
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
+                          disabled={currentPage >= totalPages - 1}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            borderRadius: '6px',
+                            cursor: currentPage >= totalPages - 1 ? 'not-allowed' : 'pointer',
+                            opacity: currentPage >= totalPages - 1 ? 0.5 : 1,
+                            background: 'var(--card)',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-primary)'
+                          }}
+                        >
+                          Next <i className="ph ph-caret-right"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -348,7 +581,7 @@ const Payments = () => {
           title={<><i className="ph ph-credit-card"></i> Secure Payment Portal</>}
           maxWidth="500px"
         >
-          <form onSubmit={handleConfirmPayment} style={{ marginTop: '12px' }}>
+          <div style={{ marginTop: '12px' }}>
             <div className="modal-summary">
               <div className="modal-summary-row">
                 <span className="modal-summary-label">Plan Name</span>
@@ -360,6 +593,12 @@ const Payments = () => {
                   {selectedPolicy.policyNumber}
                 </span>
               </div>
+              <div className="modal-summary-row">
+                <span className="modal-summary-label">Payment Gateway</span>
+                <span className="modal-summary-val" style={{ fontWeight: '700', color: '#2563eb' }}>
+                  Razorpay (UPI / Card / NetBanking)
+                </span>
+              </div>
               <div className="modal-summary-row" style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', marginTop: '4px' }}>
                 <span className="modal-summary-label" style={{ fontWeight: '700' }}>Amount to Pay</span>
                 <span className="modal-summary-val highlight">
@@ -368,35 +607,7 @@ const Payments = () => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Payment Mode</label>
-              <select 
-                className="form-input"
-                value={paymentMode}
-                onChange={(e) => setPaymentMode(e.target.value)}
-                disabled={submitting}
-              >
-                <option value="UPI">UPI (Google Pay, PhonePe, Paytm)</option>
-                <option value="CARD">Credit / Debit Card</option>
-                <option value="NET_BANKING">Net Banking</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Transaction Reference Code</label>
-              <input 
-                type="text" 
-                className="form-input" 
-                style={{ fontFamily: 'var(--font-mono)', fontWeight: '600' }}
-                value={txnRef}
-                onChange={(e) => setTxnRef(e.target.value)}
-                placeholder="TXN-YYYYMMDD-XXXXXXXX"
-                required
-                disabled={submitting}
-              />
-            </div>
-
-            <div className="modal-actions">
+            <div className="modal-actions" style={{ marginTop: '20px' }}>
               <button 
                 type="button" 
                 className="btn-cancel" 
@@ -406,14 +617,17 @@ const Payments = () => {
                 Cancel
               </button>
               <button 
-                type="submit" 
+                type="button" 
                 className="btn-confirm" 
+                onClick={() => handleConfirmRazorpayPayment(selectedPolicy)}
                 disabled={submitting}
+                style={{ background: '#2563eb', color: '#ffffff', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
               >
-                {submitting ? 'Processing...' : `Confirm Payment`}
+                <i className="ph ph-shield-check" style={{ fontSize: '18px' }}></i>
+                {submitting ? 'Processing...' : `Pay ₹${selectedPolicy.premiumAmount.toLocaleString('en-IN')} via Razorpay`}
               </button>
             </div>
-          </form>
+          </div>
         </Modal>
       )}
     </>

@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import "../../styles/LandingPage.css";
+import PremiumCalculatorWidget from "../../components/PremiumCalculatorWidget";
 
 /* ─────────────────────────────────────────
    NAV links
    ───────────────────────────────────────── */
 const NAV_LINKS = [
-  { id: "home",     label: "Home" },
-  { id: "plans",    label: "Plans" },
-  { id: "claims",   label: "Claims" },
-  { id: "about",    label: "About" },
-  { id: "contact",  label: "Contact" },
+  { id: "home",       label: "Home" },
+  { id: "plans",      label: "Plans" },
+  { id: "calculator", label: "Calculator" },
+  { id: "claims",     label: "Claims" },
+  { id: "about",      label: "About" },
+  { id: "contact",    label: "Contact" },
 ];
 
 /* ─────────────────────────────────────────
@@ -226,6 +227,7 @@ const LandingPage = () => {
     let sectionId = "home";
     if (location.pathname === "/about") sectionId = "about";
     else if (location.pathname === "/plans") sectionId = "plans";
+    else if (location.pathname === "/calculator") sectionId = "calculator";
     else if (location.pathname === "/pricing") sectionId = "pricing";
     else if (location.pathname === "/features") sectionId = "features";
     else if (location.pathname === "/claims-info") sectionId = "claims";
@@ -550,6 +552,19 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* ══════════ LIVE PREMIUM CALCULATOR SECTION (Light Canvas) ══════════ */}
+      <section id="calculator" className="rev-band-light reveal-hidden">
+        <div className="rev-container">
+          <div className="rev-section-header rev-header-light">
+            <span className="rev-section-tag">Instant Quote</span>
+            <h2 className="rev-display-lg">Generate your premium in real time.</h2>
+            <p className="rev-body-lg">Enter your coverage preferences to calculate instant policy quotes calculated using our actuarial risk formula.</p>
+          </div>
+
+          <PremiumCalculatorWidget />
+        </div>
+      </section>
+
       {/* ══════════ PRICING SECTION (Light Canvas) ══════════ */}
       <section id="pricing" className="rev-band-light reveal-hidden">
         <div className="rev-container">
@@ -672,24 +687,39 @@ const LandingPage = () => {
               </div>
             </div>
 
-            <form className="rev-contact-form glass-card" onSubmit={(e) => { e.preventDefault(); alert("Thank you! Our agent will contact you shortly."); }}>
+            <form className="rev-contact-form glass-card" onSubmit={async (e) => {
+              e.preventDefault();
+              const form = e.target;
+              const fullName = form.fullName.value;
+              const email = form.email.value;
+              const subject = form.subject.value;
+              const message = form.message.value;
+              try {
+                const { submitQuery } = await import('../../services/CustomerQueryService');
+                await submitQuery({ fullName, email, subject, message });
+                alert("Thank you! Your message has been sent successfully. Our support team will get back to you shortly.");
+                form.reset();
+              } catch (err) {
+                alert("Failed to send message. Please try again.");
+              }
+            }}>
               <div className="form-group-row">
                 <div className="form-group">
                   <label className="form-label">Full Name</label>
-                  <input type="text" className="form-input" placeholder="John Doe" required />
+                  <input type="text" name="fullName" className="form-input" placeholder="John Doe" required />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Email Address</label>
-                  <input type="email" className="form-input" placeholder="john@example.com" required />
+                  <input type="email" name="email" className="form-input" placeholder="john@example.com" required />
                 </div>
               </div>
               <div className="form-group">
                 <label className="form-label">Subject</label>
-                <input type="text" className="form-input" placeholder="Inquiry about Life Gold Plan" required />
+                <input type="text" name="subject" className="form-input" placeholder="Inquiry about Life Gold Plan" required />
               </div>
               <div className="form-group">
                 <label className="form-label">Message</label>
-                <textarea className="form-input" rows="4" placeholder="Type your message here..." required></textarea>
+                <textarea name="message" className="form-input" rows="4" placeholder="Type your message here..." required></textarea>
               </div>
               <button type="submit" className="rev-btn rev-btn-lg rev-btn-brand rev-btn-gradient-border">
                 Send Message

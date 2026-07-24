@@ -670,6 +670,48 @@ const Profile = () => {
                     }}
                   />
                 )}
+
+                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <a
+                    href="/contact"
+                    style={{
+                      background: 'var(--primary)',
+                      color: '#ffffff',
+                      textDecoration: 'none',
+                      padding: '10px 16px',
+                      borderRadius: '8px',
+                      fontSize: '13.5px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justify: 'center',
+                      gap: '8px',
+                      textAlign: 'center',
+                      boxShadow: '0 2px 8px rgba(37, 99, 168, 0.2)'
+                    }}
+                  >
+                    <i className="ph ph-envelope-simple" style={{ fontSize: '16px' }}></i> Contact Us & Support
+                  </a>
+                  <a
+                    href="/queries"
+                    style={{
+                      background: 'transparent',
+                      border: '1.5px solid var(--border)',
+                      color: 'var(--text-primary)',
+                      textDecoration: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontSize: '12.5px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justify: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <i className="ph ph-chat-text" style={{ fontSize: '15px' }}></i> My Support Queries
+                  </a>
+                </div>
               </div>
 
               <div className="profile-details-card">
