@@ -1,7 +1,7 @@
 import api from "../api/api";
 
 // GET /api/payments?page=0&size=10  [admin]
-export const readAllPayments = async (page = 0, size = 10) => {
+export const readAllPayments = async (page = 0, size = 100) => {
     try {
         const response = await api.get(`payments`, { params: { page, size } });
         return response;
@@ -12,7 +12,7 @@ export const readAllPayments = async (page = 0, size = 10) => {
 };
 
 // GET /api/payments/my?page=0&size=10
-export const readMyPayements = async (page = 0, size = 10) => {
+export const readMyPayements = async (page = 0, size = 100) => {
     try {
         const response = await api.get(`payments/my`, { params: { page, size } });
         return response.data.content;

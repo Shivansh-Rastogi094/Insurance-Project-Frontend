@@ -28,7 +28,7 @@ export const getCustomerById = async (id) => {
 };
 
 // GET /api/customers?page=0&size=10  [admin]
-export const readAllCustomers = async (page = 0, size = 10) => {
+export const readAllCustomers = async (page = 0, size = 100) => {
     try {
         const response = await api.get("customers", { params: { page, size } });
         return response;

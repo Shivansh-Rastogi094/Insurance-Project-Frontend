@@ -33,7 +33,10 @@ const Payments = () => {
 
   // Sort policies in descending order (newest / recent first)
   const sortedPoliciesList = [...policiesList].sort((a, b) => {
-    return (b.id || 0) - (a.id || 0);
+      const aActive = a.policyStatus === 'ACTIVE' ? 1 : 0;
+      const bActive = b.policyStatus === 'ACTIVE' ? 1 : 0;
+      if (aActive !== bActive) return aActive - bActive;
+      return (b.id || 0) - (a.id || 0);
   });
 
   // Sort recent transactions in descending order (newest payment date / ID first)
