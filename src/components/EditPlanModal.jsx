@@ -271,9 +271,6 @@ const EditPlanModal = ({ isOpen, onClose, plan, onSave, submitting = false }) =>
               onChange={(e) => setFormData({ ...formData, premiumType: e.target.value })}
             >
               <option value="ANNUAL">ANNUAL</option>
-              <option value="MONTHLY">MONTHLY</option>
-              <option value="SEMI_ANNUAL">SEMI_ANNUAL</option>
-              <option value="QUARTERLY">QUARTERLY</option>
               <option value="ONE_TIME">ONE_TIME</option>
             </select>
           </div>
