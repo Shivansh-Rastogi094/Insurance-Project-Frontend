@@ -494,7 +494,8 @@ const Profile = () => {
     state: '',
     pinCode: '',
     nomineeName: '',
-    nomineeRelation: ''
+    nomineeRelation: '',
+    isSmoker: false
   }, validationFn);
 
   const openFormModal = () => {
@@ -506,13 +507,15 @@ const Profile = () => {
         state: profile.state || '',
         pinCode: profile.pinCode || '',
         nomineeName: profile.nomineeName || '',
-        nomineeRelation: profile.nomineeRelation || ''
+        nomineeRelation: profile.nomineeRelation || '',
+        isSmoker: Boolean(profile.isSmoker)
       });
     } else {
       resetForm();
     }
     setShowModal(true);
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -529,7 +532,8 @@ const Profile = () => {
           state: formData.state.trim(),
           pinCode: formData.pinCode.toString().trim(),
           nomineeName: formData.nomineeName.trim(),
-          nomineeRelation: formData.nomineeRelation.trim()
+          nomineeRelation: formData.nomineeRelation.trim(),
+          isSmoker: Boolean(formData.isSmoker)
         };
         let updateId = profile.id;
         const token = localStorage.getItem("token");
@@ -570,8 +574,10 @@ const Profile = () => {
           state: formData.state.trim(),
           pinCode: formData.pinCode.toString().trim(),
           nomineeName: formData.nomineeName.trim(),
-          nomineeRelation: formData.nomineeRelation.trim()
+          nomineeRelation: formData.nomineeRelation.trim(),
+          isSmoker: Boolean(formData.isSmoker)
         };
+
         await createCustomerProfile(payload);
         toast.success("Profile completed successfully!");
         setShowModal(false);
@@ -684,7 +690,7 @@ const Profile = () => {
                       fontWeight: '600',
                       display: 'flex',
                       alignItems: 'center',
-                      justify: 'center',
+                      justifyContent: 'center',
                       gap: '8px',
                       textAlign: 'center',
                       boxShadow: '0 2px 8px rgba(37, 99, 168, 0.2)'
@@ -705,7 +711,7 @@ const Profile = () => {
                       fontWeight: '600',
                       display: 'flex',
                       alignItems: 'center',
-                      justify: 'center',
+                      justifyContent: 'center',
                       gap: '6px'
                     }}
                   >
@@ -773,6 +779,14 @@ const Profile = () => {
                         {profile?.nomineeRelation || 'Not Provided'}
                       </span>
                     </div>
+
+                    <div className="detail-item">
+                      <span className="detail-label">Smoker / Tobacco Status</span>
+                      <span className="detail-value" style={{ color: profile?.isSmoker ? '#EF4444' : '#10B981', fontWeight: '700' }}>
+                        {profile?.isSmoker ? '🚬 Smoker (Surcharge Applies)' : '🚭 Non-Smoker'}
+                      </span>
+                    </div>
+
                   </div>
                 </div>
               </div>
@@ -882,6 +896,31 @@ const Profile = () => {
               </select>
               {formErrors.nomineeRelation && <div className="form-error">⚠️ {formErrors.nomineeRelation}</div>}
             </div>
+          </div>
+
+          {/* Tobacco / Smoker Status Checkbox */}
+          <div className="form-group" style={{ background: formData.isSmoker ? 'rgba(239, 68, 68, 0.06)' : 'rgba(16, 185, 129, 0.06)', border: formData.isSmoker ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '8px', padding: '12px 14px', marginTop: '6px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', margin: 0 }}>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: formData.isSmoker ? '#EF4444' : '#10B981' }}>
+                🚬 Tobacco / Smoker Status
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  checked={Boolean(formData.isSmoker)}
+                  onChange={(e) => setFormData({ ...formData, isSmoker: e.target.checked })}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                  I consume tobacco / cigarette products
+                </span>
+              </div>
+            </label>
+            {formData.isSmoker && (
+              <div style={{ fontSize: '11.5px', color: '#EF4444', marginTop: '6px' }}>
+                ⚠️ Smoker status adds an actuarial risk surcharge (+15% to +75%) to policy premium calculations.
+              </div>
+            )}
           </div>
 
           <div className="modal-actions">

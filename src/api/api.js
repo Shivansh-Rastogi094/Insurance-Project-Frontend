@@ -30,7 +30,7 @@ api.interceptors.response.use(
     ) {
       // Clear token and userData
       localStorage.removeItem("userData");
-      localStorage.setItem("token", "null");
+      localStorage.removeItem("token");
       
       // Store session expiration flag to display toast on login page
       localStorage.setItem("session_expired_toast", "true");

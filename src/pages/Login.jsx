@@ -10,18 +10,24 @@ const Login = () => {
   const { login } = useAuth();
   const toast = useToast();
 
+  const [rememberMe, setRememberMe] = useState(() => {
+    return localStorage.getItem("remember_me") === "true";
+  });
+
+  const [user, setUser] = useState({
+    email: localStorage.getItem("remembered_email") || "",
+    password: "",
+  });
+
+  const isSubmittingRef = React.useRef(false);
+
   React.useEffect(() => {
     const sessionExpired = localStorage.getItem("session_expired_toast");
     if (sessionExpired === "true") {
       toast.error("Your session has expired. Please login again to continue.");
       localStorage.removeItem("session_expired_toast");
     }
-  }, [toast]);
-
-  const [user, setUser] = useState({
-    email: "",
-    password: "",
-  });
+  }, []);
 
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
@@ -71,12 +77,22 @@ const Login = () => {
   };
 
   const handleLogin = async () => {
+    if (isSubmittingRef.current || loading) return;
     if (!validate()) return;
 
     try {
+      isSubmittingRef.current = true;
       setLoading(true);
       setApiError("");
       const response = await LoginService(user);
+
+      if (rememberMe) {
+        localStorage.setItem("remember_me", "true");
+        localStorage.setItem("remembered_email", user.email);
+      } else {
+        localStorage.removeItem("remember_me");
+        localStorage.removeItem("remembered_email");
+      }
 
       login(response.data);
 
@@ -99,6 +115,7 @@ const Login = () => {
       toast.error("Login failed: " + (error?.response?.data?.message || "Invalid credentials"));
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -226,7 +243,13 @@ const Login = () => {
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "-8px", marginBottom: "20px" }}>
                   <span style={{ fontSize: "12.5px", color: "#64748b", display: "flex", alignItems: "center", gap: "4px" }}>
-                    <input type="checkbox" id="rememberMe" style={{ accentColor: "var(--primary-light)" }} />
+                    <input
+                      type="checkbox"
+                      id="rememberMe"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      style={{ accentColor: "var(--primary-light)" }}
+                    />
                     <label htmlFor="rememberMe" style={{ cursor: "pointer", userSelect: "none" }}>Remember me</label>
                   </span>
                   <a

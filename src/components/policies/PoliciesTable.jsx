@@ -34,7 +34,9 @@ const PoliciesTable = ({ policies, onCancelClick, userRole }) => {
               const startDate = policy.startDate
                 ? new Date(policy.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
                 : 'N/A';
-              const statusClass = (policy.policyStatus || 'PENDING').toLowerCase();
+              const rawStatus = policy.policyStatus || 'PENDING_PAYMENT';
+              const statusClass = rawStatus === 'PENDING_PAYMENT' ? 'pending' : rawStatus.toLowerCase();
+              const statusLabel = rawStatus === 'PENDING_PAYMENT' ? 'Pending Payment' : rawStatus.charAt(0) + rawStatus.slice(1).toLowerCase();
 
               return (
                 <tr key={policy.id}>
@@ -48,7 +50,7 @@ const PoliciesTable = ({ policies, onCancelClick, userRole }) => {
                   <td>{startDate}</td>
                   <td>
                     <span className={`status-badge ${statusClass}`}>
-                      {policy.policyStatus || 'PENDING'}
+                      {statusLabel}
                     </span>
                   </td>
                   <td style={{ textAlign: 'right', paddingRight: '24px' }}>
@@ -72,7 +74,10 @@ const PoliciesTable = ({ policies, onCancelClick, userRole }) => {
                         return (
                           <button
                             className="action-btn cancel-policy"
-                            onClick={() => !isNotCancellable && onCancelClick(policy)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (!isNotCancellable) onCancelClick(e, policy);
+                            }}
                             disabled={isNotCancellable}
                             title={
                               isCancelled

@@ -12,12 +12,12 @@ export const readAllPayments = async (page = 0, size = 10) => {
 };
 
 // GET /api/payments/my?page=0&size=10
-export const readMyPayements = async (page = 0, size = 10) => {
+export const readMyPayments = async (page = 0, size = 10) => {
     try {
         const response = await api.get(`payments/my`, { params: { page, size } });
         return response.data.content;
     } catch (error) {
-        console.error("Error in readMyPayements:", error);
+        console.error("Error in readMyPayments:", error);
         throw error;
     }
 };

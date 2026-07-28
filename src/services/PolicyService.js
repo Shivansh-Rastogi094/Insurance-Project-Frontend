@@ -1,9 +1,9 @@
 import api from "../api/api";
 
-// GET /api/policies?page=0&size=10  [admin]
-export const readAllPolicies = async (page = 0, size = 10) => {
+// GET /api/policies?page=0&size=1000&sort=id,desc  [admin]
+export const readAllPolicies = async (page = 0, size = 1000) => {
     try {
-        const response = await api.get("policies", { params: { page, size } });
+        const response = await api.get("policies", { params: { page, size, sort: 'id,desc' } });
         return response;
     } catch (err) {
         console.error("Error in readAllPolicies:", err);
@@ -11,10 +11,10 @@ export const readAllPolicies = async (page = 0, size = 10) => {
     }
 };
 
-// GET /api/policies/my?page=0&size=10
-export const readMyPolicies = async (page = 0, size = 10) => {
+// GET /api/policies/my?page=0&size=1000&sort=id,desc
+export const readMyPolicies = async (page = 0, size = 1000) => {
     try {
-        const response = await api.get("policies/my", { params: { page, size } });
+        const response = await api.get("policies/my", { params: { page, size, sort: 'id,desc' } });
         return response.data.content;
     } catch (error) {
         console.error("Error in readMyPolicies:", error);

@@ -3,7 +3,7 @@ import Sidebar from '../components/Sidebar';
 import { readMyPolicies } from '../services/PolicyService';
 import Card from '../components/Card';
 import { readMyClaims } from '../services/ClaimService';
-import { readMyPayements } from '../services/PaymentService';
+import { readMyPayments } from '../services/PaymentService';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -653,7 +653,7 @@ const UserDashboard = () => {
   };
 
   const myPayments = async()=>{
-    const response = await readMyPayements();
+    const response = await readMyPayments();
     setPayments(response);
   }
 
@@ -737,6 +737,7 @@ const UserDashboard = () => {
                   const rawStatus =  p.policyStatus;
                   const statusLabel = rawStatus === "PENDING_PAYMENT" ? "Inactive" : rawStatus.toLowerCase();
                   const badgeClass = rawStatus === "PENDING_PAYMENT" ? "expired" : rawStatus.toLowerCase();
+                  const isPendingPayment = rawStatus === "PENDING_PAYMENT";
                   return (
                     <div className="compact-policy-card" key={p.id || p.policyId || index}>
                       <div className="policy-info">
@@ -747,6 +748,25 @@ const UserDashboard = () => {
                         <span className={`status-badge ${badgeClass}`}>
                           {statusLabel}
                         </span>
+                        {isPendingPayment && (
+                          <button
+                            onClick={() => navigate('/payments')}
+                            style={{
+                              background: 'var(--primary)',
+                              color: '#ffffff',
+                              border: 'none',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              cursor: 'pointer',
+                              marginLeft: '8px',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            💳 Pay Now
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

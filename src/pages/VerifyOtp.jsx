@@ -197,7 +197,7 @@ const VerifyOtp = () => {
               placeholder="your@email.com"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setEmailError(""); setApiError(""); }}
-              disabled={loading || step === 2}
+              disabled={loading}
             />
             {emailError && <span className="otp-error-text">{emailError}</span>}
           </div>
@@ -243,24 +243,22 @@ const VerifyOtp = () => {
         </form>
 
         {/* Resend OTP */}
-        {step === 1 && (
-          <div className="resend-row">
-            Didn't receive the OTP?{" "}
-            {cooldown > 0 ? (
-              <span>
-                Resend in <span className="resend-countdown">{cooldown}s</span>
-              </span>
-            ) : (
-              <button
-                className="resend-btn"
-                onClick={handleResend}
-                disabled={resending || cooldown > 0}
-              >
-                {resending ? "Sending..." : "Resend OTP"}
-              </button>
-            )}
-          </div>
-        )}
+        <div className="resend-row">
+          Didn't receive the OTP?{" "}
+          {cooldown > 0 ? (
+            <span>
+              Resend in <span className="resend-countdown">{cooldown}s</span>
+            </span>
+          ) : (
+            <button
+              className="resend-btn"
+              onClick={handleResend}
+              disabled={resending || cooldown > 0}
+            >
+              {resending ? "Sending..." : "Resend OTP"}
+            </button>
+          )}
+        </div>
 
         {/* Back to login */}
         <div className="otp-footer">

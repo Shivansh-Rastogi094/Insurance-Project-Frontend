@@ -2,9 +2,33 @@ import React, { createContext, useState, useContext } from 'react';
 
 const AuthContext = createContext(null);
 
+// Helper: decode JWT payload and check expiry (client-side, no verification)
+const isTokenExpired = (token) => {
+  if (!token) return true;
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+    );
+    const { exp } = JSON.parse(jsonPayload);
+    if (!exp) return false;
+    return Date.now() >= exp * 1000;
+  } catch {
+    return true;
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [userData, setUserData] = useState(() => {
     const savedUser = localStorage.getItem("userData");
+    const token = localStorage.getItem("token");
+    // BUG-023 fix: If token is expired on load, clear stored session
+    if (savedUser && isTokenExpired(token)) {
+      localStorage.removeItem("userData");
+      localStorage.removeItem("token");
+      return null;
+    }
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
@@ -17,7 +41,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUserData(null);
     localStorage.removeItem("userData");
-    localStorage.setItem("token", "null");
+    // BUG-001 fix: Remove token instead of storing the string "null"
+    localStorage.removeItem("token");
   };
 
   return (

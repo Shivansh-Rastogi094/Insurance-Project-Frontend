@@ -131,6 +131,10 @@ const Claims = () => {
 
   // Effective Pagination Math
   const totalFilteredCount = filteredClaims.length;
+  // BUG-026 fix: Always use client-side slice for display — data is pre-fetched
+  // For admin/agent without filters, server pagination is used (loadClaims(page))
+  // totalElements from server used for export; client-filtered count shown in UI
+  const serverTotalElements = data?.totalElements || 0;
   const isClientPaginated = isCustomer || Boolean(statusFilter || searchQuery || minAmount || maxAmount || myAssignedOnly || matchSpecializationOnly);
 
   const totalEffectivePages = isClientPaginated
@@ -173,7 +177,8 @@ const Claims = () => {
         if (exportRange === 'PAGE') {
           claimsToExport = filteredClaims;
         } else {
-          const limit = exportRange === 'FULL' ? totalElements : parseInt(customExportLimit);
+          // BUG-005 fix: Use serverTotalElements (derived from data?.totalElements) instead of undefined totalElements
+          const limit = exportRange === 'FULL' ? serverTotalElements : parseInt(customExportLimit);
           if (!limit || limit <= 0) {
             toast.error("Please enter a valid count.");
             setExporting(false);
@@ -515,7 +520,7 @@ const Claims = () => {
                       onChange={() => setExportRange('FULL')}
                       disabled={exporting}
                     />
-                    Full List ({totalElements} total claims)
+                    Full List ({serverTotalElements} total claims)
                   </label>
 
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer' }}>

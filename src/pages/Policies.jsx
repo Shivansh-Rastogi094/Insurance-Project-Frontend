@@ -14,8 +14,6 @@ import '../styles/Policy.css';
 const Policies = () => {
   const toast = useToast();
   const { userData } = useAuth();
-  const [currentPage, setCurrentPage] = useState(0);
-  const pageSize = 10;
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,22 +39,21 @@ const Policies = () => {
   const [customExportLimit, setCustomExportLimit] = useState('50');
   const [exporting, setExporting] = useState(false);
 
-  const fetchPoliciesData = useCallback(async (page = 0) => {
-    const response = await readAllPolicies(page, pageSize);
+  const fetchPoliciesData = useCallback(async () => {
+    const response = await readAllPolicies(0, 1000);
     return response?.data || response || {};
   }, []);
 
-  const { data, loading, error, execute: loadPolicies } = useFetch(fetchPoliciesData);
+  const { data, setData, loading, error, execute: loadPolicies } = useFetch(fetchPoliciesData);
 
   useEffect(() => {
-    loadPolicies(currentPage);
-  }, [currentPage, loadPolicies]);
+    loadPolicies();
+  }, [loadPolicies]);
 
-  const policiesList = data?.content || [];
-  const totalPages = data?.totalPages || 1;
-  const totalElements = data?.totalElements || 0;
+  const policiesList = Array.isArray(data) ? data : (data?.content || []);
+  const totalElements = data?.totalElements || policiesList.length;
 
-  // Compute filtered policies list
+  // Compute filtered policies list (always from full list)
   const filteredPolicies = policiesList.filter(policy => {
     if (statusFilter && (policy.policyStatus || '').toUpperCase() !== statusFilter.toUpperCase()) {
       return false;
@@ -96,25 +93,42 @@ const Policies = () => {
     ? userData.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
     : "U";
 
-  const handleCancelClick = (policy) => {
+  const handleCancelClick = (e, policy) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const target = policy || e;
     const role = userData?.role;
     if (role !== 'ADMIN' && role !== 'SUPER_AGENT') {
       toast.error('Only Admin and Super Agent can cancel policies.');
       return;
     }
-    setTargetPolicy(policy);
+    setTargetPolicy(target);
     setShowCancelModal(true);
   };
 
-  const handleConfirmCancel = async () => {
+  const handleConfirmCancel = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (!targetPolicy) return;
 
     try {
       setCancelSubmitting(true);
       await cancelPolicy(targetPolicy.id);
       toast.success(`Policy ${targetPolicy.policyNumber} has been successfully cancelled.`);
+      
+      // Dynamically update local state immediately so status and summary counts update without a page reload
+      setData(prevData => {
+        if (!prevData) return prevData;
+        if (Array.isArray(prevData)) {
+          return prevData.map(p => p.id === targetPolicy.id ? { ...p, policyStatus: 'CANCELLED' } : p);
+        }
+        return {
+          ...prevData,
+          content: (prevData.content || []).map(p =>
+            p.id === targetPolicy.id ? { ...p, policyStatus: 'CANCELLED' } : p
+          )
+        };
+      });
+
       setShowCancelModal(false);
-      loadPolicies(currentPage);
     } catch (err) {
       console.error("Policy cancellation failed:", err);
       toast.error(`Operation failed: ${err?.response?.data?.message || err.message}`);
@@ -222,7 +236,7 @@ const Policies = () => {
           ) : error ? (
             <div className="loading-container" style={{ color: 'var(--danger)' }}>
               <p>⚠️ Error loading policies: {error}</p>
-              <button className="page-btn" style={{ marginTop: '12px' }} onClick={() => loadPolicies(currentPage)}>
+              <button className="page-btn" style={{ marginTop: '12px' }} onClick={() => loadPolicies()}>
                 Retry
               </button>
             </div>
@@ -269,31 +283,9 @@ const Policies = () => {
                     onCancelClick={handleCancelClick}
                     userRole={userData?.role}
                   />
-
-                  {/* Pagination footer */}
-                  {totalPages > 1 && (
-                    <div className="pagination-footer">
-                      <div className="pagination-info">
-                        Showing Page <strong>{currentPage + 1}</strong> of <strong>{totalPages}</strong> (<strong>{totalElements}</strong> total policies)
-                      </div>
-                      <div className="pagination-controls">
-                        <button
-                          className="page-btn"
-                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 0))}
-                          disabled={currentPage === 0 || loading}
-                        >
-                          <i className="ph ph-arrow-left"></i> Previous
-                        </button>
-                        <button
-                          className="page-btn"
-                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages - 1))}
-                          disabled={currentPage === totalPages - 1 || loading}
-                        >
-                          Next <i className="ph ph-arrow-right"></i>
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  <div className="pagination-info" style={{ padding: '12px 4px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                    Showing <strong>{filteredPolicies.length}</strong> of <strong>{totalElements}</strong> policies (newest first)
+                  </div>
                 </>
               )}
             </>

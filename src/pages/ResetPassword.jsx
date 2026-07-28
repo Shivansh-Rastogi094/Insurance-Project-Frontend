@@ -19,8 +19,18 @@ const ResetPassword = () => {
     e.preventDefault();
     if (!email.trim() || !otp.trim() || !newPassword.trim()) return;
 
+    if (!/^\d{6}$/.test(otp.trim())) {
+      setError("OTP code must be exactly 6 digits.");
+      return;
+    }
+
     if (newPassword.length < 8) {
       setError("Password must be at least 8 characters long.");
+      return;
+    }
+
+    if (!/(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/.test(newPassword)) {
+      setError("Password must include uppercase, a number, and a special character.");
       return;
     }
 
@@ -78,9 +88,13 @@ const ResetPassword = () => {
                 <span className="input-icon-left"><i className="ph ph-key"></i></span>
                 <input
                   type="text"
+                  inputMode="numeric"
                   className="form-input-premium"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^\d*$/.test(val)) setOtp(val);
+                  }}
                   maxLength={6}
                   required
                   disabled={loading}

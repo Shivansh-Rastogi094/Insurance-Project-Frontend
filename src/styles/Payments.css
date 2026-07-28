@@ -1069,3 +1069,200 @@
     }
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+   Segmented Count Bar & High-Contrast Status Badges
+   ══════════════════════════════════════════════════════════ */
+.segmented-filter-bar {
+  display: flex;
+  align-items: center;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 6px;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 20px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+  overflow-x: auto;
+}
+
+[data-theme='dark'] .segmented-filter-bar {
+  background: #0F172A;
+  border-color: #1E293B;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.segmented-item {
+  flex: 1;
+  min-width: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.segmented-item:hover {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text-primary);
+}
+
+.segment-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+
+.segmented-item:hover .segment-icon-wrapper {
+  transform: scale(1.12);
+}
+
+.segment-count-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(148, 163, 184, 0.15);
+  color: inherit;
+  font-family: var(--font-mono, monospace);
+  transition: all 0.2s ease;
+}
+
+/* 1. All Transactions (Neutral Slate) */
+.segmented-item.item-all .segment-icon-wrapper { color: #64748B; }
+.segmented-item.item-all.active {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+[data-theme='dark'] .segmented-item.item-all.active {
+  background: #1E293B;
+  border-color: #334155;
+  color: #F8FAFC;
+  box-shadow: 0 4px 14px rgba(30, 41, 59, 0.6);
+}
+
+/* 2. Successful (Emerald Green) */
+.segmented-item.item-success .segment-icon-wrapper { color: #10B981; }
+.segmented-item.item-success.active {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #059669;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+}
+[data-theme='dark'] .segmented-item.item-success.active {
+  color: #34D399;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+.segmented-item.item-success.active .segment-count-badge {
+  background: rgba(16, 185, 129, 0.2);
+  color: #047857;
+}
+[data-theme='dark'] .segmented-item.item-success.active .segment-count-badge {
+  color: #6EE7B7;
+}
+
+/* 3. Pending (Amber Orange) */
+.segmented-item.item-pending .segment-icon-wrapper { color: #F59E0B; }
+.segmented-item.item-pending.active {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #D97706;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.2);
+}
+[data-theme='dark'] .segmented-item.item-pending.active {
+  color: #FBBF24;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+}
+.segmented-item.item-pending.active .segment-count-badge {
+  background: rgba(245, 158, 11, 0.2);
+  color: #B45309;
+}
+[data-theme='dark'] .segmented-item.item-pending.active .segment-count-badge {
+  color: #FDE68A;
+}
+
+/* 4. Failed (Rose Red) */
+.segmented-item.item-failed .segment-icon-wrapper { color: #EF4444; }
+.segmented-item.item-failed.active {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #DC2626;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
+}
+[data-theme='dark'] .segmented-item.item-failed.active {
+  color: #F87171;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+}
+.segmented-item.item-failed.active .segment-count-badge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #B91C1C;
+}
+[data-theme='dark'] .segmented-item.item-failed.active .segment-count-badge {
+  color: #FCA5A5;
+}
+
+/* 5. Refunded (Blue) */
+.segmented-item.item-refunded .segment-icon-wrapper { color: #3B82F6; }
+.segmented-item.item-refunded.active {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #2563EB;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
+}
+[data-theme='dark'] .segmented-item.item-refunded.active {
+  color: #60A5FA;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+}
+.segmented-item.item-refunded.active .segment-count-badge {
+  background: rgba(59, 130, 246, 0.2);
+  color: #1D4ED8;
+}
+[data-theme='dark'] .segmented-item.item-refunded.active .segment-count-badge {
+  color: #93C5FD;
+}
+
+/* Status Badges in Table */
+.status-success-badge {
+  color: #10B981 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+.status-pending-badge {
+  color: #F59E0B !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+.status-failed-badge {
+  color: #EF4444 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+.status-refunded-badge {
+  color: #3B82F6 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}

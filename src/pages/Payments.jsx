@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { readMyPolicies } from '../services/PolicyService';
-import { readMyPayements, createPayment, readAllPayments, createRazorpayOrder, verifyRazorpayPayment } from '../services/PaymentService';
+import { readMyPayments, createPayment, readAllPayments, createRazorpayOrder, verifyRazorpayPayment } from '../services/PaymentService';
 import { useFetch } from '../hooks/useFetch';
 import Modal from '../components/Modal';
 import DownloadButton from '../components/DownloadButton';
@@ -19,7 +19,7 @@ const Payments = () => {
 
   const fetchPaymentsData = React.useCallback(async () => {
     if (isCustomer) {
-      const res = await readMyPayements(0, 1000);
+      const res = await readMyPayments(0, 1000);
       return Array.isArray(res) ? res : (res?.content || []);
     } else {
       const response = await readAllPayments(0, 1000);
@@ -52,6 +52,8 @@ const Payments = () => {
   const [pageSize, setPageSize] = useState(5);
   const [policyPage, setPolicyPage] = useState(0);
   const [policyPageSize, setPolicyPageSize] = useState(2);
+  // Segmented Filter State
+  const [statusSegment, setStatusSegment] = useState('ALL');
 
   // Policy Pagination calculation
   const totalPolicyElements = sortedPoliciesList.length;
@@ -60,13 +62,40 @@ const Payments = () => {
   const policyEndIndex = Math.min(policyStartIndex + policyPageSize, totalPolicyElements);
   const paginatedPolicies = sortedPoliciesList.slice(policyStartIndex, policyEndIndex);
 
-  // Reset pagination when search query or page size changes
+  // Compute exact counts for each segment from the full transaction list
+  const segmentCounts = React.useMemo(() => {
+    let all = 0, success = 0, pending = 0, failed = 0;
+    sortedTransactionsList.forEach(txn => {
+      all++;
+      const st = String(txn.paymentStatus || '').toUpperCase();
+      if (st === 'SUCCESS' || st === 'SUCCESSFUL' || st === 'COMPLETED') {
+        success++;
+      } else if (st === 'PENDING' || st === 'PROCESSING' || st === 'INITIATED') {
+        pending++;
+      } else if (st === 'FAILED' || st === 'FAILURE' || st === 'REJECTED') {
+        failed++;
+      } else {
+        pending++; // Default fallback count if status is unknown/other
+      }
+    });
+    return { all, success, pending, failed };
+  }, [sortedTransactionsList]);
+
+  // Reset pagination when search query, page size, or status segment changes
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchQuery, pageSize]);
+    setPolicyPage(0);
+  }, [searchQuery, pageSize, statusSegment]);
 
-  // Filter transactions based on search query
+  // Filter transactions based on selected segment and search query
   const filteredTransactionsList = sortedTransactionsList.filter((txn) => {
+    const st = String(txn.paymentStatus || '').toUpperCase();
+    if (statusSegment !== 'ALL') {
+      if (statusSegment === 'SUCCESS' && !(st === 'SUCCESS' || st === 'SUCCESSFUL' || st === 'COMPLETED')) return false;
+      if (statusSegment === 'PENDING' && !(st === 'PENDING' || st === 'PROCESSING' || st === 'INITIATED')) return false;
+      if (statusSegment === 'FAILED' && !(st === 'FAILED' || st === 'FAILURE' || st === 'REJECTED')) return false;
+    }
+
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase().trim();
     const ref = String(txn.transactionReference || '').toLowerCase();
@@ -86,12 +115,13 @@ const Payments = () => {
   const endIndex = Math.min(startIndex + pageSize, totalElements);
   const paginatedTransactions = filteredTransactionsList.slice(startIndex, endIndex);
 
+  // BUG-003 fix: Include loadPolicies and loadPayments in deps to prevent stale closures
   useEffect(() => {
     if (isCustomer) {
       loadPolicies();
     }
     loadPayments();
-  }, [isCustomer]);
+  }, [isCustomer, loadPolicies, loadPayments]);
 
   const initials = userData?.fullName
     ? userData.fullName.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2)
@@ -238,6 +268,45 @@ const Payments = () => {
                   </div>
                 ) : (
                   <>
+                    {/* Pending Payment Alert Banner */}
+                    {sortedPoliciesList.filter(p => p.policyStatus !== 'ACTIVE' && p.policyStatus !== 'CANCELLED').length > 0 && (
+                      <div style={{
+                        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.03) 100%)',
+                        border: '1.5px solid rgba(245, 158, 11, 0.35)',
+                        borderRadius: '10px',
+                        padding: '14px 16px',
+                        marginBottom: '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                          <i className="ph ph-warning-circle" style={{ color: '#F59E0B', fontSize: '16px' }} />
+                          <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#92400E' }}>
+                            Payment Required — Policy Not Yet Active
+                          </span>
+                        </div>
+                        {sortedPoliciesList
+                          .filter(p => p.policyStatus !== 'ACTIVE' && p.policyStatus !== 'CANCELLED')
+                          .map(p => (
+                            <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', background: 'rgba(255,255,255,0.6)', borderRadius: '8px', padding: '10px 12px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                              <div>
+                                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>{p.planName}</div>
+                                <div style={{ fontSize: '11.5px', color: '#64748B', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>{p.policyNumber}</div>
+                              </div>
+                              <button
+                                className="btn-pay"
+                                onClick={() => handleOpenPayModal(p)}
+                                style={{ padding: '7px 16px', fontSize: '12.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}
+                              >
+                                <i className="ph ph-credit-card" />
+                                ₹{(p.premiumAmount ?? 0).toLocaleString('en-IN')}
+                              </button>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    )}
                     <div className="policies-stack">
                       {paginatedPolicies.map((policy) => {
                         const isActive = policy.policyStatus === 'ACTIVE';
@@ -262,7 +331,7 @@ const Payments = () => {
                               <div className="detail-field">
                                 <span className="field-label">Premium Installment</span>
                                 <span className="field-val highlight mono">
-                                  ₹{policy.premiumAmount.toLocaleString('en-IN')}
+                                  ₹{(policy.premiumAmount ?? 0).toLocaleString('en-IN')}
                                 </span>
                               </div>
                               <div className="detail-field">
@@ -315,7 +384,7 @@ const Payments = () => {
                                   onClick={() => handleOpenPayModal(policy)}
                                   style={{ padding: '6px 12px', fontSize: '12px' }}
                                 >
-                                  Pay ₹{policy.premiumAmount.toLocaleString('en-IN')}
+                                  Pay ₹{(policy.premiumAmount ?? 0).toLocaleString('en-IN')}
                                 </button>
                               )}
                             </div>
@@ -379,6 +448,8 @@ const Payments = () => {
 
             {/* Right Column: Transaction Logs */}
             <div className={`section-card ${!isCustomer ? 'full-width' : ''}`}>
+              
+              {/* Header Title & Search Row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
                 <h3 className="section-title" style={{ margin: 0 }}>
                   <i className="ph ph-clipboard"></i> {isCustomer ? "Recent Payment Transactions" : "System Payment Transactions"}
@@ -406,6 +477,57 @@ const Payments = () => {
                 </div>
               </div>
 
+              {/* Streamlined Segmented Count Filter Bar */}
+              <div className="segmented-filter-bar">
+                <button
+                  type="button"
+                  className={`segmented-item item-all ${statusSegment === 'ALL' ? 'active' : ''}`}
+                  onClick={() => setStatusSegment('ALL')}
+                >
+                  <div className="segment-icon-wrapper">
+                    <i className="ph-bold ph-squares-four"></i>
+                  </div>
+                  <span className="segment-label">All Transactions</span>
+                  <span className="segment-count-badge">{segmentCounts.all}</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`segmented-item item-success ${statusSegment === 'SUCCESS' ? 'active' : ''}`}
+                  onClick={() => setStatusSegment('SUCCESS')}
+                >
+                  <div className="segment-icon-wrapper">
+                    <i className="ph-bold ph-check-circle"></i>
+                  </div>
+                  <span className="segment-label">Successful</span>
+                  <span className="segment-count-badge">{segmentCounts.success}</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`segmented-item item-pending ${statusSegment === 'PENDING' ? 'active' : ''}`}
+                  onClick={() => setStatusSegment('PENDING')}
+                >
+                  <div className="segment-icon-wrapper">
+                    <i className="ph-bold ph-clock"></i>
+                  </div>
+                  <span className="segment-label">Pending</span>
+                  <span className="segment-count-badge">{segmentCounts.pending}</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`segmented-item item-failed ${statusSegment === 'FAILED' ? 'active' : ''}`}
+                  onClick={() => setStatusSegment('FAILED')}
+                >
+                  <div className="segment-icon-wrapper">
+                    <i className="ph-bold ph-x-circle"></i>
+                  </div>
+                  <span className="segment-label">Failed</span>
+                  <span className="segment-count-badge">{segmentCounts.failed}</span>
+                </button>
+              </div>
+
               {transactionsLoading ? (
                 <div className="loading-container" style={{ width: '100%', padding: '20px 40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <Skeleton height={60} />
@@ -414,17 +536,19 @@ const Payments = () => {
               ) : filteredTransactionsList.length === 0 ? (
                 <div className="empty-state" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
                   <i className="ph ph-magnifying-glass" style={{ fontSize: '32px', marginBottom: '8px', display: 'block', color: 'var(--text-muted)' }}></i>
-                  {searchQuery ? `No transactions match "${searchQuery}"` : "No payment transactions have been logged yet."}
-                  {searchQuery && (
-                    <div style={{ marginTop: '12px' }}>
-                      <button
-                        onClick={() => setSearchQuery('')}
-                        style={{ background: 'transparent', border: '1px solid var(--border)', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', color: 'var(--primary-light)' }}
-                      >
-                        Clear Search Filter
-                      </button>
-                    </div>
-                  )}
+                  {searchQuery || statusSegment !== 'ALL' ? (
+                    <>
+                      No transactions match the chosen filter criteria ({statusSegment !== 'ALL' ? `Status: ${statusSegment}` : ''}{searchQuery ? `, Search: "${searchQuery}"` : ''}).
+                      <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => { setSearchQuery(''); setStatusSegment('ALL'); }}
+                          style={{ background: 'transparent', border: '1px solid var(--border)', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', color: 'var(--primary-light)' }}
+                        >
+                          Reset All Filters
+                        </button>
+                      </div>
+                    </>
+                  ) : "No payment transactions have been logged yet."}
                 </div>
               ) : (
                 <div className="table-container" style={{ margin: '8px 0 0 0', boxShadow: 'none', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
@@ -453,6 +577,7 @@ const Payments = () => {
                             hour: '2-digit',
                             minute: '2-digit'
                           });
+                          const st = String(txn.paymentStatus || '').toUpperCase();
 
                           return (
                             <tr key={txn.id}>
@@ -464,13 +589,21 @@ const Payments = () => {
                               </td>
                               <td className="amount-val">₹{(txn.amount || 0).toLocaleString('en-IN')}</td>
                               <td>
-                                {txn.paymentStatus === 'SUCCESS' ? (
-                                  <span className="txn-status">
-                                    <i className="ph-fill ph-check-circle" style={{ color: 'var(--success-color)' }}></i> Success
+                                {st === 'SUCCESS' || st === 'SUCCESSFUL' || st === 'COMPLETED' ? (
+                                  <span className="txn-status status-success-badge">
+                                    <i className="ph-fill ph-check-circle"></i> Success
+                                  </span>
+                                ) : st === 'FAILED' || st === 'FAILURE' || st === 'REJECTED' ? (
+                                  <span className="txn-status status-failed-badge">
+                                    <i className="ph-fill ph-x-circle"></i> Failed
+                                  </span>
+                                ) : st === 'REFUNDED' || st === 'REFUND' ? (
+                                  <span className="txn-status status-refunded-badge">
+                                    <i className="ph-fill ph-arrow-counter-clockwise"></i> Refunded
                                   </span>
                                 ) : (
-                                  <span className="txn-status" style={{ color: 'var(--text-secondary)' }}>
-                                    <i className="ph-fill ph-clock" style={{ color: 'var(--text-secondary)' }}></i> {txn.paymentStatus}
+                                  <span className="txn-status status-pending-badge">
+                                    <i className="ph-fill ph-clock"></i> Pending
                                   </span>
                                 )}
                               </td>
@@ -602,7 +735,7 @@ const Payments = () => {
               <div className="modal-summary-row" style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', marginTop: '4px' }}>
                 <span className="modal-summary-label" style={{ fontWeight: '700' }}>Amount to Pay</span>
                 <span className="modal-summary-val highlight">
-                  ₹{selectedPolicy.premiumAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  ₹{(selectedPolicy.premiumAmount ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
@@ -624,7 +757,7 @@ const Payments = () => {
                 style={{ background: '#2563eb', color: '#ffffff', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
               >
                 <i className="ph ph-shield-check" style={{ fontSize: '18px' }}></i>
-                {submitting ? 'Processing...' : `Pay ₹${selectedPolicy.premiumAmount.toLocaleString('en-IN')} via Razorpay`}
+                {submitting ? 'Processing...' : `Pay ₹${(selectedPolicy.premiumAmount ?? 0).toLocaleString('en-IN')} via Razorpay`}
               </button>
             </div>
           </div>

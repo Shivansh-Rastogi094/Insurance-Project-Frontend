@@ -35,7 +35,8 @@ const PolicyFilterBar = ({
         >
           <option value="">All Statuses</option>
           <option value="ACTIVE">ACTIVE</option>
-          <option value="PENDING">PENDING</option>
+          <option value="PENDING_PAYMENT">PENDING PAYMENT</option>
+          <option value="EXPIRED">EXPIRED</option>
           <option value="CANCELLED">CANCELLED</option>
         </select>
       </div>

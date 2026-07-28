@@ -163,7 +163,6 @@ const AccessDenied = () => {
 export const ProtectedRoute = ({ children, allowedRoles }) => {
   const { userData, isAuthenticated } = useAuth();
 
-  console.log("[ProtectedRoute] checking path", window.location.pathname, "allowed:", allowedRoles, "userRole:", userData?.role);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

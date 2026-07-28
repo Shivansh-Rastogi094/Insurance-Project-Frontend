@@ -9,6 +9,7 @@ import { getCustomerProfile } from '../services/CustomerService';
 import { useFetch } from '../hooks/useFetch';
 import { useForm } from '../hooks/useForm';
 import Modal from '../components/Modal';
+import EditPlanModal from '../components/EditPlanModal';
 import { useToast } from '../components/ToastProvider';
 import '../styles/PlanCatalog.css';
 
@@ -36,14 +37,37 @@ const getAgeLoadingDetails = (age) => {
   return { percent: 60, label: '+60% Senior Risk Loading (Age 60+)' };
 };
 
-const getAgeAdjustedPremium = (basePremium, age) => {
-  if (!basePremium) return 0;
-  const { percent } = getAgeLoadingDetails(age);
-  if (percent === 0) return basePremium;
-  return Number((basePremium * (1 + percent / 100)).toFixed(2));
+const getSmokerLoadingDetails = (isSmoker, age) => {
+  if (!isSmoker) return { percent: 0, label: 'Non-Smoker' };
+  if (!age || age < 30) return { percent: 15, label: '+15% Smoker Loading (Age < 30)' };
+  if (age < 45) return { percent: 25, label: '+25% Smoker Loading (Age 30–44)' };
+  if (age < 60) return { percent: 50, label: '+50% Smoker Loading (Age 45–59)' };
+  return { percent: 75, label: '+75% Smoker Loading (Age 60+)' };
 };
 
+const getFrequencyMultiplier = (freq) => {
+  if (freq === 'HALF_YEARLY') return 0.55;
+  if (freq === 'QUARTERLY') return 0.275;
+  return 1.0; // ANNUAL
+};
+
+const getAdjustedPremium = (basePremium, age, isSmoker, freq, productType = '') => {
+  if (!basePremium) return 0;
+  const isMotorOrTravel = productType && (productType.toUpperCase() === 'MOTOR' || productType.toUpperCase() === 'TRAVEL');
+  const agePct = getAgeLoadingDetails(age).percent;
+  const smokerPct = isMotorOrTravel ? 0 : getSmokerLoadingDetails(isSmoker, age).percent;
+  const totalPercent = agePct + smokerPct;
+  const annualRate = basePremium * (1 + totalPercent / 100);
+  const installmentRate = annualRate * getFrequencyMultiplier(freq);
+  return Math.round(installmentRate);
+};
+
+const getAgeAdjustedPremium = (basePremium, age) => getAdjustedPremium(basePremium, age, false, 'ANNUAL');
+
+
+
 const PlanCatalog = () => {
+
   const toast = useToast();
   const { type, productId } = useParams();
   const navigate = useNavigate();
@@ -54,9 +78,12 @@ const PlanCatalog = () => {
   // Purchase Modal State
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().substring(0, 10));
+  const [selectedFrequency, setSelectedFrequency] = useState('ANNUAL');
+  const [isSmokerSelection, setIsSmokerSelection] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [customerProfile, setCustomerProfile] = useState(null);
   const [checkingProfile, setCheckingProfile] = useState(false);
+
 
   // Add Plan Modal State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -124,15 +151,18 @@ const PlanCatalog = () => {
       navigate('/profile');
       return;
     }
+    setIsSmokerSelection(Boolean(customerProfile?.isSmoker));
+    setSelectedFrequency(plan.premiumType || 'ANNUAL');
     setSelectedPlan(plan);
   };
 
   const isAdminOrAgent = userData?.role === 'ADMIN' || userData?.role === 'AGENT';
 
   // Filter plans matching this product ID and active status (roles ADMIN/AGENT see all)
-  const productPlans = plans.filter(
+  const productPlans = (Array.isArray(plans) ? plans : []).filter(
     (p) => p.productId === parsedProductId && (isAdminOrAgent ? true : p.active)
   );
+
 
   // Retrieve the product name dynamically from matched plans
   const productName = productPlans.length > 0 
@@ -146,15 +176,18 @@ const PlanCatalog = () => {
       setPurchasing(true);
       const payload = {
         planId: selectedPlan.id,
-        startDate: purchaseDate
+        startDate: purchaseDate,
+        isSmoker: isSmokerSelection,
+        premiumType: selectedFrequency
       };
       await purchasePolicy(payload);
-      toast.success(`Success! You have purchased the ${selectedPlan.planName} plan.`);
+      toast.success(`🎉 Policy created! Redirecting to Payments to complete your first premium installment.`);
       setSelectedPlan(null);
+
       
-      // Redirect to customer dashboard to view updated policies
+      // Redirect to payments page so the customer can pay the pending premium immediately
       if (userData?.role === 'CUSTOMER') {
-        navigate('/userdashboard');
+        navigate('/payments');
       } else {
         navigate('/policy');
       }
@@ -251,27 +284,20 @@ const PlanCatalog = () => {
     setShowEditModal(true);
   };
 
-  const handleEditPlanSubmit = async (e) => {
-    e.preventDefault();
-    const errors = validatePlanForm(editingPlan);
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
-    
+  const handleSaveFromEditModal = async (updatedPlanData) => {
     try {
       setPurchasing(true);
       const payload = {
-        productId: editingPlan.productId,
-        planName: editingPlan.planName.trim(),
-        coverageAmount: parseFloat(editingPlan.coverageAmount),
-        premiumAmount: parseFloat(editingPlan.premiumAmount),
-        premiumType: editingPlan.premiumType,
-        duration: parseInt(editingPlan.duration, 10),
-        termsAndConditions: editingPlan.termsAndConditions.trim(),
-        active: editingPlan.active
+        productId: updatedPlanData.productId || editingPlan?.productId || parsedProductId,
+        planName: updatedPlanData.planName.trim(),
+        coverageAmount: parseFloat(updatedPlanData.coverageAmount),
+        premiumAmount: parseFloat(updatedPlanData.premiumAmount),
+        premiumType: updatedPlanData.premiumType,
+        duration: parseInt(updatedPlanData.duration, 10),
+        termsAndConditions: (updatedPlanData.termsAndConditions || '').trim(),
+        active: updatedPlanData.active
       };
-      await updatePlan(editingPlan.id, payload);
+      await updatePlan(updatedPlanData.id || editingPlan.id, payload);
       toast.success("Plan updated successfully!");
       setShowEditModal(false);
       setEditingPlan(null);
@@ -369,7 +395,8 @@ const PlanCatalog = () => {
               {productPlans.map((plan) => {
                 const currentCustomerAge = calculateCustomerAge(customerProfile?.dateOfBirth);
                 const ageLoading = getAgeLoadingDetails(currentCustomerAge);
-                const effectivePremium = getAgeAdjustedPremium(plan.premiumAmount, currentCustomerAge);
+                const effectivePremium = getAdjustedPremium(plan.premiumAmount, currentCustomerAge, Boolean(customerProfile?.isSmoker), plan.premiumType || 'ANNUAL');
+
 
                 return (
                   <div className={`plan-card ${categoryMeta.className}`} key={plan.id}>
@@ -480,22 +507,111 @@ const PlanCatalog = () => {
                 
                 {(() => {
                   const currentCustomerAge = calculateCustomerAge(customerProfile?.dateOfBirth);
+                  const isMotorOrTravel = categoryTypeCode === 'MOTOR' || categoryTypeCode === 'TRAVEL' || (selectedPlan?.productName || '').toLowerCase().includes('motor') || (selectedPlan?.productName || '').toLowerCase().includes('travel');
                   const ageLoading = getAgeLoadingDetails(currentCustomerAge);
-                  const effectivePremium = getAgeAdjustedPremium(selectedPlan.premiumAmount, currentCustomerAge);
+                  const smokerLoading = isMotorOrTravel ? { percent: 0, label: 'Not Applicable' } : getSmokerLoadingDetails(isSmokerSelection, currentCustomerAge);
+                  const effectiveInstallment = getAdjustedPremium(selectedPlan.premiumAmount, currentCustomerAge, isSmokerSelection, selectedFrequency, categoryTypeCode);
 
                   return (
                     <div className="modal-plan-summary">
                       <div style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-primary)', marginBottom: '8px' }}>
                         {selectedPlan.planName}
                       </div>
-                      <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <div><strong>Product Name:</strong> {selectedPlan.productName}</div>
                         <div><strong>Sum Insured:</strong> ₹{selectedPlan.coverageAmount.toLocaleString('en-IN')}</div>
-                        <div><strong>Term:</strong> {selectedPlan.durationYears} Years ({selectedPlan.premiumType})</div>
+                        <div><strong>Coverage Term:</strong> {selectedPlan.durationYears} Years</div>
+
+                        {/* Interactive Billing Frequency Selector */}
+                        <div style={{ marginTop: '4px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+                            💳 SELECT BILLING FREQUENCY (3 OPTIONS)
+                          </label>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedFrequency('ANNUAL')}
+                              style={{
+                                padding: '8px 6px',
+                                fontSize: '12px',
+                                fontWeight: '700',
+                                borderRadius: '6px',
+                                border: selectedFrequency === 'ANNUAL' ? '2px solid var(--primary)' : '1px solid var(--border)',
+                                background: selectedFrequency === 'ANNUAL' ? 'rgba(79, 70, 229, 0.08)' : 'var(--card)',
+                                color: selectedFrequency === 'ANNUAL' ? 'var(--primary)' : 'var(--text-secondary)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Annual (1x/yr)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedFrequency('HALF_YEARLY')}
+                              style={{
+                                padding: '8px 6px',
+                                fontSize: '12px',
+                                fontWeight: '700',
+                                borderRadius: '6px',
+                                border: selectedFrequency === 'HALF_YEARLY' ? '2px solid var(--primary)' : '1px solid var(--border)',
+                                background: selectedFrequency === 'HALF_YEARLY' ? 'rgba(79, 70, 229, 0.08)' : 'var(--card)',
+                                color: selectedFrequency === 'HALF_YEARLY' ? 'var(--primary)' : 'var(--text-secondary)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Half-Yearly (2x)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedFrequency('QUARTERLY')}
+                              style={{
+                                padding: '8px 6px',
+                                fontSize: '12px',
+                                fontWeight: '700',
+                                borderRadius: '6px',
+                                border: selectedFrequency === 'QUARTERLY' ? '2px solid var(--primary)' : '1px solid var(--border)',
+                                background: selectedFrequency === 'QUARTERLY' ? 'rgba(79, 70, 229, 0.08)' : 'var(--card)',
+                                color: selectedFrequency === 'QUARTERLY' ? 'var(--primary)' : 'var(--text-secondary)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Quarterly (4x)
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Interactive Smoker Status Toggle (Only for Life & Health, NOT Motor/Travel) */}
+                        {!isMotorOrTravel ? (
+                          <div style={{ marginTop: '4px', background: isSmokerSelection ? 'rgba(239, 68, 68, 0.06)' : 'rgba(16, 185, 129, 0.06)', border: isSmokerSelection ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '8px', padding: '10px 12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '12.5px', fontWeight: '700', color: isSmokerSelection ? '#EF4444' : '#10B981' }}>
+                                🚬 Tobacco / Smoker Status
+                              </span>
+                              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={isSmokerSelection}
+                                  onChange={(e) => setIsSmokerSelection(e.target.checked)}
+                                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                                />
+                                Applicant is a Smoker
+                              </label>
+                            </div>
+                            {isSmokerSelection && (
+                              <div style={{ fontSize: '11.5px', color: '#EF4444', marginTop: '4px' }}>
+                                ⚠️ Smoker Surcharge Applied: <strong>{smokerLoading.label}</strong> (Premium increases by 15% to 75%)
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: '4px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#64748B' }}>
+                            ℹ️ <strong>Smoker Surcharge N/A:</strong> Tobacco risk loading is not applicable for {categoryMeta.title || 'Motor / Travel'} Insurance policies.
+                          </div>
+                        )}
+
                         
-                        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 14px', marginTop: '6px' }}>
+                        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 14px', marginTop: '4px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12.5px' }}>
-                            <span>Base Plan Premium:</span>
+                            <span>Base Annual Premium:</span>
                             <span className="mono">₹{selectedPlan.premiumAmount.toLocaleString('en-IN')}</span>
                           </div>
                           {currentCustomerAge !== null && (
@@ -506,10 +622,20 @@ const PlanCatalog = () => {
                               </span>
                             </div>
                           )}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', borderTop: '1px dashed #CBD5E1', paddingTop: '6px', marginTop: '4px', fontSize: '13.5px' }}>
-                            <span>Effective Premium Installment:</span>
+                          {isSmokerSelection && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', color: '#EF4444' }}>
+                              <span>Smoker Risk Surcharge:</span>
+                              <span style={{ fontWeight: '600' }}>{smokerLoading.label}</span>
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', color: '#4F46E5' }}>
+                            <span>Selected Billing Frequency:</span>
+                            <span style={{ fontWeight: '700', textTransform: 'uppercase' }}>{selectedFrequency}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', borderTop: '1px dashed #CBD5E1', paddingTop: '6px', marginTop: '4px', fontSize: '14px' }}>
+                            <span>Effective Installment Premium:</span>
                             <span className="mono" style={{ color: '#10B981' }}>
-                              ₹{effectivePremium.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                              ₹{effectiveInstallment.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </span>
                           </div>
                         </div>
@@ -530,6 +656,7 @@ const PlanCatalog = () => {
                 </div>
               </div>
 
+
               <div className="modal-actions">
                 <button 
                   className="btn-cancel" 
@@ -543,7 +670,7 @@ const PlanCatalog = () => {
                   onClick={handleConfirmPurchase}
                   disabled={purchasing}
                 >
-                  {purchasing ? 'Processing...' : 'Confirm Purchase'}
+                  {purchasing ? 'Processing...' : '✅ Confirm & Go to Payment'}
                 </button>
               </div>
         </Modal>
@@ -665,121 +792,14 @@ const PlanCatalog = () => {
             </form>
       </Modal>
 
-      {/* Edit Plan Modal */}
-      {editingPlan && (
-        <Modal isOpen={showEditModal && !!editingPlan} onClose={() => { setShowEditModal(false); setFormErrors({}); }} title="✏️ Edit Plan" maxWidth="520px">
-              <form onSubmit={handleEditPlanSubmit} style={{ marginTop: '16px' }}>
-                <div className="form-group">
-                  <label className="form-label">Plan Name</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    value={editingPlan.planName}
-                    onChange={(e) => setEditingPlan({ ...editingPlan, planName: e.target.value })}
-                    placeholder="e.g. Gold Life Shield"
-                  />
-                  {formErrors.planName && <div className="form-error">⚠️ {formErrors.planName}</div>}
-                </div>
-
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Sum Insured Coverage (₹)</label>
-                    <input 
-                      type="number" 
-                      step="0.01"
-                      className="form-input" 
-                      value={editingPlan.coverageAmount}
-                      onChange={(e) => setEditingPlan({ ...editingPlan, coverageAmount: e.target.value })}
-                      placeholder="e.g. 5000000"
-                    />
-                    {formErrors.coverageAmount && <div className="form-error">⚠️ {formErrors.coverageAmount}</div>}
-                  </div>
-
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Premium Installment (₹)</label>
-                    <input 
-                      type="number" 
-                      step="0.01"
-                      className="form-input" 
-                      value={editingPlan.premiumAmount}
-                      onChange={(e) => setEditingPlan({ ...editingPlan, premiumAmount: e.target.value })}
-                      placeholder="e.g. 12000"
-                    />
-                    {formErrors.premiumAmount && <div className="form-error">⚠️ {formErrors.premiumAmount}</div>}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Billing Frequency</label>
-                    <select 
-                      className="form-input"
-                      value={editingPlan.premiumType}
-                      onChange={(e) => setEditingPlan({ ...editingPlan, premiumType: e.target.value })}
-                    >
-                      <option value="ANNUAL">ANNUAL</option>
-                      <option value="ONE_TIME">ONE_TIME</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Coverage Term (Years)</label>
-                    <input 
-                      type="number" 
-                      className="form-input" 
-                      value={editingPlan.duration}
-                      onChange={(e) => setEditingPlan({ ...editingPlan, duration: e.target.value })}
-                      placeholder="e.g. 20"
-                    />
-                    {formErrors.duration && <div className="form-error">⚠️ {formErrors.duration}</div>}
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Terms & Conditions</label>
-                  <textarea 
-                    className="form-input" 
-                    value={editingPlan.termsAndConditions}
-                    onChange={(e) => setEditingPlan({ ...editingPlan, termsAndConditions: e.target.value })}
-                    placeholder="Enter terms and conditions..."
-                    rows="3"
-                    style={{ resize: 'vertical', fontFamily: 'inherit' }}
-                  />
-                </div>
-
-                <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px', marginTop: '16px' }}>
-                  <input 
-                    type="checkbox" 
-                    id="edit-active-plan"
-                    checked={editingPlan.active}
-                    onChange={(e) => setEditingPlan({ ...editingPlan, active: e.target.checked })}
-                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                  />
-                  <label htmlFor="edit-active-plan" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>
-                    Mark as Active
-                  </label>
-                </div>
-
-                <div className="modal-actions" style={{ marginTop: '24px' }}>
-                  <button 
-                    type="button"
-                    className="btn-cancel" 
-                    onClick={() => { setShowEditModal(false); setFormErrors({}); }}
-                    disabled={purchasing}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit"
-                    className="btn-confirm" 
-                    disabled={purchasing}
-                  >
-                    {purchasing ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-              </form>
-        </Modal>
-      )}
+      {/* Edit Plan Modal Component */}
+      <EditPlanModal
+        isOpen={showEditModal && !!editingPlan}
+        onClose={() => { setShowEditModal(false); setEditingPlan(null); }}
+        plan={editingPlan}
+        onSave={handleSaveFromEditModal}
+        submitting={purchasing}
+      />
     </>
   );
 };

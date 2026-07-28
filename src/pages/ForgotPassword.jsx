@@ -13,7 +13,15 @@ const ForgotPassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+    if (!email.trim()) {
+      setError("Email address is required.");
+      return;
+    }
+    if (!emailRegex.test(email.trim())) {
+      setError("Please enter a valid email address format.");
+      return;
+    }
 
     setLoading(true);
     setError("");

@@ -1,9 +1,9 @@
 import 'react-loading-skeleton/dist/skeleton.css';
-import React, { useEffect } from 'react'
+import React from 'react'
 import './App.css'
 import AdminDashboard from './pages/AdminDashboard'
 import AgentDashboard from './pages/AgentDashboard'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Login from "./pages/Login"
 import UserDashboard from './pages/UserDashboard'
 import Policy from './pages/Policy'
@@ -22,12 +22,25 @@ import ResetPassword from './pages/ResetPassword'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { ToastProvider } from './components/ToastProvider'
 import { ThemeProvider } from './context/ThemeContext'
+import { useAuth } from './context/AuthContext'
 
 // Landing Page (Redesigned Single Page)
 import LandingPage from './pages/landing/LandingPage'
 
 import ContactUs from './pages/ContactUs'
 import CustomerQueries from './pages/CustomerQueries'
+import NotFound from './pages/NotFound'
+
+// BUG-007: GuestRoute — redirects authenticated users away from auth pages
+const GuestRoute = ({ children }) => {
+  const { isAuthenticated, userData } = useAuth();
+  if (!isAuthenticated) return children;
+  // Redirect to the appropriate dashboard
+  if (userData?.role === 'ADMIN') return <Navigate to="/admindashboard" replace />;
+  if (userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') return <Navigate to="/agentdashboard" replace />;
+  if (userData?.role === 'CUSTOMER') return <Navigate to="/userdashboard" replace />;
+  return <Navigate to="/" replace />;
+};
 
 function App() {
   return (
@@ -43,12 +56,12 @@ function App() {
         <Route path="/claims-info" element={<LandingPage />} />
         <Route path="/calculator"  element={<LandingPage />} />
 
-        {/* ── Auth ── */}
-        <Route path="/login"       element={<Login />} />
-        <Route path="/register"    element={<Register />} />
-        <Route path="/verify-otp"  element={<VerifyOtp />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password"  element={<ResetPassword />} />
+        {/* ── Auth (BUG-007: wrapped in GuestRoute) ── */}
+        <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+        <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+        <Route path="/verify-otp" element={<GuestRoute><VerifyOtp /></GuestRoute>} />
+        <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
+        <Route path="/reset-password" element={<GuestRoute><ResetPassword /></GuestRoute>} />
 
         {/* ── App (protected) ── */}
         <Route path="/contact" element={
@@ -121,8 +134,11 @@ function App() {
             <Policies />
           </ProtectedRoute>
         } />
+
+        {/* BUG-006: 404 catch-all route */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
-    </ToastProvider>
+      </ToastProvider>
     </ThemeProvider>
   )
 }

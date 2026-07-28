@@ -7,6 +7,7 @@ const PremiumCalculatorWidget = ({ onSelectCalculatedPlan }) => {
   const [productType, setProductType] = useState('LIFE');
   const [premiumType, setPremiumType] = useState('ANNUAL');
   const [age, setAge] = useState(30);
+  const [isSmoker, setIsSmoker] = useState(false);
 
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -19,7 +20,8 @@ const PremiumCalculatorWidget = ({ onSelectCalculatedPlan }) => {
         durationYears: Number(durationYears),
         productType,
         premiumType,
-        age: Number(age)
+        age: Number(age),
+        isSmoker
       });
       setResult(res);
     } catch (err) {
@@ -27,7 +29,8 @@ const PremiumCalculatorWidget = ({ onSelectCalculatedPlan }) => {
     } finally {
       setLoading(false);
     }
-  }, [coverageAmount, durationYears, productType, premiumType, age]);
+  }, [coverageAmount, durationYears, productType, premiumType, age, isSmoker]);
+
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -74,7 +77,9 @@ const PremiumCalculatorWidget = ({ onSelectCalculatedPlan }) => {
                 onChange={(e) => setPremiumType(e.target.value)}
                 style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600 }}
               >
-                <option value="ANNUAL">Annual Installments</option>
+                <option value="ANNUAL">Annual Installments (1x/yr)</option>
+                <option value="HALF_YEARLY">Half-Yearly Installments (2x/yr)</option>
+                <option value="QUARTERLY">Quarterly Installments (4x/yr)</option>
                 <option value="ONE_TIME">One-Time Lump Sum</option>
               </select>
             </div>
@@ -130,7 +135,33 @@ const PremiumCalculatorWidget = ({ onSelectCalculatedPlan }) => {
               />
             </div>
           </div>
+
+          {/* Smoker Status Toggle (Only for LIFE & HEALTH) */}
+          {productType === 'LIFE' || productType === 'HEALTH' ? (
+            <div style={{ background: isSmoker ? 'rgba(239, 68, 68, 0.06)' : 'var(--surface)', border: isSmoker ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', margin: 0 }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 700, color: isSmoker ? '#EF4444' : 'var(--text-primary)' }}>
+                  🚬 Smoker Risk Loading
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input
+                    type="checkbox"
+                    checked={isSmoker}
+                    onChange={(e) => setIsSmoker(e.target.checked)}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '12px', fontWeight: 600 }}>Is Smoker (+15% to +75%)</span>
+                </div>
+              </label>
+            </div>
+          ) : (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 12px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+              ℹ️ Tobacco / Smoker surcharge is Not Applicable for {productType} Insurance.
+            </div>
+          )}
         </div>
+
+
 
         {/* Calculation Result Summary Column */}
         <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>

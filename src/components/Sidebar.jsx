@@ -89,7 +89,7 @@ const styles = `
     padding: 10px 16px;
     border-radius: 8px;
     font-size: 14px;
-    font-weight: 550;
+    font-weight: 600;
     color: var(--sidebar-text);
     text-decoration: none;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -112,7 +112,7 @@ const styles = `
   .sidebar ul li a.active-link {
     background: rgba(79, 70, 229, 0.2);
     color: var(--sidebar-active);
-    font-weight: 650;
+    font-weight: 700;
   }
 
   .sidebar ul li a.active-link i {
