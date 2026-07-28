@@ -9,7 +9,7 @@ import '../styles/LandingPage.css';
 const ContactUs = () => {
   const toast = useToast();
   const navigate = useNavigate();
-  const { userData } = useAuth();
+  const { userData, isAuthenticated } = useAuth();
 
   const [formData, setFormData] = useState({
     fullName: userData?.fullName || '',
@@ -57,25 +57,48 @@ const ContactUs = () => {
   };
 
   return (
-    <div className="page-container" style={{ background: 'var(--surface)', minHeight: '100vh', display: 'flex' }}>
-      <Sidebar />
-
-      <div className="main-content" style={{ flex: 1, marginLeft: '240px', minWidth: 0 }}>
-        {/* Topbar */}
-        <div className="topbar" style={{ height: '60px', background: 'var(--card)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', position: 'sticky', top: 0, zIndex: 100 }}>
-          <div className="topbar-logo" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div className="brand-glyph-sm" style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px' }}>C</div>
-            <span>Crown Assurance</span>
-          </div>
-          <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span className="role-badge" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary-light)', background: 'rgba(37, 99, 168, 0.1)', padding: '4px 10px', borderRadius: '12px', textTransform: 'uppercase' }}>
-              {userData?.fullName || "Guest"} | {userData?.role || "USER"}
-            </span>
-            <div className="user-avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }} title={userData?.fullName || "User"}>
-              {initials}
+    <div className="page-container" style={{ background: 'var(--surface)', minHeight: '100vh', display: 'flex', flexDirection: isAuthenticated ? 'row' : 'column' }}>
+      {isAuthenticated ? (
+        <Sidebar />
+      ) : (
+        <nav className="auth-nav">
+          <div className="auth-nav-inner">
+            <a className="auth-nav-logo" onClick={() => navigate("/")} style={{ cursor: 'pointer' }}>
+              <img src="/logo1.png" alt="Crown Assurance Logo" className="auth-logo-img" />
+              <span>Crown Assurance</span>
+            </a>
+            <ul className="auth-nav-menu">
+              <li><a onClick={() => navigate("/")} style={{ cursor: 'pointer' }}>Home</a></li>
+              <li><a onClick={() => navigate("/plans")} style={{ cursor: 'pointer' }}>Plans</a></li>
+              <li><a onClick={() => navigate("/claims-info")} style={{ cursor: 'pointer' }}>Claims</a></li>
+              <li><a onClick={() => navigate("/contact")} style={{ cursor: 'pointer', color: 'var(--primary-light)', fontWeight: 700 }}>Support</a></li>
+            </ul>
+            <div className="auth-nav-actions">
+              <button className="auth-btn-brand" onClick={() => navigate("/login")}>
+                Sign In
+              </button>
             </div>
           </div>
-        </div>
+        </nav>
+      )}
+
+      <div className="main-content" style={{ flex: 1, marginLeft: isAuthenticated ? '240px' : 0, minWidth: 0 }}>
+        {isAuthenticated && (
+          <div className="topbar" style={{ height: '60px', background: 'var(--card)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 40px', position: 'sticky', top: 0, zIndex: 100 }}>
+            <div className="topbar-logo" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="brand-glyph-sm" style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px' }}>C</div>
+              <span>Crown Assurance</span>
+            </div>
+            <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <span className="role-badge" style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary-light)', background: 'rgba(37, 99, 168, 0.1)', padding: '4px 10px', borderRadius: '12px', textTransform: 'uppercase' }}>
+                {userData?.fullName || "Guest"} | {userData?.role || "USER"}
+              </span>
+              <div className="user-avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }} title={userData?.fullName || "User"}>
+                {initials}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content Body */}
         <div style={{ padding: '32px 40px 60px' }}>
@@ -138,19 +161,29 @@ const ContactUs = () => {
             </div>
 
             {/* Form Panel */}
-            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '32px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '20px' }}>Send Us a Message</h3>
+            <div style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: '16px',
+              padding: '32px',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px'
+            }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <i className="ph ph-envelope-simple" style={{ color: 'var(--primary)' }}></i> Send Us a Message
+              </h3>
 
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div className="form-group">
-                    <label className="form-label" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
-                      Full Name {userData?.fullName && <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 700, marginLeft: '4px' }}>🔒 (Locked)</span>}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', textTransform: 'none' }}>
+                      Full Name {userData?.fullName && <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 700, marginLeft: '4px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}><i className="ph ph-lock-key"></i> (Locked)</span>}
                     </label>
                     <input
                       type="text"
                       name="fullName"
-                      className="form-input"
                       value={formData.fullName}
                       onChange={handleChange}
                       readOnly={!!userData?.fullName}
@@ -158,25 +191,25 @@ const ContactUs = () => {
                       required
                       style={{
                         width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
+                        padding: '11px 14px',
+                        borderRadius: '10px',
                         border: '1px solid var(--border)',
-                        background: userData?.fullName ? 'rgba(0,0,0,0.04)' : 'var(--surface)',
+                        background: userData?.fullName ? 'rgba(148, 163, 184, 0.12)' : 'var(--surface)',
                         color: 'var(--text-primary)',
                         fontSize: '14px',
+                        outline: 'none',
                         cursor: userData?.fullName ? 'not-allowed' : 'text'
                       }}
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
-                      Email Address {userData?.email && <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 700, marginLeft: '4px' }}>🔒 (Locked)</span>}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', textTransform: 'none' }}>
+                      Email Address {userData?.email && <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 700, marginLeft: '4px', display: 'inline-flex', alignItems: 'center', gap: '2px' }}><i className="ph ph-lock-key"></i> (Locked)</span>}
                     </label>
                     <input
                       type="email"
                       name="email"
-                      className="form-input"
                       value={formData.email}
                       onChange={handleChange}
                       readOnly={!!userData?.email}
@@ -184,43 +217,42 @@ const ContactUs = () => {
                       required
                       style={{
                         width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: '8px',
+                        padding: '11px 14px',
+                        borderRadius: '10px',
                         border: '1px solid var(--border)',
-                        background: userData?.email ? 'rgba(0,0,0,0.04)' : 'var(--surface)',
+                        background: userData?.email ? 'rgba(148, 163, 184, 0.12)' : 'var(--surface)',
                         color: 'var(--text-primary)',
                         fontSize: '14px',
+                        outline: 'none',
                         cursor: userData?.email ? 'not-allowed' : 'text'
                       }}
                     />
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>Subject</label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', textTransform: 'none' }}>Subject</label>
                   <input
                     type="text"
                     name="subject"
-                    className="form-input"
                     value={formData.subject}
                     onChange={handleChange}
                     placeholder="Inquiry about Life Gold Plan"
                     required
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '14px' }}
+                    style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '14px', outline: 'none' }}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>Message</label>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', textTransform: 'none' }}>Message</label>
                   <textarea
                     name="message"
-                    rows="5"
-                    className="form-input"
+                    rows="4"
                     value={formData.message}
                     onChange={handleChange}
                     placeholder="Type your message here..."
                     required
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical' }}
+                    style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical', outline: 'none' }}
                   ></textarea>
                 </div>
 
@@ -230,18 +262,22 @@ const ContactUs = () => {
                   style={{
                     backgroundColor: 'var(--primary)',
                     color: '#ffffff',
-                    padding: '12px 24px',
+                    padding: '12px 28px',
                     border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '15px',
-                    fontWeight: '600',
+                    borderRadius: '10px',
+                    fontSize: '14.5px',
+                    fontWeight: '700',
                     cursor: submitting ? 'not-allowed' : 'pointer',
-                    boxShadow: '0 4px 12px rgba(37, 99, 168, 0.25)',
+                    boxShadow: '0 4px 14px rgba(79, 70, 229, 0.3)',
                     transition: 'all 0.2s ease',
-                    marginTop: '8px'
+                    marginTop: '6px',
+                    alignSelf: 'flex-start',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px'
                   }}
                 >
-                  {submitting ? 'Sending Message...' : 'Send Message'}
+                  {submitting ? 'Sending Message...' : <><i className="ph ph-paper-plane-right" style={{ fontSize: '16px' }}></i> Send Message</>}
                 </button>
               </form>
             </div>

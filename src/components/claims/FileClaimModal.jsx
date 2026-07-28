@@ -165,7 +165,7 @@ const FileClaimModal = ({ show, onClose, activePolicies, onClaimFiled }) => {
               );
             })}
           </select>
-          {formErrors.policyId && <div className="form-error">⚠️ {formErrors.policyId}</div>}
+          {formErrors.policyId && <div className="form-error"><i className="ph ph-warning-circle" style={{ marginRight: '4px' }}></i>{formErrors.policyId}</div>}
         </div>
 
         <div className="form-group">
@@ -180,7 +180,7 @@ const FileClaimModal = ({ show, onClose, activePolicies, onClaimFiled }) => {
             required
             disabled={submitting}
           />
-          {formErrors.claimAmount && <div className="form-error">⚠️ {formErrors.claimAmount}</div>}
+          {formErrors.claimAmount && <div className="form-error"><i className="ph ph-warning-circle" style={{ marginRight: '4px' }}></i>{formErrors.claimAmount}</div>}
         </div>
 
         <div className="form-group">
@@ -193,7 +193,7 @@ const FileClaimModal = ({ show, onClose, activePolicies, onClaimFiled }) => {
             required
             disabled={submitting}
           />
-          {formErrors.incidentDate && <div className="form-error">⚠️ {formErrors.incidentDate}</div>}
+          {formErrors.incidentDate && <div className="form-error"><i className="ph ph-warning-circle" style={{ marginRight: '4px' }}></i>{formErrors.incidentDate}</div>}
         </div>
 
         <div className="form-group">
@@ -207,7 +207,7 @@ const FileClaimModal = ({ show, onClose, activePolicies, onClaimFiled }) => {
             required
             disabled={submitting}
           />
-          {formErrors.claimReason && <div className="form-error">⚠️ {formErrors.claimReason}</div>}
+          {formErrors.claimReason && <div className="form-error"><i className="ph ph-warning-circle" style={{ marginRight: '4px' }}></i>{formErrors.claimReason}</div>}
         </div>
 
         <div style={{ marginTop: '20px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
@@ -272,7 +272,7 @@ const FileClaimModal = ({ show, onClose, activePolicies, onClaimFiled }) => {
                   title="Remove Document"
                   disabled={submitting}
                 >
-                  🗑️
+                  <i className="ph ph-trash" style={{ fontSize: '14px' }}></i>
                 </button>
               </div>
 

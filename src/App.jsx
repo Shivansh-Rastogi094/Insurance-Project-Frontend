@@ -64,11 +64,9 @@ function App() {
         <Route path="/reset-password" element={<GuestRoute><ResetPassword /></GuestRoute>} />
 
         {/* ── App (protected) ── */}
-        <Route path="/contact" element={
-          <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'SUPER_AGENT', 'CUSTOMER']}>
-            <ContactUs />
-          </ProtectedRoute>
-        } />
+        {/* ── Contact & Support (accessible to all) ── */}
+        <Route path="/contact" element={<ContactUs />} />
+        <Route path="/support" element={<ContactUs />} />
         <Route path="/queries" element={
           <ProtectedRoute allowedRoles={['ADMIN', 'AGENT', 'SUPER_AGENT', 'CUSTOMER']}>
             <CustomerQueries />

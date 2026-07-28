@@ -253,10 +253,11 @@ const Payments = () => {
           </div>
 
           <div className={`billing-grid ${!isCustomer ? 'full-width' : ''}`}>
-            {/* Left Column: All Policies Billing list */}
             {isCustomer && (
               <div className="section-card">
-                <h3 className="section-title">🛡️ My Policies</h3>
+                <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <i className="ph ph-shield-check" style={{ color: 'var(--primary)' }}></i> My Policies
+                </h3>
                 {policiesLoading ? (
                   <div className="loading-container" style={{ width: '100%', padding: '20px 40px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <Skeleton height={60} />

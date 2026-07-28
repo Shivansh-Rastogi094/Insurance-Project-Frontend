@@ -124,7 +124,7 @@ const ClaimReviewModal = ({ show, onClose, claim, userData, onClaimReviewed }) =
               </>
             )}
           </select>
-          {reviewErrors.status && <div className="form-error">⚠️ {reviewErrors.status}</div>}
+          {reviewErrors.status && <div className="form-error"><i className="ph ph-warning-circle" style={{ marginRight: '4px' }}></i>{reviewErrors.status}</div>}
         </div>
 
         {(userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') && (
@@ -142,7 +142,7 @@ const ClaimReviewModal = ({ show, onClose, claim, userData, onClaimReviewed }) =
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
               Leave empty to approve the full requested amount of ₹{claim.claimAmount?.toLocaleString('en-IN')}.
             </span>
-            {reviewErrors.suggestedAmount && <div className="form-error">⚠️ {reviewErrors.suggestedAmount}</div>}
+            {reviewErrors.suggestedAmount && <div className="form-error"><i className="ph ph-warning-circle" style={{ marginRight: '4px' }}></i>{reviewErrors.suggestedAmount}</div>}
           </div>
         )}
 
@@ -161,7 +161,7 @@ const ClaimReviewModal = ({ show, onClose, claim, userData, onClaimReviewed }) =
             required
             disabled={reviewSubmitting}
           />
-          {reviewErrors.remarks && <div className="form-error">⚠️ {reviewErrors.remarks}</div>}
+          {reviewErrors.remarks && <div className="form-error"><i className="ph ph-warning-circle" style={{ marginRight: '4px' }}></i>{reviewErrors.remarks}</div>}
         </div>
 
         <div className="modal-actions" style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>

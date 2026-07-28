@@ -63,10 +63,10 @@ const PremiumCalculatorWidget = ({ onSelectCalculatedPlan }) => {
                 onChange={(e) => setProductType(e.target.value)}
                 style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600 }}
               >
-                <option value="LIFE">🛡️ Life Insurance</option>
-                <option value="HEALTH">🏥 Health Insurance</option>
-                <option value="MOTOR">🚗 Motor Insurance</option>
-                <option value="TRAVEL">✈️ Travel Insurance</option>
+                <option value="LIFE">Life Insurance</option>
+                <option value="HEALTH">Health Insurance</option>
+                <option value="MOTOR">Motor Insurance</option>
+                <option value="TRAVEL">Travel Insurance</option>
               </select>
             </div>
 
@@ -77,10 +77,9 @@ const PremiumCalculatorWidget = ({ onSelectCalculatedPlan }) => {
                 onChange={(e) => setPremiumType(e.target.value)}
                 style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600 }}
               >
-                <option value="ANNUAL">Annual Installments (1x/yr)</option>
-                <option value="HALF_YEARLY">Half-Yearly Installments (2x/yr)</option>
-                <option value="QUARTERLY">Quarterly Installments (4x/yr)</option>
-                <option value="ONE_TIME">One-Time Lump Sum</option>
+                <option value="ANNUAL">Annual (100% per yr)</option>
+                <option value="HALF_YEARLY">Half-Yearly (55% x 2)</option>
+                <option value="QUARTERLY">Quarterly (27.5% x 4)</option>
               </select>
             </div>
           </div>
@@ -140,8 +139,8 @@ const PremiumCalculatorWidget = ({ onSelectCalculatedPlan }) => {
           {productType === 'LIFE' || productType === 'HEALTH' ? (
             <div style={{ background: isSmoker ? 'rgba(239, 68, 68, 0.06)' : 'var(--surface)', border: isSmoker ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px' }}>
               <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', margin: 0 }}>
-                <span style={{ fontSize: '12.5px', fontWeight: 700, color: isSmoker ? '#EF4444' : 'var(--text-primary)' }}>
-                  🚬 Smoker Risk Loading
+                <span style={{ fontSize: '12.5px', fontWeight: 700, color: isSmoker ? '#EF4444' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <i className="ph ph-warning-octagon"></i> Smoker Risk Loading
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <input

@@ -119,13 +119,13 @@ const CustomerQueries = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'RESOLVED':
-        return <span style={{ background: 'rgba(34, 197, 94, 0.12)', color: '#16a34a', padding: '4px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: 700 }}>✓ RESOLVED</span>;
+        return <span style={{ background: 'rgba(34, 197, 94, 0.12)', color: '#16a34a', padding: '4px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><i className="ph ph-check-circle"></i> RESOLVED</span>;
       case 'IN_PROGRESS':
-        return <span style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#2563eb', padding: '4px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: 700 }}>⏳ IN PROGRESS</span>;
+        return <span style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#2563eb', padding: '4px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><i className="ph ph-clock"></i> IN PROGRESS</span>;
       case 'CLOSED':
-        return <span style={{ background: 'rgba(100, 116, 139, 0.12)', color: '#64748b', padding: '4px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: 700 }}>🔒 CLOSED</span>;
+        return <span style={{ background: 'rgba(100, 116, 139, 0.12)', color: '#64748b', padding: '4px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><i className="ph ph-lock-key"></i> CLOSED</span>;
       default:
-        return <span style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#ca8a04', padding: '4px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: 700 }}>⏳ PENDING</span>;
+        return <span style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#ca8a04', padding: '4px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><i className="ph ph-hourglass"></i> PENDING</span>;
     }
   };
 
@@ -232,7 +232,7 @@ const CustomerQueries = () => {
                       {(userData?.role === 'AGENT' || userData?.role === 'SUPER_AGENT') && (
                         (item.status === 'RESOLVED' || item.status === 'CLOSED') ? (
                           <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', background: 'var(--surface)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            🔒 Status Finalized
+                            <i className="ph ph-lock-key"></i> Status Finalized
                           </span>
                         ) : (
                           <button
@@ -334,7 +334,7 @@ const CustomerQueries = () => {
         >
           <form onSubmit={handleCreateQuery} style={{ marginTop: '12px' }}>
             <div style={{ background: 'var(--surface)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '14px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Customer Account:</span> {userData?.fullName} ({userData?.email}) 🔒 <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>(Locked to authenticated user)</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Customer Account:</span> {userData?.fullName} ({userData?.email}) <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '2px' }}><i className="ph ph-lock-key"></i> (Locked to authenticated user)</span>
             </div>
 
             <div className="form-group" style={{ marginBottom: '14px' }}>

@@ -51,15 +51,19 @@ const getFrequencyMultiplier = (freq) => {
   return 1.0; // ANNUAL
 };
 
-const getAdjustedPremium = (basePremium, age, isSmoker, freq, productType = '') => {
+const getAdjustedPremium = (basePremium, age, isSmoker, freq, productType = '', selectedCoverage = 0, minCoverage = 0) => {
   if (!basePremium) return 0;
+  let effectiveBase = basePremium;
+  if (selectedCoverage > 0 && minCoverage > 0) {
+    effectiveBase = basePremium * (selectedCoverage / minCoverage);
+  }
   const isMotorOrTravel = productType && (productType.toUpperCase() === 'MOTOR' || productType.toUpperCase() === 'TRAVEL');
   const agePct = getAgeLoadingDetails(age).percent;
   const smokerPct = isMotorOrTravel ? 0 : getSmokerLoadingDetails(isSmoker, age).percent;
   const totalPercent = agePct + smokerPct;
-  const annualRate = basePremium * (1 + totalPercent / 100);
+  const annualRate = effectiveBase * (1 + totalPercent / 100);
   const installmentRate = annualRate * getFrequencyMultiplier(freq);
-  return Math.round(installmentRate);
+  return Number(installmentRate.toFixed(2));
 };
 
 const getAgeAdjustedPremium = (basePremium, age) => getAdjustedPremium(basePremium, age, false, 'ANNUAL');
@@ -77,12 +81,22 @@ const PlanCatalog = () => {
 
   // Purchase Modal State
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedCoverage, setSelectedCoverage] = useState(50000);
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().substring(0, 10));
   const [selectedFrequency, setSelectedFrequency] = useState('ANNUAL');
   const [isSmokerSelection, setIsSmokerSelection] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [customerProfile, setCustomerProfile] = useState(null);
   const [checkingProfile, setCheckingProfile] = useState(false);
+
+  // Policyholder Detail State
+  const [isBuyingForSelf, setIsBuyingForSelf] = useState(true);
+  const [holderName, setHolderName] = useState('');
+  const [holderAddress, setHolderAddress] = useState('');
+  const [holderPhone, setHolderPhone] = useState('');
+  const [holderAadhaar, setHolderAadhaar] = useState('');
+  const [vehicleNumber, setVehicleNumber] = useState('');
+  const [purchaseErrors, setPurchaseErrors] = useState({});
 
 
   // Add Plan Modal State
@@ -145,15 +159,43 @@ const PlanCatalog = () => {
     checkProfile();
   }, [userData]);
 
+  const fillSelfDetails = () => {
+    setHolderName(customerProfile?.fullName || customerProfile?.user?.fullName || userData?.fullName || '');
+    const fullAddr = [customerProfile?.address, customerProfile?.city, customerProfile?.state, customerProfile?.pinCode]
+      .filter(Boolean).join(', ');
+    setHolderAddress(fullAddr || customerProfile?.address || '');
+    setHolderPhone(userData?.phoneNumber || customerProfile?.phone || customerProfile?.mobileNumber || '');
+    setHolderAadhaar(customerProfile?.aadhaarNumber || '');
+  };
+
+  const openPurchaseModal = (plan) => {
+    setSelectedPlan(plan);
+    const minCov = plan.minCoverageAmount || plan.coverageAmount || 50000;
+    setSelectedCoverage(minCov);
+    if (plan.premiumType === 'ONE_TIME') {
+      setSelectedFrequency('ONE_TIME');
+    } else {
+      setSelectedFrequency('ANNUAL');
+    }
+    setIsBuyingForSelf(true);
+    setHolderName(customerProfile?.fullName || customerProfile?.user?.fullName || userData?.fullName || '');
+    const fullAddr = [customerProfile?.address, customerProfile?.city, customerProfile?.state, customerProfile?.pinCode]
+      .filter(Boolean).join(', ');
+    setHolderAddress(fullAddr || customerProfile?.address || '');
+    setHolderPhone(userData?.phoneNumber || customerProfile?.phone || customerProfile?.mobileNumber || '');
+    setHolderAadhaar(customerProfile?.aadhaarNumber || '');
+    setVehicleNumber('');
+    setPurchaseErrors({});
+  };
+
   const handleBuyPlanClick = (plan) => {
     if (userData?.role === 'CUSTOMER' && !customerProfile) {
-      toast.info("⚠️ You must complete your customer profile before purchasing a policy. Redirecting to your profile page...");
+      toast.info("You must complete your customer profile before purchasing a policy. Redirecting to your profile page...");
       navigate('/profile');
       return;
     }
     setIsSmokerSelection(Boolean(customerProfile?.isSmoker));
-    setSelectedFrequency(plan.premiumType || 'ANNUAL');
-    setSelectedPlan(plan);
+    openPurchaseModal(plan);
   };
 
   const isAdminOrAgent = userData?.role === 'ADMIN' || userData?.role === 'AGENT';
@@ -163,7 +205,6 @@ const PlanCatalog = () => {
     (p) => p.productId === parsedProductId && (isAdminOrAgent ? true : p.active)
   );
 
-
   // Retrieve the product name dynamically from matched plans
   const productName = productPlans.length > 0 
     ? productPlans[0].productName 
@@ -172,13 +213,54 @@ const PlanCatalog = () => {
   // Handle purchasing submission
   const handleConfirmPurchase = async () => {
     if (!selectedPlan) return;
+    
+    // Validation
+    const errs = {};
+    if (!holderName || !holderName.trim()) errs.holderName = "Holder Name is required.";
+    if (!holderAddress || !holderAddress.trim()) errs.holderAddress = "Holder Address is required.";
+    
+    const phoneClean = holderPhone ? holderPhone.trim() : '';
+    if (!phoneClean || !/^[6-9]\d{9}$/.test(phoneClean)) {
+      errs.holderPhone = "Phone must be a valid 10-digit mobile number starting with 6-9.";
+    }
+
+    const isMotorPlan = categoryTypeCode === 'MOTOR' || (selectedPlan?.productName || '').toLowerCase().includes('motor');
+    
+    const aadhaarClean = holderAadhaar ? holderAadhaar.trim() : '';
+    if (!isMotorPlan) {
+      if (!aadhaarClean || !/^\d{12}$/.test(aadhaarClean)) {
+        errs.holderAadhaar = "Aadhaar must be a 12-digit numeric number.";
+      }
+    }
+
+    if (isMotorPlan) {
+      const vClean = vehicleNumber ? vehicleNumber.trim().toUpperCase() : '';
+      if (!vClean) {
+        errs.vehicleNumber = "Vehicle registration number is required for Motor insurance.";
+      } else if (!/^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}$/.test(vClean)) {
+        errs.vehicleNumber = "Please enter a valid car registration number (e.g. MH01AB1234).";
+      }
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setPurchaseErrors(errs);
+      toast.error("Please resolve validation errors in the purchase form.");
+      return;
+    }
+
     try {
       setPurchasing(true);
       const payload = {
         planId: selectedPlan.id,
         startDate: purchaseDate,
         isSmoker: isSmokerSelection,
-        premiumType: selectedFrequency
+        premiumType: selectedFrequency,
+        selectedCoverageAmount: Number(selectedCoverage),
+        holderName: holderName.trim(),
+        holderAddress: holderAddress.trim(),
+        holderPhone: phoneClean,
+        holderAadhaar: aadhaarClean,
+        vehicleNumber: isMotorPlan ? vehicleNumber.trim().toUpperCase() : null
       };
       await purchasePolicy(payload);
       toast.success(`🎉 Policy created! Redirecting to Payments to complete your first premium installment.`);
@@ -205,9 +287,9 @@ const PlanCatalog = () => {
       errors.planName = "Plan name is required.";
     }
     
-    const coverageVal = parseFloat(formData.coverageAmount);
-    if (isNaN(coverageVal) || coverageVal <= 0) {
-      errors.coverageAmount = "Coverage amount must be greater than zero.";
+    const coverageVal = parseFloat(formData.minCoverageAmount || formData.coverageAmount);
+    if (isNaN(coverageVal) || coverageVal < 50000) {
+      errors.minCoverageAmount = "Minimum coverage amount must be at least ₹50,000.";
     }
     
     // Premium amount is optional (auto-calculated at runtime using actuarial formula if left empty)
@@ -239,8 +321,8 @@ const PlanCatalog = () => {
       const payload = {
         productId: parsedProductId,
         planName: newPlan.planName.trim(),
-        coverageAmount: parseFloat(newPlan.coverageAmount),
-        premiumAmount: parseFloat(newPlan.premiumAmount),
+        minCoverageAmount: parseFloat(newPlan.minCoverageAmount || newPlan.coverageAmount),
+        premiumAmount: newPlan.premiumAmount ? parseFloat(newPlan.premiumAmount) : null,
         premiumType: newPlan.premiumType,
         duration: parseInt(newPlan.duration, 10),
         termsAndConditions: newPlan.termsAndConditions.trim(),
@@ -251,7 +333,7 @@ const PlanCatalog = () => {
       setShowAddModal(false);
       setNewPlan({
         planName: '',
-        coverageAmount: '',
+        minCoverageAmount: '',
         premiumAmount: '',
         premiumType: 'ANNUAL',
         duration: '',
@@ -273,7 +355,7 @@ const PlanCatalog = () => {
       id: plan.id,
       productId: plan.productId,
       planName: plan.planName,
-      coverageAmount: plan.coverageAmount,
+      minCoverageAmount: plan.minCoverageAmount || plan.coverageAmount,
       premiumAmount: plan.premiumAmount,
       premiumType: plan.premiumType,
       duration: plan.durationYears, // Map durationYears back to duration
@@ -290,8 +372,8 @@ const PlanCatalog = () => {
       const payload = {
         productId: updatedPlanData.productId || editingPlan?.productId || parsedProductId,
         planName: updatedPlanData.planName.trim(),
-        coverageAmount: parseFloat(updatedPlanData.coverageAmount),
-        premiumAmount: parseFloat(updatedPlanData.premiumAmount),
+        minCoverageAmount: parseFloat(updatedPlanData.minCoverageAmount || updatedPlanData.coverageAmount),
+        premiumAmount: updatedPlanData.premiumAmount ? parseFloat(updatedPlanData.premiumAmount) : null,
         premiumType: updatedPlanData.premiumType,
         duration: parseInt(updatedPlanData.duration, 10),
         termsAndConditions: (updatedPlanData.termsAndConditions || '').trim(),
@@ -419,33 +501,20 @@ const PlanCatalog = () => {
                       
                       <div className="plan-details-list">
                         <div className="plan-detail-row">
-                          <span className="plan-detail-label">Sum Insured Coverage</span>
-                          <span className="plan-detail-value highlight mono">
-                            ₹{plan.coverageAmount.toLocaleString('en-IN')}
+                          <span className="plan-detail-label">Sum Insured Range</span>
+                          <span className="plan-detail-value highlight mono" style={{ fontSize: '13.5px' }}>
+                            ₹{(plan.minCoverageAmount || plan.coverageAmount || 50000).toLocaleString('en-IN')} — ₹{(plan.maxCoverageAmount || (plan.minCoverageAmount || plan.coverageAmount || 50000) + 2000000).toLocaleString('en-IN')}
                           </span>
                         </div>
                         
                         <div className="plan-detail-row">
-                          <span className="plan-detail-label">Premium Installment</span>
+                          <span className="plan-detail-label">Base Premium (from)</span>
                           <span className="plan-detail-value mono" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                            <span style={{ fontWeight: '700' }}>
-                              ₹{effectivePremium.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                            </span>
-                            {currentCustomerAge && ageLoading.percent > 0 && (
-                              <span style={{ fontSize: '10.5px', color: '#6B7280', fontWeight: 'normal' }}>
-                                Base ₹{plan.premiumAmount.toLocaleString('en-IN')} ({ageLoading.label})
-                              </span>
-                            )}
+                            <span className="amount">₹{(plan.premiumAmount || 0).toLocaleString('en-IN')}</span>
+                            <span className="subtext" style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>/year at Min Coverage</span>
                           </span>
                         </div>
-                        
-                        <div className="plan-detail-row">
-                          <span className="plan-detail-label">Billing Frequency</span>
-                          <span className="plan-detail-value" style={{ textTransform: 'uppercase', fontSize: '12px' }}>
-                            {plan.premiumType}
-                          </span>
-                        </div>
-                        
+
                         <div className="plan-detail-row">
                           <span className="plan-detail-label">Coverage Term</span>
                           <span className="plan-detail-value">
@@ -501,32 +570,62 @@ const PlanCatalog = () => {
 
       {/* Confirmation Modal */}
       {selectedPlan && (
-        <Modal isOpen={!!selectedPlan} onClose={() => setSelectedPlan(null)} title="🛡️ Confirm Policy Purchase">
+        <Modal isOpen={!!selectedPlan} onClose={() => setSelectedPlan(null)} title={<><i className="ph ph-shield-check" style={{ marginRight: '8px' }}></i>Confirm Policy Purchase</>}>
               <div className="modal-body">
                 <p>You are initiating a request to buy the following insurance plan:</p>
                 
                 {(() => {
                   const currentCustomerAge = calculateCustomerAge(customerProfile?.dateOfBirth);
                   const isMotorOrTravel = categoryTypeCode === 'MOTOR' || categoryTypeCode === 'TRAVEL' || (selectedPlan?.productName || '').toLowerCase().includes('motor') || (selectedPlan?.productName || '').toLowerCase().includes('travel');
+                  const isMotorPlan = categoryTypeCode === 'MOTOR' || (selectedPlan?.productName || '').toLowerCase().includes('motor');
                   const ageLoading = getAgeLoadingDetails(currentCustomerAge);
                   const smokerLoading = isMotorOrTravel ? { percent: 0, label: 'Not Applicable' } : getSmokerLoadingDetails(isSmokerSelection, currentCustomerAge);
-                  const effectiveInstallment = getAdjustedPremium(selectedPlan.premiumAmount, currentCustomerAge, isSmokerSelection, selectedFrequency, categoryTypeCode);
+                  
+                  const minCov = selectedPlan.minCoverageAmount || selectedPlan.coverageAmount || 50000;
+                  const maxCov = selectedPlan.maxCoverageAmount || (minCov + 2000000);
+                  const effectiveInstallment = getAdjustedPremium(selectedPlan.premiumAmount, currentCustomerAge, isSmokerSelection, selectedFrequency, categoryTypeCode, selectedCoverage, minCov);
 
                   return (
-                    <div className="modal-plan-summary">
-                      <div style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                    <div className="modal-plan-summary" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <div style={{ fontWeight: '700', fontSize: '15px', color: 'var(--text-primary)' }}>
                         {selectedPlan.planName}
                       </div>
-                      <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div><strong>Product Name:</strong> {selectedPlan.productName}</div>
-                        <div><strong>Sum Insured:</strong> ₹{selectedPlan.coverageAmount.toLocaleString('en-IN')}</div>
-                        <div><strong>Coverage Term:</strong> {selectedPlan.durationYears} Years</div>
 
-                        {/* Interactive Billing Frequency Selector */}
-                        <div style={{ marginTop: '4px' }}>
-                          <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
-                            💳 SELECT BILLING FREQUENCY (3 OPTIONS)
+                      {/* 1. Sum Insured Coverage Range Slider */}
+                      <div style={{ background: 'rgba(79, 70, 229, 0.05)', border: '1px solid rgba(79, 70, 229, 0.2)', borderRadius: '10px', padding: '12px 14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <i className="ph ph-target"></i> SELECT DESIRED COVERAGE AMOUNT
                           </label>
+                          <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--primary)', fontFamily: 'monospace' }}>
+                            ₹{Number(selectedCoverage).toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={minCov}
+                          max={maxCov}
+                          step={50000}
+                          value={selectedCoverage}
+                          onChange={(e) => setSelectedCoverage(Number(e.target.value))}
+                          style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                          <span>Min: ₹{minCov.toLocaleString('en-IN')}</span>
+                          <span>Max: ₹{maxCov.toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+
+                      {/* 2. Interactive Billing Frequency Selector */}
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                          <i className="ph ph-credit-card"></i> SELECT BILLING FREQUENCY
+                        </label>
+                        {selectedPlan?.premiumType === 'ONE_TIME' ? (
+                          <div style={{ padding: '10px 12px', background: 'rgba(79, 70, 229, 0.08)', border: '1.5px solid var(--primary)', borderRadius: '6px', color: 'var(--primary)', fontWeight: '700', fontSize: '12.5px', textAlign: 'center' }}>
+                            ONE-TIME LUMP SUM (100% Single Payment)
+                          </div>
+                        ) : (
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
                             <button
                               type="button"
@@ -536,13 +635,13 @@ const PlanCatalog = () => {
                                 fontSize: '12px',
                                 fontWeight: '700',
                                 borderRadius: '6px',
-                                border: selectedFrequency === 'ANNUAL' ? '2px solid var(--primary)' : '1px solid var(--border)',
-                                background: selectedFrequency === 'ANNUAL' ? 'rgba(79, 70, 229, 0.08)' : 'var(--card)',
+                                border: selectedFrequency === 'ANNUAL' ? '1.5px solid var(--primary)' : '1px solid var(--border)',
+                                background: selectedFrequency === 'ANNUAL' ? 'rgba(79, 70, 229, 0.1)' : 'var(--surface)',
                                 color: selectedFrequency === 'ANNUAL' ? 'var(--primary)' : 'var(--text-secondary)',
                                 cursor: 'pointer'
                               }}
                             >
-                              Annual (1x/yr)
+                              ANNUAL (1x)
                             </button>
                             <button
                               type="button"
@@ -552,13 +651,13 @@ const PlanCatalog = () => {
                                 fontSize: '12px',
                                 fontWeight: '700',
                                 borderRadius: '6px',
-                                border: selectedFrequency === 'HALF_YEARLY' ? '2px solid var(--primary)' : '1px solid var(--border)',
-                                background: selectedFrequency === 'HALF_YEARLY' ? 'rgba(79, 70, 229, 0.08)' : 'var(--card)',
+                                border: selectedFrequency === 'HALF_YEARLY' ? '1.5px solid var(--primary)' : '1px solid var(--border)',
+                                background: selectedFrequency === 'HALF_YEARLY' ? 'rgba(79, 70, 229, 0.1)' : 'var(--surface)',
                                 color: selectedFrequency === 'HALF_YEARLY' ? 'var(--primary)' : 'var(--text-secondary)',
                                 cursor: 'pointer'
                               }}
                             >
-                              Half-Yearly (2x)
+                              HALF YEARLY (2x)
                             </button>
                             <button
                               type="button"
@@ -568,92 +667,221 @@ const PlanCatalog = () => {
                                 fontSize: '12px',
                                 fontWeight: '700',
                                 borderRadius: '6px',
-                                border: selectedFrequency === 'QUARTERLY' ? '2px solid var(--primary)' : '1px solid var(--border)',
-                                background: selectedFrequency === 'QUARTERLY' ? 'rgba(79, 70, 229, 0.08)' : 'var(--card)',
+                                border: selectedFrequency === 'QUARTERLY' ? '1.5px solid var(--primary)' : '1px solid var(--border)',
+                                background: selectedFrequency === 'QUARTERLY' ? 'rgba(79, 70, 229, 0.1)' : 'var(--surface)',
                                 color: selectedFrequency === 'QUARTERLY' ? 'var(--primary)' : 'var(--text-secondary)',
                                 cursor: 'pointer'
                               }}
                             >
-                              Quarterly (4x)
+                              QUARTERLY (4x)
                             </button>
                           </div>
-                        </div>
+                        )}
+                      </div>
 
-                        {/* Interactive Smoker Status Toggle (Only for Life & Health, NOT Motor/Travel) */}
-                        {!isMotorOrTravel ? (
-                          <div style={{ marginTop: '4px', background: isSmokerSelection ? 'rgba(239, 68, 68, 0.06)' : 'rgba(16, 185, 129, 0.06)', border: isSmokerSelection ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '8px', padding: '10px 12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <span style={{ fontSize: '12.5px', fontWeight: '700', color: isSmokerSelection ? '#EF4444' : '#10B981' }}>
-                                🚬 Tobacco / Smoker Status
-                              </span>
-                              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
-                                <input
-                                  type="checkbox"
-                                  checked={isSmokerSelection}
-                                  onChange={(e) => setIsSmokerSelection(e.target.checked)}
-                                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                                />
-                                Applicant is a Smoker
-                              </label>
+                      {/* 3. Smoker Toggle */}
+                      {!isMotorOrTravel ? (
+                        <div style={{ background: isSmokerSelection ? 'rgba(239, 68, 68, 0.06)' : 'rgba(16, 185, 129, 0.06)', border: isSmokerSelection ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '8px', padding: '10px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '12.5px', fontWeight: '700', color: isSmokerSelection ? '#EF4444' : '#10B981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <i className="ph ph-warning-octagon"></i> Tobacco / Smoker Status
+                            </span>
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                              <input
+                                type="checkbox"
+                                checked={isSmokerSelection}
+                                onChange={(e) => setIsSmokerSelection(e.target.checked)}
+                                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                              />
+                              Applicant is a Smoker
+                            </label>
+                          </div>
+                          {isSmokerSelection && (
+                            <div style={{ fontSize: '11.5px', color: '#EF4444', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <i className="ph ph-warning-circle"></i> Smoker Surcharge Applied: <strong>{smokerLoading.label}</strong>
                             </div>
-                            {isSmokerSelection && (
-                              <div style={{ fontSize: '11.5px', color: '#EF4444', marginTop: '4px' }}>
-                                ⚠️ Smoker Surcharge Applied: <strong>{smokerLoading.label}</strong> (Premium increases by 15% to 75%)
+                          )}
+                        </div>
+                      ) : null}
+
+                      {/* 4. Real-Time Installment Breakdown */}
+                      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', color: '#64748B' }}>
+                          <span>Chosen Sum Insured:</span>
+                          <span style={{ fontWeight: '700', color: '#1E293B' }}>₹{Number(selectedCoverage).toLocaleString('en-IN')}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', color: '#4F46E5' }}>
+                          <span>Selected Frequency:</span>
+                          <span style={{ fontWeight: '700', textTransform: 'uppercase' }}>{selectedFrequency}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', borderTop: '1px dashed #CBD5E1', paddingTop: '6px', marginTop: '4px', fontSize: '14px' }}>
+                          <span>Calculated Installment Premium:</span>
+                          <span className="mono" style={{ color: '#10B981' }}>
+                            ₹{effectiveInstallment.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 5. Policyholder Details Section */}
+                      <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <i className="ph ph-user-circle" style={{ color: 'var(--primary)' }}></i> Policyholder Personal Information
+                          </div>
+                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', color: 'var(--primary)' }}>
+                            <input
+                              type="checkbox"
+                              checked={isBuyingForSelf}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setIsBuyingForSelf(checked);
+                                if (checked) {
+                                  fillSelfDetails();
+                                } else {
+                                  setHolderName('');
+                                  setHolderAddress('');
+                                  setHolderPhone('');
+                                  setHolderAadhaar('');
+                                }
+                              }}
+                              style={{ width: '15px', height: '15px', cursor: 'pointer' }}
+                            />
+                            Buying for Self (Auto-fill)
+                          </label>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          
+                          <div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                              Full Name <span style={{ color: '#EF4444' }}>*</span>
+                            </label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={holderName}
+                              onChange={(e) => {
+                                setHolderName(e.target.value);
+                                if (purchaseErrors.holderName) setPurchaseErrors({ ...purchaseErrors, holderName: '' });
+                              }}
+                              placeholder="e.g. Rahul Sharma"
+                            />
+                            {purchaseErrors.holderName && (
+                              <p style={{ color: '#EF4444', fontSize: '11px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <i className="ph ph-warning-circle"></i> {purchaseErrors.holderName}
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                              Address <span style={{ color: '#EF4444' }}>*</span>
+                            </label>
+                            <textarea
+                              rows="2"
+                              className="form-input"
+                              style={{ resize: 'vertical' }}
+                              value={holderAddress}
+                              onChange={(e) => {
+                                setHolderAddress(e.target.value);
+                                if (purchaseErrors.holderAddress) setPurchaseErrors({ ...purchaseErrors, holderAddress: '' });
+                              }}
+                              placeholder="e.g. Flat 101, Green Enclave, MG Road, Mumbai"
+                            />
+                            {purchaseErrors.holderAddress && (
+                              <p style={{ color: '#EF4444', fontSize: '11px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <i className="ph ph-warning-circle"></i> {purchaseErrors.holderAddress}
+                              </p>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                                Phone Number <span style={{ color: '#EF4444' }}>*</span>
+                              </label>
+                              <input
+                                type="text"
+                                maxLength="10"
+                                className="form-input"
+                                value={holderPhone}
+                                onChange={(e) => {
+                                  setHolderPhone(e.target.value);
+                                  if (purchaseErrors.holderPhone) setPurchaseErrors({ ...purchaseErrors, holderPhone: '' });
+                                }}
+                                placeholder="10-digit Mobile"
+                              />
+                              {purchaseErrors.holderPhone && (
+                                <p style={{ color: '#EF4444', fontSize: '11px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <i className="ph ph-warning-circle"></i> {purchaseErrors.holderPhone}
+                                </p>
+                              )}
+                            </div>
+
+                            {!isMotorPlan ? (
+                              <div style={{ flex: 1 }}>
+                                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                                  Aadhaar Number <span style={{ color: '#EF4444' }}>*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  maxLength="12"
+                                  className="form-input"
+                                  value={holderAadhaar}
+                                  onChange={(e) => {
+                                    setHolderAadhaar(e.target.value);
+                                    if (purchaseErrors.holderAadhaar) setPurchaseErrors({ ...purchaseErrors, holderAadhaar: '' });
+                                  }}
+                                  placeholder="12-digit Aadhaar"
+                                />
+                                {purchaseErrors.holderAadhaar && (
+                                  <p style={{ color: '#EF4444', fontSize: '11px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <i className="ph ph-warning-circle"></i> {purchaseErrors.holderAadhaar}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <div style={{ flex: 1 }}>
+                                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                                  Vehicle Number (Car Reg. No) <span style={{ color: '#EF4444' }}>*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  style={{ textTransform: 'uppercase' }}
+                                  value={vehicleNumber}
+                                  onChange={(e) => {
+                                    setVehicleNumber(e.target.value);
+                                    if (purchaseErrors.vehicleNumber) setPurchaseErrors({ ...purchaseErrors, vehicleNumber: '' });
+                                  }}
+                                  placeholder="e.g. MH01AB1234"
+                                />
+                                {purchaseErrors.vehicleNumber && (
+                                  <p style={{ color: '#EF4444', fontSize: '11px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <i className="ph ph-warning-circle"></i> {purchaseErrors.vehicleNumber}
+                                  </p>
+                                )}
                               </div>
                             )}
                           </div>
-                        ) : (
-                          <div style={{ marginTop: '4px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#64748B' }}>
-                            ℹ️ <strong>Smoker Surcharge N/A:</strong> Tobacco risk loading is not applicable for {categoryMeta.title || 'Motor / Travel'} Insurance policies.
-                          </div>
-                        )}
 
-                        
-                        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 14px', marginTop: '4px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12.5px' }}>
-                            <span>Base Annual Premium:</span>
-                            <span className="mono">₹{selectedPlan.premiumAmount.toLocaleString('en-IN')}</span>
-                          </div>
-                          {currentCustomerAge !== null && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', color: '#64748B' }}>
-                              <span>Applicant Age ({currentCustomerAge} yrs):</span>
-                              <span style={{ color: ageLoading.percent > 0 ? '#D97706' : '#10B981', fontWeight: '600' }}>
-                                {ageLoading.label}
-                              </span>
-                            </div>
-                          )}
-                          {isSmokerSelection && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', color: '#EF4444' }}>
-                              <span>Smoker Risk Surcharge:</span>
-                              <span style={{ fontWeight: '600' }}>{smokerLoading.label}</span>
-                            </div>
-                          )}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '12px', color: '#4F46E5' }}>
-                            <span>Selected Billing Frequency:</span>
-                            <span style={{ fontWeight: '700', textTransform: 'uppercase' }}>{selectedFrequency}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', borderTop: '1px dashed #CBD5E1', paddingTop: '6px', marginTop: '4px', fontSize: '14px' }}>
-                            <span>Effective Installment Premium:</span>
-                            <span className="mono" style={{ color: '#10B981' }}>
-                              ₹{effectiveInstallment.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                            </span>
-                          </div>
                         </div>
                       </div>
+
+                      {/* Policy Start Date */}
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Policy Start Date</label>
+                        <input
+                          type="date"
+                          className="form-input"
+                          value={purchaseDate}
+                          onChange={(e) => setPurchaseDate(e.target.value)}
+                          required
+                        />
+                      </div>
+
                     </div>
                   );
                 })()}
-
-                <div className="form-group">
-                  <label className="form-label">Policy Start Date</label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    value={purchaseDate}
-                    onChange={(e) => setPurchaseDate(e.target.value)}
-                    required
-                  />
-                </div>
               </div>
 
 
@@ -670,7 +898,7 @@ const PlanCatalog = () => {
                   onClick={handleConfirmPurchase}
                   disabled={purchasing}
                 >
-                  {purchasing ? 'Processing...' : '✅ Confirm & Go to Payment'}
+                  {purchasing ? 'Processing...' : <><i className="ph ph-check-circle" style={{ marginRight: '6px' }}></i>Confirm & Go to Payment</>}
                 </button>
               </div>
         </Modal>
@@ -693,16 +921,17 @@ const PlanCatalog = () => {
 
               <div style={{ display: 'flex', gap: '16px' }}>
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Sum Insured Coverage (₹)</label>
+                  <label className="form-label">Min Coverage Amount (₹)</label>
                   <input 
                     type="number" 
-                    step="0.01"
+                    step="50000"
+                    min="50000"
                     className="form-input" 
-                    value={newPlan.coverageAmount}
-                    onChange={(e) => setNewPlan({ ...newPlan, coverageAmount: e.target.value })}
-                    placeholder="e.g. 5000000"
+                    value={newPlan.minCoverageAmount || newPlan.coverageAmount || ''}
+                    onChange={(e) => setNewPlan({ ...newPlan, minCoverageAmount: e.target.value })}
+                    placeholder="e.g. 500000 (Min ₹50,000)"
                   />
-                  {formErrors.coverageAmount && <div className="form-error">⚠️ {formErrors.coverageAmount}</div>}
+                  {formErrors.minCoverageAmount && <div className="form-error">⚠️ {formErrors.minCoverageAmount}</div>}
                 </div>
 
                 <div className="form-group" style={{ flex: 1 }}>

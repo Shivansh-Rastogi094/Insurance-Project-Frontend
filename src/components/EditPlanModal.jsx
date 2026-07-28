@@ -14,7 +14,7 @@ const EditPlanModal = ({ isOpen, onClose, plan, onSave, submitting = false }) =>
   const [formData, setFormData] = useState({
     id: '',
     planName: 'LifeSecure Term Plan',
-    coverageAmount: '50000000',
+    minCoverageAmount: '500000',
     premiumAmount: '',
     premiumType: 'ANNUAL',
     duration: '17',
@@ -29,11 +29,12 @@ const EditPlanModal = ({ isOpen, onClose, plan, onSave, submitting = false }) =>
   useEffect(() => {
     if (plan) {
       const hasCustomPremium = plan.premiumAmount !== undefined && plan.premiumAmount !== null && Number(plan.premiumAmount) > 0;
+      const minCov = plan.minCoverageAmount !== undefined ? String(plan.minCoverageAmount) : (plan.coverageAmount !== undefined ? String(plan.coverageAmount) : '500000');
 
       setFormData({
         id: plan.id || '',
         planName: plan.planName || 'LifeSecure Term Plan',
-        coverageAmount: plan.coverageAmount !== undefined ? String(plan.coverageAmount) : '50000000',
+        minCoverageAmount: minCov,
         premiumAmount: hasCustomPremium ? String(plan.premiumAmount) : '',
         premiumType: plan.premiumType || 'ANNUAL',
         duration: plan.duration !== undefined ? String(plan.duration) : (plan.durationYears ? String(plan.durationYears) : '17'),
@@ -53,9 +54,9 @@ const EditPlanModal = ({ isOpen, onClose, plan, onSave, submitting = false }) =>
     if (!formData.planName || !formData.planName.trim()) {
       newErrors.planName = "Plan name is required.";
     }
-    const cov = parseFloat(formData.coverageAmount);
-    if (isNaN(cov) || cov <= 0) {
-      newErrors.coverageAmount = "Coverage amount must be greater than zero.";
+    const cov = parseFloat(formData.minCoverageAmount);
+    if (isNaN(cov) || cov < 50000) {
+      newErrors.minCoverageAmount = "Minimum coverage amount must be at least ₹50,000.";
     }
 
     if (overridePremium) {
@@ -80,7 +81,7 @@ const EditPlanModal = ({ isOpen, onClose, plan, onSave, submitting = false }) =>
     if (onSave) {
       onSave({
         ...formData,
-        coverageAmount: parseFloat(formData.coverageAmount),
+        minCoverageAmount: parseFloat(formData.minCoverageAmount),
         premiumAmount: overridePremium && formData.premiumAmount ? parseFloat(formData.premiumAmount) : null,
         duration: parseInt(formData.duration, 10)
       });
@@ -114,7 +115,7 @@ const EditPlanModal = ({ isOpen, onClose, plan, onSave, submitting = false }) =>
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="✏️ Edit Insurance Plan"
+      title={<><i className="ph ph-pencil-simple" style={{ marginRight: '8px' }}></i>Edit Insurance Plan</>}
       maxWidth="540px"
     >
       <form onSubmit={handleSubmit} style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -135,66 +136,66 @@ const EditPlanModal = ({ isOpen, onClose, plan, onSave, submitting = false }) =>
             placeholder="e.g. LifeSecure Term Plan"
           />
           {errors.planName && (
-            <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px', fontWeight: '500' }}>⚠️ {errors.planName}</p>
+            <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <i className="ph ph-warning-circle"></i> {errors.planName}
+            </p>
           )}
         </div>
 
-        {/* Row 1: Coverage Amount & Premium */}
+        {/* Row 1: Min Coverage Amount & Max Coverage Amount (Auto-generated) */}
         <div style={{ display: 'flex', gap: '16px' }}>
           
-          {/* Sum Insured Coverage */}
+          {/* Min Coverage Amount */}
           <div style={{ flex: 1 }}>
             <label style={labelStyle}>
-              Sum Insured Coverage (₹) <span style={{ color: '#EF4444' }}>*</span>
+              Min Coverage Amount (₹) <span style={{ color: '#EF4444' }}>*</span>
             </label>
             <input
               type="number"
-              step="1"
+              step="50000"
+              min="50000"
               style={inputStyle}
-              value={formData.coverageAmount}
+              value={formData.minCoverageAmount}
               onChange={(e) => {
-                setFormData({ ...formData, coverageAmount: e.target.value });
-                if (errors.coverageAmount) setErrors({ ...errors, coverageAmount: '' });
+                setFormData({ ...formData, minCoverageAmount: e.target.value });
+                if (errors.minCoverageAmount) setErrors({ ...errors, minCoverageAmount: '' });
               }}
-              placeholder="e.g. 50000000"
+              placeholder="e.g. 500000 (Min ₹50,000)"
             />
-            {errors.coverageAmount && (
-              <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px', fontWeight: '500' }}>⚠️ {errors.coverageAmount}</p>
+            {errors.minCoverageAmount && (
+              <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <i className="ph ph-warning-circle"></i> {errors.minCoverageAmount}
+              </p>
             )}
           </div>
 
-          {/* Premium Installment (Custom vs Auto-generated) */}
+          {/* Max Coverage Amount (Auto-Calculated) */}
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <label style={labelStyle}>
-                Premium Installment (₹)
+                Max Coverage Amount (₹)
               </label>
-              {!overridePremium && (
-                <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px', background: 'rgba(37, 99, 235, 0.12)', color: 'var(--primary-light)', border: '1px solid rgba(37, 99, 235, 0.25)' }}>
-                  Auto-Generated
-                </span>
-              )}
+              <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.12)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                Auto-Calculated (+₹20L)
+              </span>
             </div>
             <input
               type="number"
-              step="0.01"
-              disabled={!overridePremium}
+              disabled
               style={{
                 ...inputStyle,
-                background: !overridePremium ? 'rgba(148, 163, 184, 0.08)' : 'var(--surface)',
-                opacity: !overridePremium ? 0.7 : 1,
-                cursor: !overridePremium ? 'not-allowed' : 'text'
+                background: 'rgba(148, 163, 184, 0.08)',
+                opacity: 0.85,
+                cursor: 'not-allowed',
+                fontWeight: '600',
+                color: 'var(--primary-light)'
               }}
-              value={formData.premiumAmount}
-              onChange={(e) => {
-                setFormData({ ...formData, premiumAmount: e.target.value });
-                if (errors.premiumAmount) setErrors({ ...errors, premiumAmount: '' });
-              }}
-              placeholder={!overridePremium ? "Auto-generated by backend" : "Enter custom amount"}
+              value={!isNaN(parseFloat(formData.minCoverageAmount)) ? parseFloat(formData.minCoverageAmount) + 2000000 : ''}
+              readOnly
             />
-            {errors.premiumAmount && (
-              <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px', fontWeight: '500' }}>⚠️ {errors.premiumAmount}</p>
-            )}
+            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <i className="ph ph-sparkle" style={{ color: 'var(--primary)' }}></i> Auto-set by backend to Min + ₹20,00,000
+            </p>
           </div>
 
         </div>
@@ -204,7 +205,10 @@ const EditPlanModal = ({ isOpen, onClose, plan, onSave, submitting = false }) =>
           background: overridePremium ? 'rgba(79, 70, 229, 0.06)' : 'var(--surface)',
           border: overridePremium ? '1px solid rgba(79, 70, 229, 0.25)' : '1px solid var(--border)',
           borderRadius: '10px',
-          padding: '12px 14px'
+          padding: '12px 14px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
         }}>
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', margin: 0 }}>
             <input
@@ -217,14 +221,40 @@ const EditPlanModal = ({ isOpen, onClose, plan, onSave, submitting = false }) =>
               style={{ width: '16px', height: '16px', marginTop: '2px', cursor: 'pointer' }}
             />
             <div>
-              <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', display: 'block' }}>
-                ⚙️ Set Custom Premium Installment Amount
+              <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <i className="ph ph-gear-six" style={{ color: 'var(--primary)' }}></i> Set Custom Premium Installment Amount
               </span>
               <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
                 Unchecked = Backend automatically calculates the actuarial premium based on coverage &amp; term. Checked = Admin specifies a custom fixed premium amount.
               </p>
             </div>
           </label>
+
+          {overridePremium && (
+            <div style={{ paddingTop: '10px', borderTop: '1px dashed rgba(79, 70, 229, 0.25)' }}>
+              <label style={labelStyle}>
+                Custom Premium Amount (₹) <span style={{ color: '#EF4444' }}>*</span>
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="1"
+                style={inputStyle}
+                value={formData.premiumAmount}
+                onChange={(e) => {
+                  setFormData({ ...formData, premiumAmount: e.target.value });
+                  if (errors.premiumAmount) setErrors({ ...errors, premiumAmount: '' });
+                }}
+                placeholder="Enter custom installment premium (e.g. 15000)"
+                autoFocus
+              />
+              {errors.premiumAmount && (
+                <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <i className="ph ph-warning-circle"></i> {errors.premiumAmount}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Row 2: Billing Frequency & Coverage Term */}
@@ -266,7 +296,9 @@ const EditPlanModal = ({ isOpen, onClose, plan, onSave, submitting = false }) =>
               placeholder="e.g. 17"
             />
             {errors.duration && (
-              <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px', fontWeight: '500' }}>⚠️ {errors.duration}</p>
+              <p style={{ color: '#EF4444', fontSize: '12px', marginTop: '4px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <i className="ph ph-warning-circle"></i> {errors.duration}
+              </p>
             )}
           </div>
 
