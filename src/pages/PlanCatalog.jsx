@@ -103,7 +103,7 @@ const PlanCatalog = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPlan, setNewPlan] = useState({
     planName: '',
-    coverageAmount: '',
+    minCoverageAmount: '',
     premiumAmount: '',
     premiumType: 'ANNUAL',
     duration: '',
@@ -325,7 +325,7 @@ const PlanCatalog = () => {
       const payload = {
         productId: parsedProductId,
         planName: newPlan.planName.trim(),
-        coverageAmount: parseFloat(newPlan.minCoverageAmount || newPlan.coverageAmount),
+        minCoverageAmount: parseFloat(newPlan.minCoverageAmount || newPlan.coverageAmount),
         premiumAmount: newPlan.premiumAmount ? parseFloat(newPlan.premiumAmount) : null,
         premiumType: newPlan.premiumType,
         duration: parseInt(newPlan.duration, 10),
