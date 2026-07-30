@@ -44,7 +44,7 @@ const AccessDenied = () => {
           justifyContent: 'space-between',
           padding: '0 40px'
         }}>
-          <div className="topbar-logo">🛡️ InsureSpace</div>
+          <div className="topbar-logo"><i className="ph ph-shield"></i> InsureSpace</div>
           <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <span className="role-badge" style={{
               fontSize: '12px',

@@ -17,7 +17,7 @@ export const readAllClaims = async (page = 0, size = 10) => {
 };
 
 // GET /api/claims/my?page=0&size=10
-export const readMyClaims = async (page = 0, size = 10) => {
+export const readMyClaims = async (page = 0, size = 100) => {
     try {
         const response = await api.get(`claims/my`, { params: { page, size } });
         return response.data.content;

@@ -455,10 +455,20 @@ const Profile = () => {
     const textRegex = /^[a-zA-Z\s.-]+$/;
 
     Object.keys(values).forEach(key => {
-      if (!values[key] || values[key].toString().trim() === '') {
+    const value = values[key];
+
+    if (typeof value === "boolean") {
+        return; // false is a valid value
+    }
+
+    if (
+        value === null ||
+        value === undefined ||
+        (typeof value === "string" && value.trim() === "")
+    ) {
         errors[key] = "This field is required.";
-      }
-    });
+    }
+});
 
     if (values.dateOfBirth) {
       const dob = new Date(values.dateOfBirth);
@@ -519,6 +529,7 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log(formData);
     if (!validateForm()) return;
 
     if (profile) {
@@ -783,7 +794,15 @@ const Profile = () => {
                     <div className="detail-item">
                       <span className="detail-label">Smoker / Tobacco Status</span>
                       <span className="detail-value" style={{ color: profile?.isSmoker ? '#EF4444' : '#10B981', fontWeight: '700' }}>
-                        {profile?.isSmoker ? '🚬 Smoker (Surcharge Applies)' : '🚭 Non-Smoker'}
+                        {profile?.isSmoker ? (
+                          <>
+                            <i className="ph ph-cigarette"></i> Smoker (Surcharge Applies)
+                          </>
+                        ) : (
+                          <>
+                            <i className="ph no-smoking"></i> Non-Smoker
+                          </>
+                        )}
                       </span>
                     </div>
 
@@ -812,7 +831,7 @@ const Profile = () => {
               value={formData.dateOfBirth}
               onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
             />
-            {formErrors.dateOfBirth && <div className="form-error">⚠️ {formErrors.dateOfBirth}</div>}
+            {formErrors.dateOfBirth && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.dateOfBirth}</div>}
           </div>
 
           <div className="form-group">
@@ -824,7 +843,7 @@ const Profile = () => {
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
             />
-            {formErrors.address && <div className="form-error">⚠️ {formErrors.address}</div>}
+            {formErrors.address && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.address}</div>}
           </div>
 
           <div style={{ display: 'flex', gap: '16px' }}>
@@ -837,7 +856,7 @@ const Profile = () => {
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
               />
-              {formErrors.city && <div className="form-error">⚠️ {formErrors.city}</div>}
+              {formErrors.city && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.city}</div>}
             </div>
 
             <div className="form-group" style={{ flex: 1 }}>
@@ -849,7 +868,7 @@ const Profile = () => {
                 value={formData.state}
                 onChange={(e) => setFormData({ ...formData, state: e.target.value })}
               />
-              {formErrors.state && <div className="form-error">⚠️ {formErrors.state}</div>}
+              {formErrors.state && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.state}</div>}
             </div>
           </div>
 
@@ -862,7 +881,7 @@ const Profile = () => {
               value={formData.pinCode}
               onChange={(e) => setFormData({ ...formData, pinCode: e.target.value })}
             />
-            {formErrors.pinCode && <div className="form-error">⚠️ {formErrors.pinCode}</div>}
+            {formErrors.pinCode && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.pinCode}</div>}
           </div>
 
           <div style={{ display: 'flex', gap: '16px' }}>
@@ -875,7 +894,7 @@ const Profile = () => {
                 value={formData.nomineeName}
                 onChange={(e) => setFormData({ ...formData, nomineeName: e.target.value })}
               />
-              {formErrors.nomineeName && <div className="form-error">⚠️ {formErrors.nomineeName}</div>}
+              {formErrors.nomineeName && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.nomineeName}</div>}
             </div>
 
             <div className="form-group" style={{ flex: 1 }}>
@@ -894,7 +913,7 @@ const Profile = () => {
                 <option value="Relative">Relative</option>
                 <option value="Other">Other</option>
               </select>
-              {formErrors.nomineeRelation && <div className="form-error">⚠️ {formErrors.nomineeRelation}</div>}
+              {formErrors.nomineeRelation && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.nomineeRelation}</div>}
             </div>
           </div>
 
@@ -902,7 +921,7 @@ const Profile = () => {
           <div className="form-group" style={{ background: formData.isSmoker ? 'rgba(239, 68, 68, 0.06)' : 'rgba(16, 185, 129, 0.06)', border: formData.isSmoker ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '8px', padding: '12px 14px', marginTop: '6px' }}>
             <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', margin: 0 }}>
               <span style={{ fontSize: '13px', fontWeight: '700', color: formData.isSmoker ? '#EF4444' : '#10B981' }}>
-                🚬 Tobacco / Smoker Status
+                <i className="ph ph-cigarette"></i> Tobacco / Smoker Status
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input
@@ -918,7 +937,7 @@ const Profile = () => {
             </label>
             {formData.isSmoker && (
               <div style={{ fontSize: '11.5px', color: '#EF4444', marginTop: '6px' }}>
-                ⚠️ Smoker status adds an actuarial risk surcharge (+15% to +75%) to policy premium calculations.
+                <i className="ph ph-info-circle"></i> Smoker status adds an actuarial risk surcharge (+15% to +75%) to policy premium calculations.
               </div>
             )}
           </div>
@@ -936,6 +955,7 @@ const Profile = () => {
               type="submit"
               className="btn-confirm"
               disabled={submitting}
+               onClick={() => console.log("btn clicked")}
             >
               {submitting ? 'Saving...' : 'Save Profile'}
             </button>

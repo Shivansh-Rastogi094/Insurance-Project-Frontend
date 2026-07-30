@@ -597,7 +597,7 @@ const Customers = () => {
             </div>
           ) : error ? (
             <div className="error-container" style={{ textAlign: 'center', padding: '40px', color: 'var(--danger)' }}>
-              <p>⚠️ {error}</p>
+              <p><i className="ph ph-warning-triangle"></i> {error}</p>
             </div>
           ) : customers.length === 0 ? (
             <div className="empty-container" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>

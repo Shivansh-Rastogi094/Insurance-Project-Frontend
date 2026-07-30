@@ -156,7 +156,7 @@ const Policy = () => {
             </div>
           ) : error ? (
             <div className="error-container">
-              <div className="error-icon">⚠️</div>
+              <div className="error-icon"><i className="ph ph-warning-triangle"></i></div>
               <p>{error}</p>
               <button className="btn-admin" style={{ marginTop: '20px' }} onClick={fetchProducts}>
                 Retry Loading

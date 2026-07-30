@@ -710,7 +710,7 @@ const ProductCatalog = () => {
             </div>
           ) : error ? (
             <div className="error-container">
-              <div className="error-icon">⚠️</div>
+              <div className="error-icon"><i className="ph ph-warning-triangle"></i></div>
               <p>{error}</p>
               <button className="explore-btn" style={{ marginTop: '20px', width: 'auto' }} onClick={loadCatalogData}>
                 Retry Loading

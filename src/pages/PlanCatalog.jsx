@@ -263,7 +263,7 @@ const PlanCatalog = () => {
         vehicleNumber: isMotorPlan ? vehicleNumber.trim().toUpperCase() : null
       };
       await purchasePolicy(payload);
-      toast.success(`🎉 Policy created! Redirecting to Payments to complete your first premium installment.`);
+      toast.success(<><i className="ph ph-party-popper" style={{ marginRight: '6px' }}></i>Policy created! Redirecting to Payments to complete your first premium installment.</>);
       setSelectedPlan(null);
 
       
@@ -321,7 +321,7 @@ const PlanCatalog = () => {
       const payload = {
         productId: parsedProductId,
         planName: newPlan.planName.trim(),
-        minCoverageAmount: parseFloat(newPlan.minCoverageAmount || newPlan.coverageAmount),
+        coverageAmount: parseFloat(newPlan.minCoverageAmount || newPlan.coverageAmount),
         premiumAmount: newPlan.premiumAmount ? parseFloat(newPlan.premiumAmount) : null,
         premiumType: newPlan.premiumType,
         duration: parseInt(newPlan.duration, 10),
@@ -457,7 +457,7 @@ const PlanCatalog = () => {
             </div>
           ) : error ? (
             <div className="error-container">
-              <div className="error-icon">⚠️</div>
+              <div className="error-icon"><i className="ph ph-warning-triangle"></i></div>
               <p>{error}</p>
               <button className="buy-btn" style={{ marginTop: '20px', width: 'auto' }} onClick={loadPlans}>
                 Retry Loading
@@ -626,7 +626,7 @@ const PlanCatalog = () => {
                             ONE-TIME LUMP SUM (100% Single Payment)
                           </div>
                         ) : (
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
                             <button
                               type="button"
                               onClick={() => setSelectedFrequency('ANNUAL')}
@@ -664,7 +664,7 @@ const PlanCatalog = () => {
                               onClick={() => setSelectedFrequency('QUARTERLY')}
                               style={{
                                 padding: '8px 6px',
-                                fontSize: '12px',
+                                fontSize: '11px',
                                 fontWeight: '700',
                                 borderRadius: '6px',
                                 border: selectedFrequency === 'QUARTERLY' ? '1.5px solid var(--primary)' : '1px solid var(--border)',
@@ -674,6 +674,22 @@ const PlanCatalog = () => {
                               }}
                             >
                               QUARTERLY (4x)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedFrequency('MONTHLY')}
+                              style={{
+                                padding: '8px 6px',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                borderRadius: '6px',
+                                border: selectedFrequency === 'MONTHLY' ? '1.5px solid var(--primary)' : '1px solid var(--border)',
+                                background: selectedFrequency === 'MONTHLY' ? 'rgba(79, 70, 229, 0.1)' : 'var(--surface)',
+                                color: selectedFrequency === 'MONTHLY' ? 'var(--primary)' : 'var(--text-secondary)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              MONTHLY (12x)
                             </button>
                           </div>
                         )}
@@ -723,12 +739,12 @@ const PlanCatalog = () => {
                       </div>
 
                       {/* 5. Policyholder Details Section */}
-                      <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <i className="ph ph-user-circle" style={{ color: 'var(--primary)' }}></i> Policyholder Personal Information
+                      <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                          <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <i className="ph ph-user-circle" style={{ color: 'var(--primary)', fontSize: '18px' }}></i> Policyholder Information
                           </div>
-                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '700', color: 'var(--primary)' }}>
+                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', color: 'var(--primary)', background: 'var(--surface)', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--primary-light)' }}>
                             <input
                               type="checkbox"
                               checked={isBuyingForSelf}
@@ -744,15 +760,16 @@ const PlanCatalog = () => {
                                   setHolderAadhaar('');
                                 }
                               }}
-                              style={{ width: '15px', height: '15px', cursor: 'pointer' }}
+                              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                             />
                             Buying for Self (Auto-fill)
                           </label>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '14px', background: 'var(--surface)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
                           
                           <div>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '6px', color: 'var(--text-secondary)' }}>
                               Full Name <span style={{ color: '#EF4444' }}>*</span>
                             </label>
                             <input
@@ -766,14 +783,14 @@ const PlanCatalog = () => {
                               placeholder="e.g. Rahul Sharma"
                             />
                             {purchaseErrors.holderName && (
-                              <p style={{ color: '#EF4444', fontSize: '11px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <p style={{ color: '#EF4444', fontSize: '11px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <i className="ph ph-warning-circle"></i> {purchaseErrors.holderName}
                               </p>
                             )}
                           </div>
 
                           <div>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '6px', color: 'var(--text-secondary)' }}>
                               Address <span style={{ color: '#EF4444' }}>*</span>
                             </label>
                             <textarea
@@ -794,9 +811,9 @@ const PlanCatalog = () => {
                             )}
                           </div>
 
-                          <div style={{ display: 'flex', gap: '10px' }}>
+                          <div style={{ display: 'flex', gap: '14px' }}>
                             <div style={{ flex: 1 }}>
-                              <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                              <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '6px', color: 'var(--text-secondary)' }}>
                                 Phone Number <span style={{ color: '#EF4444' }}>*</span>
                               </label>
                               <input
@@ -811,7 +828,7 @@ const PlanCatalog = () => {
                                 placeholder="10-digit Mobile"
                               />
                               {purchaseErrors.holderPhone && (
-                                <p style={{ color: '#EF4444', fontSize: '11px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <p style={{ color: '#EF4444', fontSize: '11px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                   <i className="ph ph-warning-circle"></i> {purchaseErrors.holderPhone}
                                 </p>
                               )}
@@ -819,7 +836,7 @@ const PlanCatalog = () => {
 
                             {!isMotorPlan ? (
                               <div style={{ flex: 1 }}>
-                                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '6px', color: 'var(--text-secondary)' }}>
                                   Aadhaar Number <span style={{ color: '#EF4444' }}>*</span>
                                 </label>
                                 <input
@@ -916,7 +933,7 @@ const PlanCatalog = () => {
                   onChange={(e) => setNewPlan({ ...newPlan, planName: e.target.value })}
                   placeholder="e.g. Gold Life Shield"
                 />
-                {formErrors.planName && <div className="form-error">⚠️ {formErrors.planName}</div>}
+                {formErrors.planName && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.planName}</div>}
               </div>
 
               <div style={{ display: 'flex', gap: '16px' }}>
@@ -931,7 +948,7 @@ const PlanCatalog = () => {
                     onChange={(e) => setNewPlan({ ...newPlan, minCoverageAmount: e.target.value })}
                     placeholder="e.g. 500000 (Min ₹50,000)"
                   />
-                  {formErrors.minCoverageAmount && <div className="form-error">⚠️ {formErrors.minCoverageAmount}</div>}
+                  {formErrors.minCoverageAmount && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.minCoverageAmount}</div>}
                 </div>
 
                 <div className="form-group" style={{ flex: 1 }}>
@@ -946,7 +963,7 @@ const PlanCatalog = () => {
                     onChange={(e) => setNewPlan({ ...newPlan, premiumAmount: e.target.value })}
                     placeholder="Leave blank to auto-calculate via formula"
                   />
-                  {formErrors.premiumAmount && <div className="form-error">⚠️ {formErrors.premiumAmount}</div>}
+                  {formErrors.premiumAmount && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.premiumAmount}</div>}
                 </div>
               </div>
 
@@ -972,7 +989,7 @@ const PlanCatalog = () => {
                     onChange={(e) => setNewPlan({ ...newPlan, duration: e.target.value })}
                     placeholder="e.g. 20"
                   />
-                  {formErrors.duration && <div className="form-error">⚠️ {formErrors.duration}</div>}
+                  {formErrors.duration && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.duration}</div>}
                 </div>
               </div>
 

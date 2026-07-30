@@ -304,7 +304,7 @@ const LandingPage = () => {
               Get started
             </button>
             <button className="rev-menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? "✕" : "☰"}
+              {menuOpen ? <i className="ph ph-x"></i> : <i className="ph ph-list"></i>}
             </button>
           </div>
         </div>

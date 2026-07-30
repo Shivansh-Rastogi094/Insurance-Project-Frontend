@@ -64,7 +64,7 @@ const ResetPassword = () => {
               <p>Setup your new password using the recovery OTP code sent to your email.</p>
             </div>
 
-            {error && <p className="error-text" style={{ color: "#EF4444", marginBottom: "16px", textAlign: "center", fontWeight: "600" }}>⚠️ {error}</p>}
+            {error && <p className="error-text" style={{ color: "#EF4444", marginBottom: "16px", textAlign: "center", fontWeight: "600" }}><i className="ph ph-warning-triangle"></i> {error}</p>}
 
             <div className="form-group">
               <label className="form-label">Email Address</label>

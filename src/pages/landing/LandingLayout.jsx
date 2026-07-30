@@ -7,11 +7,11 @@ import "../../styles/Navbar.css";
 
 const NAV_LINKS = [
   { path: "/",          label: "Home",     icon: <i className="ph ph-house"></i> },
-  { path: "/about",     label: "About",    icon: "ℹ️" },
+  { path: "/about",     label: "About",    icon: <i className="ph ph-info-circle"></i> },
   { path: "/plans",     label: "Plans",    icon: <i className="ph ph-clipboard"></i> },
   { path: "/pricing",   label: "Pricing",  icon: <i className="ph ph-coin"></i> },
   { path: "/features",  label: "Features", icon: <i className="ph ph-sparkle"></i> },
-  { path: "/claims-info", label: "Claims",  icon: "🛡️" },
+  { path: "/claims-info", label: "Claims",  icon: <i className="ph ph-shield"></i> },
   { path: "/register",  label: "Contact",  icon: <i className="ph ph-phone"></i> },
 ];
 
@@ -37,7 +37,7 @@ const Navbar = () => {
         <div className="ca-nav-inner">
           {/* Brand */}
           <div className="ca-brand" onClick={() => navigate("/")}>
-            <span className="ca-brand-icon">🛡️</span>
+            <div className="ca-brand-icon"><i className="ph ph-shield"></i></div>
             <span className="ca-brand-name">
               Crown Assurance
               <span className="ca-brand-sub">Pvt. &amp; Ltd.</span>
@@ -98,7 +98,7 @@ export const Footer = () => {
   const navigate = useNavigate();
   return (
     <footer className="ca-footer">
-      <div className="ca-footer-brand">🛡️ Crown Assurance Pvt. &amp; Ltd.</div>
+      <div className="ca-footer-brand"><i className="ph ph-shield"></i> Crown Assurance Pvt. &amp; Ltd.</div>
       <div className="ca-footer-links">
         {NAV_LINKS.map((l) => (
           <a key={l.path} onClick={() => navigate(l.path)}>{l.label}</a>

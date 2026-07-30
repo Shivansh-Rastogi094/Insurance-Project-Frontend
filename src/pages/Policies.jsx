@@ -235,7 +235,7 @@ const Policies = () => {
             </div>
           ) : error ? (
             <div className="loading-container" style={{ color: 'var(--danger)' }}>
-              <p>⚠️ Error loading policies: {error}</p>
+              <p><i className="ph ph-warning-triangle"></i> Error loading policies: {error}</p>
               <button className="page-btn" style={{ marginTop: '12px' }} onClick={() => loadPolicies()}>
                 Retry
               </button>
@@ -298,7 +298,7 @@ const Policies = () => {
         <Modal
           isOpen={showCancelModal}
           onClose={() => { if (!cancelSubmitting) setShowCancelModal(false); }}
-          title="⚠️ Cancel Insurance Policy"
+          title={<><i className="ph ph-warning-triangle"></i> Cancel Insurance Policy</>}
           maxWidth="440px"
         >
           <div style={{ marginTop: '12px', fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>

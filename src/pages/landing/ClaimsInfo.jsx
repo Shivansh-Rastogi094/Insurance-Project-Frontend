@@ -28,7 +28,7 @@ const ClaimsInfo = () => {
         <div className="ci-inner">
           <div className="page-hero">
             <div className="ph-b1"/><div className="ph-b2"/>
-            <span className="page-hero-icon">🛡️</span>
+            <span className="page-hero-icon"><i className="ph ph-shield"></i></span>
             <h1>How Claims Work</h1>
             <p>Our 5-step digital claims process is fast, transparent, and completely paperless.</p>
           </div>
@@ -50,14 +50,14 @@ const ClaimsInfo = () => {
           <div className="ci-cta">
             <h2>Ready to File a Claim?</h2>
             <p>Register now and access our full claims portal with real-time tracking.</p>
-            <button className="btn-ci-cta" onClick={() => navigate("/register")}>🛡️ Start Your Claim</button>
+            <button className="btn-ci-cta" onClick={() => navigate("/register")}><i className="ph ph-shield"></i> Start Your Claim</button>
           </div>
 
           <div className="faq-title">Claims FAQs</div>
           {FAQS.map((f, i) => (
             <div className="faq-item" key={i}>
               <div className="faq-q" onClick={() => setOpen(open === i ? null : i)}>
-                {f.q} <span className={`faq-v${open===i?" open":""}`}>▼</span>
+                {f.q} <span className={`faq-v${open===i?" open":""}`}><i className="ph ph-chevron-down"></i></span>
               </div>
               {open === i && <div className="faq-a">{f.a}</div>}
             </div>

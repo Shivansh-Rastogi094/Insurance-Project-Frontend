@@ -176,8 +176,8 @@ const AddUserModal = ({ show, onClose, onUserCreated }) => {
           </select>
           <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
             {agentData.role === 'SUPER_AGENT'
-              ? '⚡ Super Agent can review claims across ALL policy types (SUPER specialization auto-assigned).'
-              : '🎯 Agent is restricted to claims matching their selected policy specialization.'}
+              ? <><i className="ph ph-zap"></i> Super Agent can review claims across ALL policy types (SUPER specialization auto-assigned).</>
+              : <><i className="ph ph-target"></i> Agent is restricted to claims matching their selected policy specialization.</>}
           </span>
         </div>
 

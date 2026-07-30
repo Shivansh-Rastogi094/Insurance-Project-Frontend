@@ -236,7 +236,7 @@ const Users = () => {
             </div>
           ) : error ? (
             <div className="loading-container" style={{ color: 'var(--danger)' }}>
-              <p>⚠️ Error loading user directory: {error}</p>
+              <p><i className="ph ph-warning-triangle"></i> Error loading user directory: {error}</p>
               <button className="page-btn" style={{ marginTop: '12px' }} onClick={() => loadUsers(currentPage)}>
                 Retry
               </button>

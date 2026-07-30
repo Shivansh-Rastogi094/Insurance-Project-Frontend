@@ -7,11 +7,11 @@ const Home = () => {
   const navigate = useNavigate();
 
   const QUICK_PAGES = [
-    { icon: "ℹ️", label: "About Us",  desc: "Our story, mission, and values",   path: "/about"      },
+    { icon: <i className="ph ph-info-circle"></i>, label: "About Us",  desc: "Our story, mission, and values",   path: "/about"      },
     { icon: <i className="ph ph-clipboard"></i>, label: "Plans",     desc: "Life, Health & Motor plans",        path: "/plans"      },
     { icon: <i className="ph ph-coin"></i>, label: "Pricing",   desc: "Simple transparent pricing",        path: "/pricing"    },
     { icon: <i className="ph ph-sparkle"></i>, label: "Features",  desc: "What makes us different",           path: "/features"   },
-    { icon: "🛡️", label: "Claims",   desc: "How our claims process works",      path: "/claims-info"},
+    { icon: <i className="ph ph-shield"></i>, label: "Claims",   desc: "How our claims process works",      path: "/claims-info"},
     { icon: <i className="ph ph-phone"></i>, label: "Contact",   desc: "Get started — create an account",   path: "/register"   },
   ];
 
