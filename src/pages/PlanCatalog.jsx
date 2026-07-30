@@ -48,6 +48,7 @@ const getSmokerLoadingDetails = (isSmoker, age) => {
 const getFrequencyMultiplier = (freq) => {
   if (freq === 'HALF_YEARLY') return 0.55;
   if (freq === 'QUARTERLY') return 0.275;
+  if (freq === 'MONTHLY') return 0.095;
   return 1.0; // ANNUAL
 };
 

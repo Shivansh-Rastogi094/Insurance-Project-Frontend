@@ -80,6 +80,7 @@ const PremiumCalculatorWidget = ({ onSelectCalculatedPlan }) => {
                 <option value="ANNUAL">Annual (100% per yr)</option>
                 <option value="HALF_YEARLY">Half-Yearly (55% x 2)</option>
                 <option value="QUARTERLY">Quarterly (27.5% x 4)</option>
+                <option value="MONTHLY">Monthly (9.5% x 12)</option>
               </select>
             </div>
           </div>
