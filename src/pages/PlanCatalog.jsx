@@ -304,6 +304,10 @@ const PlanCatalog = () => {
     if (isNaN(durationVal) || durationVal <= 0) {
       errors.duration = "Coverage duration must be greater than zero.";
     }
+
+    if (!formData.termsAndConditions || formData.termsAndConditions.trim().length < 20) {
+      errors.termsAndConditions = "Terms & conditions are required and must be at least 20 characters.";
+    }
     
     return errors;
   };
@@ -325,6 +329,7 @@ const PlanCatalog = () => {
         premiumAmount: newPlan.premiumAmount ? parseFloat(newPlan.premiumAmount) : null,
         premiumType: newPlan.premiumType,
         duration: parseInt(newPlan.duration, 10),
+        durationYears: parseInt(newPlan.duration, 10),
         termsAndConditions: newPlan.termsAndConditions.trim(),
         active: newPlan.active
       };
@@ -982,10 +987,11 @@ const PlanCatalog = () => {
                   className="form-input" 
                   value={newPlan.termsAndConditions}
                   onChange={(e) => setNewPlan({ ...newPlan, termsAndConditions: e.target.value })}
-                  placeholder="Enter terms and conditions..."
+                  placeholder="Enter terms and conditions (min 20 characters)..."
                   rows="3"
                   style={{ resize: 'vertical', fontFamily: 'inherit' }}
                 />
+                {formErrors.termsAndConditions && <div className="form-error">⚠️ {formErrors.termsAndConditions}</div>}
               </div>
 
               <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px', marginTop: '16px' }}>

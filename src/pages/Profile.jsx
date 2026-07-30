@@ -455,7 +455,8 @@ const Profile = () => {
     const textRegex = /^[a-zA-Z\s.-]+$/;
 
     Object.keys(values).forEach(key => {
-      if (!values[key] || values[key].toString().trim() === '') {
+      if (key === 'isSmoker') return; // Skip boolean field check
+      if (values[key] === undefined || values[key] === null || values[key].toString().trim() === '') {
         errors[key] = "This field is required.";
       }
     });
