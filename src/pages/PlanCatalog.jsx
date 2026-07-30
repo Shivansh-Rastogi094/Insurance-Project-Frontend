@@ -48,6 +48,7 @@ const getSmokerLoadingDetails = (isSmoker, age) => {
 const getFrequencyMultiplier = (freq) => {
   if (freq === 'HALF_YEARLY') return 0.55;
   if (freq === 'QUARTERLY') return 0.275;
+  if (freq === 'MONTHLY') return 0.095;
   return 1.0; // ANNUAL
 };
 
@@ -63,7 +64,7 @@ const getAdjustedPremium = (basePremium, age, isSmoker, freq, productType = '', 
   const totalPercent = agePct + smokerPct;
   const annualRate = effectiveBase * (1 + totalPercent / 100);
   const installmentRate = annualRate * getFrequencyMultiplier(freq);
-  return Number(installmentRate.toFixed(2));
+  return Math.round(installmentRate);
 };
 
 const getAgeAdjustedPremium = (basePremium, age) => getAdjustedPremium(basePremium, age, false, 'ANNUAL');
@@ -738,7 +739,7 @@ const PlanCatalog = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', borderTop: '1px dashed #CBD5E1', paddingTop: '6px', marginTop: '4px', fontSize: '14px' }}>
                           <span>Calculated Installment Premium:</span>
                           <span className="mono" style={{ color: '#10B981' }}>
-                            ₹{effectiveInstallment.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            ₹{Math.round(effectiveInstallment).toLocaleString('en-IN')}
                           </span>
                         </div>
                       </div>
