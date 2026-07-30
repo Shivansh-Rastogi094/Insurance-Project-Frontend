@@ -304,6 +304,10 @@ const PlanCatalog = () => {
     if (isNaN(durationVal) || durationVal <= 0) {
       errors.duration = "Coverage duration must be greater than zero.";
     }
+
+    if (!formData.termsAndConditions || formData.termsAndConditions.trim().length < 20) {
+      errors.termsAndConditions = "Terms & conditions are required and must be at least 20 characters.";
+    }
     
     return errors;
   };
@@ -325,6 +329,7 @@ const PlanCatalog = () => {
         premiumAmount: newPlan.premiumAmount ? parseFloat(newPlan.premiumAmount) : null,
         premiumType: newPlan.premiumType,
         duration: parseInt(newPlan.duration, 10),
+        durationYears: parseInt(newPlan.duration, 10),
         termsAndConditions: newPlan.termsAndConditions.trim(),
         active: newPlan.active
       };
@@ -922,10 +927,12 @@ const PlanCatalog = () => {
       )}
 
       {/* Add Plan Modal */}
-      <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); setFormErrors({}); }} title={<><i className="ph ph-sparkle"></i> Add New Plan</>} maxWidth="520px">
+      <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); setFormErrors({}); }} title={<><i className="ph ph-sparkle"></i> Add New Plan</>} maxWidth="600px">
             <form onSubmit={handleAddPlanSubmit} style={{ marginTop: '16px' }}>
               <div className="form-group">
-                <label className="form-label">Plan Name</label>
+                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                  Plan Name <span style={{ color: '#EF4444' }}>*</span>
+                </label>
                 <input 
                   type="text" 
                   className="form-input" 
@@ -938,7 +945,9 @@ const PlanCatalog = () => {
 
               <div style={{ display: 'flex', gap: '16px' }}>
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Min Coverage Amount (₹)</label>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                    Min Coverage Amount (₹) <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
                   <input 
                     type="number" 
                     step="50000"
@@ -952,16 +961,21 @@ const PlanCatalog = () => {
                 </div>
 
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">
-                    Premium (₹) <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>(Auto-Calculated via Formula)</span>
-                  </label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', margin: 0, color: 'var(--text-primary)' }}>
+                      Premium (₹)
+                    </label>
+                    <span style={{ fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px', background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', border: '1px solid rgba(79, 70, 229, 0.2)' }}>
+                      Auto-Calculated
+                    </span>
+                  </div>
                   <input 
                     type="number" 
                     step="0.01"
                     className="form-input" 
                     value={newPlan.premiumAmount}
                     onChange={(e) => setNewPlan({ ...newPlan, premiumAmount: e.target.value })}
-                    placeholder="Leave blank to auto-calculate via formula"
+                    placeholder="Leave blank for auto-calculation"
                   />
                   {formErrors.premiumAmount && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.premiumAmount}</div>}
                 </div>
@@ -969,7 +983,9 @@ const PlanCatalog = () => {
 
               <div style={{ display: 'flex', gap: '16px' }}>
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Billing Frequency</label>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                    Billing Frequency <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
                   <select 
                     className="form-input"
                     value={newPlan.premiumType}
@@ -981,7 +997,9 @@ const PlanCatalog = () => {
                 </div>
 
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Coverage Term (Years)</label>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                    Coverage Term (Years) <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
                   <input 
                     type="number" 
                     className="form-input" 
@@ -994,15 +1012,18 @@ const PlanCatalog = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Terms & Conditions</label>
+                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                  Terms & Conditions <span style={{ color: '#EF4444' }}>*</span>
+                </label>
                 <textarea 
                   className="form-input" 
                   value={newPlan.termsAndConditions}
                   onChange={(e) => setNewPlan({ ...newPlan, termsAndConditions: e.target.value })}
-                  placeholder="Enter terms and conditions..."
+                  placeholder="Enter terms and conditions (min 20 characters)..."
                   rows="3"
                   style={{ resize: 'vertical', fontFamily: 'inherit' }}
                 />
+                {formErrors.termsAndConditions && <div className="form-error">⚠️ {formErrors.termsAndConditions}</div>}
               </div>
 
               <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px', marginTop: '16px' }}>
@@ -1013,7 +1034,7 @@ const PlanCatalog = () => {
                   onChange={(e) => setNewPlan({ ...newPlan, active: e.target.checked })}
                   style={{ cursor: 'pointer', width: '16px', height: '16px' }}
                 />
-                <label htmlFor="add-active-plan" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>
+                <label htmlFor="add-active-plan" style={{ margin: 0, cursor: 'pointer', fontSize: '12.5px', fontWeight: '600', color: 'var(--text-primary)' }}>
                   Mark as Active
                 </label>
               </div>
