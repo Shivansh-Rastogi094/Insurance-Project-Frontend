@@ -493,6 +493,7 @@ const Profile = () => {
       errors.nomineeRelation = "Please select a valid nominee relation.";
     }
     if (values.pinCode && !/^\d{6}$/.test(values.pinCode)) errors.pinCode = "Pin Code must be exactly 6 digits.";
+    if (values.aadharNumber && !/^\d{12}$/.test(values.aadharNumber)) errors.aadharNumber = "Aadhaar number must be exactly 12 digits.";
 
     return errors;
   };
@@ -505,7 +506,8 @@ const Profile = () => {
     pinCode: '',
     nomineeName: '',
     nomineeRelation: '',
-    isSmoker: false
+    isSmoker: false,
+    aadharNumber: ''
   }, validationFn);
 
   const openFormModal = () => {
@@ -518,7 +520,8 @@ const Profile = () => {
         pinCode: profile.pinCode || '',
         nomineeName: profile.nomineeName || '',
         nomineeRelation: profile.nomineeRelation || '',
-        isSmoker: Boolean(profile.isSmoker)
+        isSmoker: Boolean(profile.isSmoker),
+        aadharNumber: profile.aadharNumber || ''
       });
     } else {
       resetForm();
@@ -544,7 +547,8 @@ const Profile = () => {
           pinCode: formData.pinCode.toString().trim(),
           nomineeName: formData.nomineeName.trim(),
           nomineeRelation: formData.nomineeRelation.trim(),
-          isSmoker: Boolean(formData.isSmoker)
+          isSmoker: Boolean(formData.isSmoker),
+          aadharNumber: formData.aadharNumber.trim()
         };
         let updateId = profile.id;
         const token = localStorage.getItem("token");
@@ -586,7 +590,8 @@ const Profile = () => {
           pinCode: formData.pinCode.toString().trim(),
           nomineeName: formData.nomineeName.trim(),
           nomineeRelation: formData.nomineeRelation.trim(),
-          isSmoker: Boolean(formData.isSmoker)
+          isSmoker: Boolean(formData.isSmoker),
+          aadharNumber: formData.aadharNumber.trim()
         };
 
         await createCustomerProfile(payload);
@@ -646,20 +651,23 @@ const Profile = () => {
                 <div className="large-avatar">{initials}</div>
                 <div className="profile-name">{userData?.fullName || "Valued Customer"}</div>
                 <div className="profile-email">{userData?.email || "customer@insurespace.com"}</div>
+                <div className="profile-email" style={{ marginTop: '-4px' }}>
+                  <i className="ph ph-phone"></i> {userData?.phoneNumber || profile?.phoneNumber || "N/A"}
+                </div>
 
-                <div className={`status-badge ${profile ? 'complete' : 'incomplete'}`}>
+                <div className={`status-badge ${(profile && profile.aadharNumber) ? 'complete' : 'incomplete'}`}>
                   <span style={{
                     width: '6px',
                     height: '6px',
                     borderRadius: '50%',
-                    background: profile ? '#10B981' : '#F59E0B',
+                    background: (profile && profile.aadharNumber) ? '#10B981' : '#F59E0B',
                     display: 'inline-block'
                   }}></span>
-                  {profile ? 'Profile Complete' : 'Profile Incomplete'}
+                  {(profile && profile.aadharNumber) ? 'Profile Complete' : 'Profile Incomplete'}
                 </div>
 
                 <button className="cta-btn" onClick={openFormModal}>
-                  {profile ? 'Update Your Profile' : 'Complete Your Profile'}
+                  {(profile && profile.aadharNumber) ? 'Update Your Profile' : 'Complete Your Profile'}
                 </button>
                 {profile && (
                   <DownloadButton
@@ -673,7 +681,8 @@ const Profile = () => {
                       city: profile.city,
                       state: profile.state,
                       nomineeName: profile.nomineeName,
-                      nomineeRelation: profile.nomineeRelation
+                      nomineeRelation: profile.nomineeRelation,
+                      aadharNumber: profile.aadharNumber || "N/A"
                     }}
                     label={<><i className="ph ph-download" /> Download Profile PDF</>}
                     title="Download Profile Details PDF"
@@ -788,6 +797,13 @@ const Profile = () => {
                       <span className="detail-label">Nominee Relation</span>
                       <span className={`detail-value ${!profile?.nomineeRelation ? 'empty' : ''}`}>
                         {profile?.nomineeRelation || 'Not Provided'}
+                      </span>
+                    </div>
+
+                    <div className="detail-item">
+                      <span className="detail-label">Aadhaar Number</span>
+                      <span className={`detail-value ${!profile?.aadharNumber ? 'empty' : ''}`}>
+                        {profile?.aadharNumber || 'Not Provided'}
                       </span>
                     </div>
 
@@ -915,6 +931,18 @@ const Profile = () => {
               </select>
               {formErrors.nomineeRelation && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.nomineeRelation}</div>}
             </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Aadhaar Number</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="12-digit Aadhaar Number"
+              value={formData.aadharNumber}
+              onChange={(e) => setFormData({ ...formData, aadharNumber: e.target.value })}
+            />
+            {formErrors.aadharNumber && <div className="form-error"><i className="ph ph-warning-triangle"></i> {formErrors.aadharNumber}</div>}
           </div>
 
           {/* Tobacco / Smoker Status Checkbox */}
