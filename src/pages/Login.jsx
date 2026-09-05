@@ -189,7 +189,7 @@ const Login = () => {
           {/* Right Panel: Form Card */}
           <div className="auth-right-panel">
             <div className="login-card">
-              <form onSubmit={(e) => {
+              <form noValidate onSubmit={(e) => {
                 e.preventDefault();
                 handleLogin();
               }}>

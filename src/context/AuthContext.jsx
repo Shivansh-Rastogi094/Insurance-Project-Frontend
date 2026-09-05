@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
+import { LogoutService } from "../services/AuthService";
 
 const AuthContext = createContext(null);
 
@@ -38,11 +39,18 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("token", data.token);
   };
 
-  const logout = () => {
-    setUserData(null);
-    localStorage.removeItem("userData");
-    // BUG-001 fix: Remove token instead of storing the string "null"
-    localStorage.removeItem("token");
+  const logout = async () => {
+    try {
+      if (localStorage.getItem("token")) {
+        await LogoutService();
+      }
+    } catch (err) {
+      console.error("Logout request failed:", err);
+    } finally {
+      setUserData(null);
+      localStorage.removeItem("userData");
+      localStorage.removeItem("token");
+    }
   };
 
   return (

@@ -86,3 +86,15 @@ export const ResetPasswordService = async (payload) => {
         throw error;
     }
 };
+
+// POST /api/auth/logout - notifies backend to blacklist current JWT
+export const LogoutService = async () => {
+    try {
+        const response = await api.post(`auth/logout`);
+        return response;
+    } catch (error) {
+        console.error("Error in LogoutService:", error);
+        throw error;
+    }
+};
+

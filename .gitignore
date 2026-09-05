@@ -26,3 +26,6 @@ dist-ssr
 .env
 curl_output.txt
 node_output.txt
+coverage/
+test-results/
+playwright-report/
