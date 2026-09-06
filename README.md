@@ -122,6 +122,14 @@ src/main/java/com/monocept/app/
     npm run dev
     ```
     The application will be accessible at `http://localhost:5173`.
+    
+## 📊 System Architecture & Diagrams
 
+### 1. Class Diagram
+![Class Diagram](docs/diagrams/class-diagram.png)
 
+### 2. Sequence Diagram
+![Sequence Diagram](docs/diagrams/sequence-diagram.png)
 
+### 3. Project Structure
+![Project Structure](docs/diagrams/project-structure.png)
