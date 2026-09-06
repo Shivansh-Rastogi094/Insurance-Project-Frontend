@@ -28,23 +28,19 @@ const Claims = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
-  const [myAssignedOnly, setMyAssignedOnly] = useState(false);
-  const [matchSpecializationOnly, setMatchSpecializationOnly] = useState(false);
 
   const handleClearFilters = () => {
     setSearchQuery('');
     setStatusFilter('');
     setMinAmount('');
     setMaxAmount('');
-    setMyAssignedOnly(false);
-    setMatchSpecializationOnly(false);
     setCurrentPage(0);
   };
 
   // Reset to page 0 when filters or page size change
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchQuery, statusFilter, minAmount, maxAmount, myAssignedOnly, matchSpecializationOnly, pageSize]);
+  }, [searchQuery, statusFilter, minAmount, maxAmount, pageSize]);
 
   // Export Modal States
   const [showExportModal, setShowExportModal] = useState(false);
@@ -69,10 +65,12 @@ const Claims = () => {
       const response = await readMyClaims();
       return response || [];
     } else {
-      const response = await readAllClaims(page, pageSize);
+      const isFilterActive = Boolean(statusFilter || searchQuery || minAmount || maxAmount);
+      // Fetch 1000 items if any filter is active so that frontend filtering works across all data
+      const response = await readAllClaims(isFilterActive ? 0 : page, isFilterActive ? 1000 : pageSize);
       return response?.data || response || {};
     }
-  }, [isCustomer, pageSize]);
+  }, [isCustomer, pageSize, statusFilter, searchQuery, minAmount, maxAmount]);
 
   const { data = isCustomer ? [] : {}, loading, execute: loadClaims } = useFetch(fetchClaimsData);
 
@@ -89,14 +87,6 @@ const Claims = () => {
   const filteredClaims = claimsList.filter(claim => {
     if (statusFilter && (claim.claimStatus || '').toUpperCase() !== statusFilter.toUpperCase()) {
       return false;
-    }
-    if (myAssignedOnly && claim.agentEmail !== userData?.email) {
-      return false;
-    }
-    if (matchSpecializationOnly && userData?.specialization && userData?.specialization !== 'SUPER') {
-      if (claim.productType !== userData.specialization) {
-        return false;
-      }
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -135,7 +125,7 @@ const Claims = () => {
   // For admin/agent without filters, server pagination is used (loadClaims(page))
   // totalElements from server used for export; client-filtered count shown in UI
   const serverTotalElements = data?.totalElements || 0;
-  const isClientPaginated = isCustomer || Boolean(statusFilter || searchQuery || minAmount || maxAmount || myAssignedOnly || matchSpecializationOnly);
+  const isClientPaginated = isCustomer || Boolean(statusFilter || searchQuery || minAmount || maxAmount);
 
   const totalEffectivePages = isClientPaginated
     ? Math.max(1, Math.ceil(totalFilteredCount / pageSize))
@@ -288,12 +278,6 @@ const Claims = () => {
                   setMinAmount={setMinAmount}
                   maxAmount={maxAmount}
                   setMaxAmount={setMaxAmount}
-                  myAssignedOnly={myAssignedOnly}
-                  setMyAssignedOnly={setMyAssignedOnly}
-                  matchSpecializationOnly={matchSpecializationOnly}
-                  setMatchSpecializationOnly={setMatchSpecializationOnly}
-                  userData={userData}
-                  isAgent={isAgent}
                   handleClearFilters={handleClearFilters}
                 />
 

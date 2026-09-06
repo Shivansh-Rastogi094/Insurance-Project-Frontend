@@ -27,6 +27,7 @@ const ClaimsTable = ({
           <colgroup>
             <col style={{ width: '50px' }} />
             <col style={{ width: '180px' }} />
+            <col style={{ width: '80px' }} />
             <col style={{ width: '120px' }} />
             <col style={{ width: 'auto' }} />
             <col style={{ width: '130px', textAlign: 'right' }} />
@@ -38,6 +39,7 @@ const ClaimsTable = ({
             <tr>
               <th style={{ width: '50px' }}></th>
               <th style={{ width: '180px' }}>Claim & Policy ID</th>
+              <th style={{ width: '80px' }}>Type</th>
               <th style={{ width: '120px' }}>Incident Date</th>
               <th style={{ width: 'auto' }}>Claim Reason</th>
               <th style={{ width: '130px', textAlign: 'right' }}>Amount</th>
@@ -47,10 +49,11 @@ const ClaimsTable = ({
             </tr>
           </thead>
           <tbody>
-            {filteredClaims.map((claim, idx) => {
+            {filteredClaims.map((claim, idx) => {  
               const claimNum = claim.claimNumber || `CLM-${claim.id || idx}`;
               const status = (claim.claimStatus || 'SUBMITTED').toLowerCase();
               const assocPolicy = claim.policyNumber || 'N/A';
+              const policyType = claim.productType || 'N/A';
               const incidentDate = claim.incidentDate || 'N/A';
               const claimReason = claim.claimReason || 'No reason provided';
               const claimAmount = claim.claimAmount || 0;
@@ -79,6 +82,11 @@ const ClaimsTable = ({
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 'normal', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
                         {assocPolicy}
                       </div>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '12px', fontWeight: '600' }}>
+                        {policyType}
+                      </span>
                     </td>
                     <td>{incidentDate}</td>
                     <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={claimReason}>
@@ -157,7 +165,7 @@ const ClaimsTable = ({
                   </tr>
                   {isExpanded && (
                     <tr className="detail-row">
-                      <td colSpan={8}>
+                      <td colSpan={9}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                           <div className="detail-row-grid">
                             <div className="detail-col">

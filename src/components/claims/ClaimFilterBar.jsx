@@ -9,15 +9,9 @@ const ClaimFilterBar = ({
   setMinAmount,
   maxAmount,
   setMaxAmount,
-  myAssignedOnly,
-  setMyAssignedOnly,
-  matchSpecializationOnly,
-  setMatchSpecializationOnly,
-  userData,
-  isAgent,
   handleClearFilters
 }) => {
-  const isFilterActive = searchQuery || statusFilter || minAmount || maxAmount || myAssignedOnly || matchSpecializationOnly;
+  const isFilterActive = searchQuery || statusFilter || minAmount || maxAmount;
 
   return (
     <div className="filter-bar">
@@ -87,38 +81,6 @@ const ClaimFilterBar = ({
           Clear
         </button>
       </div>
-
-      {isAgent && (
-        <div style={{ gridColumn: '1 / -1', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '24px', marginTop: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <input
-              type="checkbox"
-              id="myAssignedOnly"
-              checked={myAssignedOnly}
-              onChange={(e) => setMyAssignedOnly(e.target.checked)}
-              style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--primary)' }}
-            />
-            <label htmlFor="myAssignedOnly" style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
-              Show only claims assigned to me
-            </label>
-          </div>
-
-          {userData?.specialization && userData?.specialization !== 'SUPER' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="checkbox"
-                id="matchSpecializationOnly"
-                checked={matchSpecializationOnly}
-                onChange={(e) => setMatchSpecializationOnly(e.target.checked)}
-                style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--primary)' }}
-              />
-              <label htmlFor="matchSpecializationOnly" style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
-                Show only claims matching my specialization ({userData.specialization})
-              </label>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
