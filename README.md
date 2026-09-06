@@ -124,4 +124,13 @@ src/main/java/com/monocept/app/
     The application will be accessible at `http://localhost:5173`.
 
 
+5. **Class Diagram**
 
+![alt text](<docs/diagrams/Class Daigram.png>)
+
+6. **Sequence Diagram**
+
+![alt text](<docs/diagrams/Sequence Diagram.png>)
+7. **Project Structure**
+
+![alt text](<docs/diagrams/Project Structure.png>)
