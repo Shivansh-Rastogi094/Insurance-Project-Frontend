@@ -123,14 +123,15 @@ src/main/java/com/monocept/app/
     ```
     The application will be accessible at `http://localhost:5173`.
 
+---
 
-5. **Class Diagram**
+## 📊 System Architecture & Diagrams
 
-![alt text](<docs/diagrams/Class Daigram.png>)
+### 1. Class Diagram
+![Class Diagram](docs/diagrams/class-diagram.png)
 
-6. **Sequence Diagram**
+### 2. Sequence Diagram
+![Sequence Diagram](docs/diagrams/sequence-diagram.png)
 
-![alt text](<docs/diagrams/Sequence Diagram.png>)
-7. **Project Structure**
-
-![alt text](<docs/diagrams/Project Structure.png>)
+### 3. Project Structure
+![Project Structure](docs/diagrams/project-structure.png)
